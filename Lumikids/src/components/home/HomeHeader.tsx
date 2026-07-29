@@ -2,120 +2,59 @@ import React from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
 } from "react-native";
 
 type Props = {
-  coins?: number;
-  streak?: number;
-  onParentPress?: () => void;
+  name: string;
 };
 
 export default function HomeHeader({
-  coins = 120,
-  streak = 5,
-  onParentPress,
+  name,
 }: Props) {
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.parentButton}
-        activeOpacity={0.8}
-        onPress={onParentPress}
-      >
-        <Text style={styles.parentIcon}>👤</Text>
 
-        <Text style={styles.parentText}>
-          Parent
-        </Text>
-      </TouchableOpacity>
+      <Text style={styles.greeting}>
+        ☀️ Good Morning
+      </Text>
 
-      <View style={styles.right}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>
-            🪙 {coins}
-          </Text>
-        </View>
+      <Text style={styles.name}>
+        Hi, {name}!
+      </Text>
 
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>
-            🔥 {streak}
-          </Text>
-        </View>
-      </View>
+      <Text style={styles.subtitle}>
+        Ready to play and learn?
+      </Text>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
   container: {
-    marginTop: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    marginTop: 10,
+    marginBottom: 20,
   },
 
-  parentButton: {
-    flexDirection: "row",
-    alignItems: "center",
-
-    backgroundColor: "#FFFFFF",
-
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-
-    borderRadius: 18,
-
-    shadowColor: "#4DA8FF",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-
-    elevation: 3,
+  greeting: {
+    fontSize: 18,
+    color: "#64748B",
   },
 
-  parentIcon: {
-    fontSize: 20,
-    marginRight: 8,
+  name: {
+    marginTop: 6,
+    fontSize: 34,
+    fontWeight: "800",
+    color: "#0F172A",
   },
 
-  parentText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1E293B",
+  subtitle: {
+    marginTop: 6,
+    fontSize: 17,
+    color: "#64748B",
   },
 
-  right: {
-    flexDirection: "row",
-  },
-
-  badge: {
-    marginLeft: 10,
-
-    backgroundColor: "#FFFFFF",
-
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-
-    borderRadius: 18,
-
-    shadowColor: "#4DA8FF",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-
-    elevation: 3,
-  },
-
-  badgeText: {
-    fontWeight: "700",
-    color: "#334155",
-  },
 });

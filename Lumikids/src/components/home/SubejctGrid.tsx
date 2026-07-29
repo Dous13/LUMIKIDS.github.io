@@ -1,25 +1,27 @@
+import React from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 const subjects = [
   {
-    emoji: "📗",
+    emoji: "📖",
     title: "Reading",
-    color: "#6ED46E",
+    colors: ["#E9F8EE", "#6CCF8A"] as const,
   },
   {
     emoji: "✏️",
     title: "Writing",
-    color: "#FFA640",
+    colors: ["#FFF2E3", "#FFBE73"] as const,
   },
   {
     emoji: "🔢",
     title: "Math",
-    color: "#5CAEFF",
+    colors: ["#EAF3FF", "#79B8FF"] as const,
   },
 ];
 
@@ -29,20 +31,24 @@ export default function SubjectGrid() {
       {subjects.map((item) => (
         <TouchableOpacity
           key={item.title}
-          style={[
-            styles.card,
-            {
-              backgroundColor: item.color,
-            },
-          ]}
+          activeOpacity={0.85}
         >
-          <Text style={styles.emoji}>
-            {item.emoji}
-          </Text>
+          <LinearGradient
+            colors={item.colors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <View style={styles.emojiCircle}>
+              <Text style={styles.emoji}>
+                {item.emoji}
+              </Text>
+            </View>
 
-          <Text style={styles.title}>
-            {item.title}
-          </Text>
+            <Text style={styles.title}>
+              {item.title}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
       ))}
     </View>
@@ -54,24 +60,49 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     flexDirection: "row",
     justifyContent: "space-between",
+    marginTop: 20,
   },
 
   card: {
-    width: 100,
-    height: 120,
-    borderRadius: 28,
+    width: 102,
+    height: 132,
+
+    borderRadius: 30,
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    shadowColor: "#70BFFF",
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+
+    elevation: 8,
+  },
+
+  emojiCircle: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+
+    backgroundColor: "rgba(255,255,255,0.35)",
+
     justifyContent: "center",
     alignItems: "center",
   },
 
   emoji: {
-    fontSize: 40,
+    fontSize: 34,
   },
 
   title: {
+    marginTop: 14,
     color: "white",
-    fontWeight: "700",
-    marginTop: 10,
+    fontWeight: "800",
     fontSize: 18,
+    letterSpacing: 0.3,
   },
 });
