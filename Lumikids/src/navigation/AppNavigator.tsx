@@ -5,7 +5,6 @@ import { RootStackParamList } from "../types/navigation";
 
 import SplashScreen from "../screens/splash/SplashScreen";
 import WelcomeScreen from "../screens/onboarding/WelcomeScreen";
-import RoleSelectionScreen from "../screens/auth/RoleSelectionScreen";
 import StudentLoginScreen from "../screens/auth/StudentLoginScreen";
 import TeacherLoginScreen from "../screens/auth/TeacherLoginScreen";
 import HomeScreen from "../screens/student/HomeScreen";
@@ -24,10 +23,6 @@ export default function AppNavigator() {
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen
-          name="RoleSelection"
-          component={RoleSelectionScreen}
-        />
         <Stack.Screen
           name="StudentLogin"
           component={StudentLoginScreen}

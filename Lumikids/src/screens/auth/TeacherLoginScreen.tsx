@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 export default function SplashScreen() {
   return (
     <View style={styles.container}>
-      <Text>Splash Screen</Text>
+      <Text>TeacherLogin</Text>
     </View>
   );
 }

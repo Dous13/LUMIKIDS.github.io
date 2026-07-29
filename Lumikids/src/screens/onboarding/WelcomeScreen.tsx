@@ -1,222 +1,256 @@
-import { View, Text, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import PrimaryButton from "../../components/buttons/PrimaryButton";
 
 import { RootStackParamList } from "../../types/navigation";
-import { Colors, Spacing, Typography } from "../../theme";
+import {
+  Colors,
+  Spacing,
+  Typography,
+  Radius,
+  Shadows,
+} from "../../theme";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "Welcome"
 >;
 
+const SUBJECTS = [
+  {
+    emoji: "📖",
+    title: "Reading",
+    color: "#E8F5E9",
+  },
+  {
+    emoji: "✏️",
+    title: "Writing",
+    color: "#FFF3E0",
+  },
+  {
+    emoji: "🔢",
+    title: "Math",
+    color: "#E3F2FD",
+  },
+];
+
 export default function WelcomeScreen() {
   const navigation = useNavigation<NavigationProp>();
 
-return (
-  <View style={styles.container}>
-
-    {/* Decorative Circles */}
-    <View style={styles.circleTop} />
-    <View style={styles.circleBottom} />
-
-    <View style={styles.header}>
-      <View style={styles.logoContainer}>
-        <Image
-          source={require("../../../assets/images/welcomeicon.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
-
-      <Text style={styles.title}>
-        Welcome to{"\n"}
-        <Text style={styles.logo}>LUMIKIDS</Text>
-      </Text>
-
-      <Text style={styles.subtitle}>
-        Learn through fun games, exciting challenges,
-        and interactive adventures!
-      </Text>
-    </View>
-
-    {/* Subjects */}
-    <View style={styles.subjectContainer}>
-
-      <View style={styles.subjectCard}>
-        <Text style={styles.subjectEmoji}>📗</Text>
-        <Text style={styles.subjectTitle}>Reading</Text>
-      </View>
-
-      <View style={styles.subjectCard}>
-        <Text style={styles.subjectEmoji}>✏️</Text>
-        <Text style={styles.subjectTitle}>Writing</Text>
-      </View>
-
-      <View style={styles.subjectCard}>
-        <Text style={styles.subjectEmoji}>🔢</Text>
-        <Text style={styles.subjectTitle}>Math</Text>
-      </View>
-
-    </View>
-
-    <PrimaryButton
-      title="🚀 Start Learning"
-      onPress={() => navigation.navigate("RoleSelection")}
-    />
-
-    <Text
-      style={styles.teacher}
-      onPress={() => navigation.navigate("TeacherLogin")}
+  return (
+    <LinearGradient
+      colors={["#EAF8FF", "#D7F1FF", "#C6E8FF"]}
+      style={styles.container}
     >
-      👩‍🏫 Teacher Portal
-    </Text>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Decorations */}
+        <View style={styles.circle1} />
+        <View style={styles.circle2} />
+        <View style={styles.circle3} />
 
-  </View>
-);
+        {/* HEADER */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../../../assets/images/welcomeicon.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
+          <Text style={styles.welcome}>Welcome to</Text>
+
+          <Text style={styles.title}>LUMIKIDS</Text>
+
+          <Text style={styles.subtitle}>
+            Learn, play and discover through fun adventures!
+          </Text>
+        </View>
+
+        {/* SUBJECTS */}
+        <View style={styles.subjectContainer}>
+          {SUBJECTS.map((item) => (
+            <TouchableOpacity
+              key={item.title}
+              activeOpacity={0.8}
+              style={[
+                styles.subjectCard,
+                { backgroundColor: item.color },
+              ]}
+            >
+              <Text style={styles.subjectEmoji}>
+                {item.emoji}
+              </Text>
+
+              <Text style={styles.subjectTitle}>
+                {item.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* FOOTER */}
+        <View style={styles.footer}>
+          <PrimaryButton
+            title="🚀 Let's Start!"
+            onPress={() =>
+              navigation.navigate("StudentLogin")
+            }
+          />
+
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("TeacherLogin")
+            }
+          >
+            <Text style={styles.teacher}>
+              👩‍🏫 Teacher Portal
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
+  );
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
-    backgroundColor: "#F5FAFF",
-    justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingVertical: 40,
   },
 
-header: {
-  alignItems: "center",
-  marginTop: 10,
-},
-
-logoContainer: {
-  width: 140,
-  height: 140,
-  borderRadius: 70,
-  backgroundColor: "#FFFFFF",
-  justifyContent: "center",
-  alignItems: "center",
-
-  shadowColor: "#74B9FF",
-  shadowOpacity: 0.25,
-  shadowRadius: 20,
-  shadowOffset: {
-    width: 0,
-    height: 8,
+  header: {
+    alignItems: "center",
+    marginTop: 20,
   },
 
-  elevation: 10,
+  logoContainer: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: "#FFFFFF",
 
-  marginBottom: 24,
-},
-
-logo: {
-  width: 90,
-  height: 90,
-},
-
-  title: {
-    fontSize: 34,
-    fontWeight: "700",
-    color: Colors.text,
-    textAlign: "center",
-  },
-
-subtitle: {
-  marginTop: 14,
-  fontSize: 17,
-  textAlign: "center",
-  color: "#64748B",
-  lineHeight: 26,
-  paddingHorizontal: 20,
-},
-
-  illustration: {
-    height: 260,
-    borderRadius: 24,
-    backgroundColor: "#EEF5FF",
     justifyContent: "center",
     alignItems: "center",
+
+    marginBottom: 20,
+
+    ...Shadows.card,
+
+    shadowColor: "#7CCBFF",
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    elevation: 12,
   },
 
-  placeholder: {
-    color: Colors.textSecondary,
-    fontSize: Typography.body,
+  logo: {
+    width: 90,
+    height: 90,
   },
 
-teacher: {
-  marginTop: 24,
-  textAlign: "center",
-  fontWeight: "600",
-  color: "#3B82F6",
-  fontSize: 16,
-},
+  welcome: {
+    fontSize: 22,
+    color: "#4B5563",
+    fontWeight: "600",
+  },
 
+  title: {
+    fontSize: 42,
+    fontWeight: "900",
+    color: "#2E7DFF",
+    letterSpacing: 1,
+  },
 
-  circleTop: {
+  subtitle: {
+    marginTop: 10,
+    fontSize: 17,
+    textAlign: "center",
+    color: "#64748B",
+    lineHeight: 26,
+    paddingHorizontal: 30,
+  },
+
+  subjectContainer: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    marginTop: 45,
+    paddingHorizontal: 18,
+  },
+
+  subjectCard: {
+    width: 95,
+    height: 120,
+
+    borderRadius: 28,
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    ...Shadows.card,
+  },
+
+  subjectEmoji: {
+    fontSize: 42,
+  },
+
+  subjectTitle: {
+    marginTop: 10,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#374151",
+  },
+
+  footer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    paddingHorizontal: 24,
+    paddingBottom: 30,
+  },
+
+  teacher: {
+    marginTop: 18,
+    textAlign: "center",
+    color: "#2563EB",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+
+  circle1: {
     position: "absolute",
     width: 260,
     height: 260,
     borderRadius: 130,
-    backgroundColor: "#DCEEFF",
-    top: -120,
-    right: -90,
-},
-
-circleBottom: {
-  position: "absolute",
-  width: 220,
-  height: 220,
-  borderRadius: 110,
-  backgroundColor: "#EAF7FF",
-  bottom: -80,
-  left: -80,
-},
-
-subjectContainer: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  marginVertical: 30,
-},
-
-subjectCard: {
-  flex: 1,
-  backgroundColor: "#FFFFFF",
-
-  marginHorizontal: 6,
-
-  borderRadius: 22,
-
-  paddingVertical: 22,
-
-  alignItems: "center",
-
-  shadowColor: "#000",
-
-  shadowOpacity: 0.08,
-
-  shadowRadius: 10,
-
-  shadowOffset: {
-    width: 0,
-    height: 4,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    top: -90,
+    right: -80,
   },
 
-  elevation: 4,
-},
+  circle2: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    bottom: 160,
+    left: -70,
+  },
 
-subjectEmoji: {
-  fontSize: 34,
-},
-
-subjectTitle: {
-  marginTop: 10,
-  fontSize: 15,
-  fontWeight: "700",
-  color: "#334155",
-},
+  circle3: {
+    position: "absolute",
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    top: 250,
+    right: 40,
+  },
 });

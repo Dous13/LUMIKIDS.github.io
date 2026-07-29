@@ -1,16 +1,19 @@
-import { TextInput, StyleSheet } from "react-native";
-
+import React from "react";
 import {
-  Colors,
-  Radius,
-  Spacing,
-  Typography,
-} from "../../theme";
+  TextInput,
+  StyleSheet,
+  TextInputProps,
+} from "react-native";
 
-export default function PrimaryInput() {
+import { Colors, Radius, Spacing, Typography } from "../../theme";
+
+interface Props extends TextInputProps {}
+
+export default function PrimaryInput(props: Props) {
   return (
     <TextInput
-      placeholder="Enter text..."
+      {...props}
+      placeholderTextColor="#94A3B8"
       style={styles.input}
     />
   );
@@ -18,16 +21,13 @@ export default function PrimaryInput() {
 
 const styles = StyleSheet.create({
   input: {
-    backgroundColor: Colors.white,
-
-    borderWidth: 1,
-
-    borderColor: Colors.border,
-
-    borderRadius: Radius.md,
-
-    padding: Spacing.md,
-
+    backgroundColor: "#FFFFFF",
+    borderRadius: Radius.lg,
+    borderWidth: 2,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     fontSize: Typography.body,
+    color: Colors.text,
   },
 });
