@@ -25,7 +25,9 @@ export default function LessonScreen() {
       return;
     }
 
-    navigation.navigate("Quiz");
+    navigation.navigate("Quiz", {
+        lessonId: lesson.id,
+    });
   }
 
   function playLetterSound() {
@@ -131,16 +133,16 @@ export default function LessonScreen() {
       {currentLevel.type === "question" &&
         currentLevel.question && (
           <>
-            <Text style={styles.question}>
-              {currentLevel.question.question}
-            </Text>
+          <Text style={styles.question}>
+            {currentLevel.question}
+          </Text>
 
-            {currentLevel.question.choices.map((choice) => (
+            {currentLevel.choices?.map((choice: string) => (
               <TouchableOpacity
                 key={choice}
                 style={styles.answerButton}
                 onPress={() => {
-                  if (choice === currentLevel.question!.answer) {
+                  if (choice === currentLevel.answer){
                     Alert.alert(
                       "🎉 Great Job!",
                       "That's correct!"
@@ -176,7 +178,11 @@ export default function LessonScreen() {
 
           <TouchableOpacity
             style={styles.greenButton}
-            onPress={() => navigation.navigate("Quiz")}
+            onPress={() =>
+              navigation.navigate("Quiz", {
+                lessonId: lesson.id,
+              })
+            }
           >
             <Text style={styles.buttonText}>
               🧠 Start Quiz

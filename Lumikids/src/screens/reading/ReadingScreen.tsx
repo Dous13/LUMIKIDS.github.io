@@ -10,37 +10,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
-
-const lessons = [
-  {
-    id: "1",
-    title: "Letter A",
-    word: "Apple",
-    emoji: "🍎",
-    color: "#CFF7D4",
-    unlocked: true,
-  },
-  {
-    id: "2",
-    title: "Letter B",
-    word: "Ball",
-    emoji: "⚽",
-    color: "#FFE6C7",
-    unlocked: false,
-  },
-  {
-    id: "3",
-    title: "Letter C",
-    word: "Cat",
-    emoji: "🐱",
-    color: "#DDEEFF",
-    unlocked: false,
-  },
-];
+import { readingLessons } from "../../data/readingLessons";
 
 export default function ReadingScreen() {
   const navigation = useNavigation<any>();
-
+  const completedLessons = readingLessons.filter(
+    (lesson) => lesson.unlocked
+  ).length;
+  const progress =
+    (completedLessons / readingLessons.length) * 100;
+  
   return (
     <LinearGradient
       colors={["#F8FCFF", "#EAF8FF", "#D8F4FF"]}
@@ -64,9 +43,21 @@ export default function ReadingScreen() {
         </Text>
       </TouchableOpacity>
 
-        <Text style={styles.title}>
-          🌈 Reading Adventure
+      <View style={styles.heroCard}>
+
+        <Text style={styles.owl}>
+          🦉
         </Text>
+
+        <Text style={styles.heroTitle}>
+          Reading Adventure
+        </Text>
+
+        <Text style={styles.heroSubtitle}>
+          Let's discover new letters today!
+        </Text>
+
+      </View>
 
         <Text style={styles.subtitle}>
           🦉 Let's learn a new letter!
@@ -78,11 +69,18 @@ export default function ReadingScreen() {
           </Text>
 
           <Text style={styles.progressText}>
-            1 of 26 Letters Completed
+            {completedLessons} of {readingLessons.length} Letters Completed
           </Text>
 
           <View style={styles.progressBackground}>
-            <View style={styles.progressFill}/>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${progress}%`,
+                },
+              ]}
+            />
           </View>
         </View>
 
@@ -92,7 +90,7 @@ export default function ReadingScreen() {
             paddingTop: 20,
             paddingBottom: 40,
           }}
-          data={lessons}
+          data={readingLessons}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
@@ -119,24 +117,27 @@ export default function ReadingScreen() {
               </Text>
 
               <View style={{ flex: 1 }}>
-
                 <Text style={styles.lessonTitle}>
-                  {item.title}
+                  {item.letter}
                 </Text>
 
                 <Text style={styles.lessonWord}>
                   {item.word}
                 </Text>
 
+                <Text style={styles.reward}>
+                  ⭐ +{item.xp} XP
+                </Text>
+
                 {item.unlocked ? (
                   <View style={styles.startButton}>
                     <Text style={styles.startText}>
-                      START
+                      ▶ PLAY
                     </Text>
                   </View>
                 ) : (
                   <Text style={styles.locked}>
-                    🔒 Complete previous lesson
+                    🔒Finish the previous letter first!
                   </Text>
                 )}
 
@@ -279,6 +280,42 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#2563EB",
+  },
+
+  heroCard: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 35,
+    padding: 28,
+    alignItems: "center",
+
+    elevation: 6,
+  },
+
+  owl: {
+    fontSize: 70,
+  },
+
+  heroTitle: {
+    marginTop: 10,
+    fontSize: 30,
+    fontWeight: "900",
+    color: "#2563EB",
+  },
+
+  heroSubtitle: {
+    marginTop: 10,
+    textAlign: "center",
+    fontSize: 18,
+    color: "#64748B",
+  },
+
+  reward: {
+  marginTop: 10,
+  color: "#F59E0B",
+  fontWeight: "800",
+  fontSize: 18,
   },
 
 });

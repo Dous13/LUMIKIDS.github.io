@@ -9,4 +9,7 @@ export type RootStackParamList = {
   Lesson: {
     lessonId: string;
   };
+  Quiz: {
+    lessonId: string;
+  };
 };

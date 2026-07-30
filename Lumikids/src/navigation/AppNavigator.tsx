@@ -8,6 +8,7 @@ import TeacherLoginScreen from "../screens/auth/TeacherLoginScreen";
 import HomeScreen from "../screens/student/HomeScreen";
 import ReadingScreen from "../screens/reading/ReadingScreen";
 import LessonScreen from "../screens/reading/LessonScreen";
+import QuizScreen from "../screens/reading/QuizScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -39,6 +40,10 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Lesson"
           component={LessonScreen}
+        />
+        <Stack.Screen
+          name="Quiz"
+          component={QuizScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>
