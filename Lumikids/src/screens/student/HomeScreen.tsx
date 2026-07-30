@@ -1,25 +1,32 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
-
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import {
+  getSession,
+  clearSession,
+} from "../../services/session/session";
 import { LinearGradient } from "expo-linear-gradient";
-
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-
 import { RootStackParamList } from "../../types/navigation";
-
 import HomeHeader from "../../components/home/HomeHeader";
 import MascotCard from "../../components/home/MascotCard";
 import SubjectButton from "../../components/home/SubjectButton";
 import BottomMenu from "../../components/home/BottomMenu";
+import { useStudent } from "../../hooks/useStudent";
+import {
+  getLevel,
+  getXPProgress,
+  getCurrentLevelXP,
+  getNextLevelXP,
+} from "../../utils/xp";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -28,6 +35,28 @@ type NavigationProp = NativeStackNavigationProp<
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
+
+  const [studentId, setStudentId] = useState("");
+
+  useEffect(() => {
+    async function loadSession() {
+      const session = await getSession();
+
+      if (!session) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Welcome" }],
+        });
+        return;
+      }
+
+      setStudentId(session.studentId);
+    }
+
+    loadSession();
+  }, [navigation]);
+
+  const { student, loading } = useStudent(studentId);
 
   async function logout() {
     Alert.alert(
@@ -42,7 +71,7 @@ export default function HomeScreen() {
           text: "Logout",
           style: "destructive",
           onPress: async () => {
-            await AsyncStorage.removeItem("studentSession");
+            await clearSession();
 
             navigation.reset({
               index: 0,
@@ -54,64 +83,88 @@ export default function HomeScreen() {
     );
   }
 
-return (
-  <LinearGradient
-    colors={["#F8FCFF", "#EAF8FF", "#D6F1FF"]}
-    style={styles.container}
-  >
-    {/* Background Decorations */}
-
-    <View style={styles.circle1} />
-    <View style={styles.circle2} />
-    <View style={styles.circle3} />
-    <View style={styles.circle4} />
-
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        <HomeHeader
-          name="Little Explorer"
+  if (loading || studentId === "") {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator
+          size="large"
+          color="#4DA8FF"
         />
+      </SafeAreaView>
+    );
+  }
 
-        <MascotCard />
+  if (!student) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <Text style={styles.errorText}>
+          Student not found.
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
-        <SubjectButton
-          emoji="📖"
-          title="Reading"
-          color="#EAF9F0"
-          onPress={() =>
-            Alert.alert("Reading", "Coming Soon!")
-          }
+  const level = getLevel(student.xp);
+  const progress = getXPProgress(student.xp);
+  const nextLevelXP = getNextLevelXP(level);
+
+  return (
+    <LinearGradient
+      colors={["#F8FCFF", "#EAF8FF", "#D6F1FF"]}
+      style={styles.container}
+    >
+      <View style={styles.circle1} />
+      <View style={styles.circle2} />
+      <View style={styles.circle3} />
+      <View style={styles.circle4} />
+
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+        >
+          <HomeHeader
+            name={student.name}
+          />
+
+          <MascotCard />
+
+          <SubjectButton
+            emoji="📖"
+            title="Reading"
+            color="#EAF9F0"
+            onPress={() => navigation.navigate("Reading")}
+          />
+
+          <SubjectButton
+            emoji="✏️"
+            title="Writing"
+            color="#FFF6E8"
+            onPress={() =>
+              Alert.alert("Writing", "Coming Soon!")
+            }
+          />
+
+          <SubjectButton
+            emoji="🔢"
+            title="Math"
+            color="#EDF6FF"
+            onPress={() =>
+              Alert.alert("Math", "Coming Soon!")
+            }
+          />
+        </ScrollView>
+
+        <BottomMenu
+          xp={student.xp}
+          level={level}
+          progress={progress}
+          streak={student.streak}
+          onParentPress={logout}
         />
-
-        <SubjectButton
-          emoji="✏️"
-          title="Writing"
-          color="#FFF6E8"
-          onPress={() =>
-            Alert.alert("Writing", "Coming Soon!")
-          }
-        />
-
-        <SubjectButton
-          emoji="🔢"
-          title="Math"
-          color="#EDF6FF"
-          onPress={() =>
-            Alert.alert("Math", "Coming Soon!")
-          }
-        />
-      </ScrollView>
-
-      <BottomMenu
-        xp={120}
-        onParentPress={logout}
-      />
-    </SafeAreaView>
-  </LinearGradient>
-);
+      </SafeAreaView>
+    </LinearGradient>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -123,6 +176,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 18,
     paddingBottom: 60,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F8FCFF",
+  },
+
+  errorText: {
+    fontSize: 18,
+    color: "#64748B",
+    fontWeight: "600",
   },
 
   circle1: {

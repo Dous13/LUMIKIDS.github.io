@@ -5,4 +5,8 @@ export type RootStackParamList = {
   StudentLogin: undefined;
   TeacherLogin: undefined;
   Home: undefined;
+  Reading: undefined;
+  Lesson: {
+    lessonId: string;
+  };
 };

@@ -1,13 +1,13 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
-
 import { RootStackParamList } from "../types/navigation";
-
 import SplashScreen from "../screens/splash/SplashScreen";
 import WelcomeScreen from "../screens/onboarding/WelcomeScreen";
 import StudentLoginScreen from "../screens/auth/StudentLoginScreen";
 import TeacherLoginScreen from "../screens/auth/TeacherLoginScreen";
 import HomeScreen from "../screens/student/HomeScreen";
+import ReadingScreen from "../screens/reading/ReadingScreen";
+import LessonScreen from "../screens/reading/LessonScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -32,6 +32,14 @@ export default function AppNavigator() {
           component={TeacherLoginScreen}
         />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen
+          name="Reading"
+          component={ReadingScreen}
+        />
+        <Stack.Screen
+          name="Lesson"
+          component={LessonScreen}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -8,13 +8,20 @@ import {
 
 type Props = {
   xp: number;
+  level: number;
+  progress: number;
+  streak: number;
   onParentPress: () => void;
 };
 
 export default function BottomMenu({
   xp,
+  level,
+  progress,
+  streak,
   onParentPress,
 }: Props) {
+
   return (
     <View style={styles.container}>
 

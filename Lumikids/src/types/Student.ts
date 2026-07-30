@@ -1,25 +1,17 @@
 export interface Student {
-
-  studentId: string;
-
+  id: string;
   name: string;
-
   classCode: string;
 
-  level: number;
-
   xp: number;
+  level: number;
+  streak: number;
 
-  stars: number;
-
-  readingProgress: number;
-
-  writingProgress: number;
-
-  mathProgress: number;
+  readingXP: number;
+  writingXP: number;
+  mathXP: number;
 
   avatar: string;
 
-  createdAt: string;
-
+  createdAt: Date;
 }

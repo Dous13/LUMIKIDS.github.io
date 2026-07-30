@@ -1,23 +1,27 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { StudentSession } from "../../types/session";
 
-const SESSION_KEY = "studentSession";
+const KEY = "studentSession";
 
-export async function saveSession(session: StudentSession) {
+export async function saveSession(session: {
+  studentId: string;
+  remember: boolean;
+}) {
   await AsyncStorage.setItem(
-    SESSION_KEY,
+    KEY,
     JSON.stringify(session)
   );
 }
 
-export async function getSession(): Promise<StudentSession | null> {
-  const data = await AsyncStorage.getItem(SESSION_KEY);
+export async function getSession() {
+  const value = await AsyncStorage.getItem(KEY);
 
-  if (!data) return null;
+  if (!value) {
+    return null;
+  }
 
-  return JSON.parse(data);
+  return JSON.parse(value);
 }
 
 export async function clearSession() {
-  await AsyncStorage.removeItem(SESSION_KEY);
+  await AsyncStorage.removeItem(KEY);
 }
