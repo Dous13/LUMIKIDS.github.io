@@ -40,7 +40,7 @@ export default function ReadingScreen() {
         <Ionicons
           name="arrow-back"
           size={28}
-          color="#2563EB"
+          color="#618ff1"
         />
 
         <Text style={styles.backText}>
