@@ -9,10 +9,23 @@ import HomeScreen from "../screens/student/HomeScreen";
 import ReadingScreen from "../screens/reading/ReadingScreen";
 import LessonScreen from "../screens/reading/LessonScreen";
 import QuizScreen from "../screens/reading/QuizScreen";
+import React, { useEffect } from "react";
+import { initializeDatabase } from "../services/database/database";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
+
+useEffect(() => {
+  try {
+    console.log("Initializing database...");
+    initializeDatabase();
+    console.log("Database initialized!");
+  } catch (e) {
+    console.error("Database failed:", e);
+  }
+}, []);
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -32,7 +45,10 @@ export default function AppNavigator() {
           name="TeacherLogin"
           component={TeacherLoginScreen}
         />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+        />
         <Stack.Screen
           name="Reading"
           component={ReadingScreen}

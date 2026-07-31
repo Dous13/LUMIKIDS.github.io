@@ -1,4 +1,8 @@
-import React from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -14,17 +18,51 @@ import { readingLessons } from "../../data/readingLessons";
 import {
   getLessonProgress,
   getAllProgress,
-} from "../../services/progressService";
+} from "../../services/database/localProgress";
+import { useFocusEffect } from "@react-navigation/native";
+import { getSession } from "../../services/session/session";
+
 
 export default function ReadingScreen() {
   const navigation = useNavigation<any>();
-  const allProgress = getAllProgress();
-  const completedLessons = Object.values(allProgress).filter(
-    (lesson) => lesson.completed
+  const [studentId, setStudentId] =
+    useState("");
+
+  const [progress, setProgress] =
+    useState<any[]>([]);
+  const loadProgress = async () => {
+  const session = await getSession();
+
+  if (!session) return;
+
+  setStudentId(session.studentId);
+
+  const data =
+    getAllProgress(session.studentId);
+
+  setProgress(data as any[]);
+  };
+
+  useEffect(() => {
+  loadProgress();
+  }, []);
+
+  useFocusEffect(
+  useCallback(() => {
+    loadProgress();
+  }, [])
+  );
+
+  const completedLessons = progress.filter(
+    (lesson: any) => lesson.completed === 1
   ).length;
+
   const progressPercentage =
     (completedLessons / readingLessons.length) * 100;
-  
+
+  const progressMap = Object.fromEntries(
+    progress.map((p: any) => [p.lessonId, p])
+  );
   return (
     <LinearGradient
       colors={["#F8FCFF", "#EAF8FF", "#D8F4FF"]}
@@ -102,12 +140,12 @@ export default function ReadingScreen() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              disabled={!getLessonProgress(item.id).unlocked}
+              disabled={!progressMap[item.id]?.unlocked}
               style={[
                 styles.lessonCard,
                 {
                   backgroundColor: item.color,
-                  opacity: getLessonProgress(item.id).unlocked ? 1 : 0.55,
+                  opacity: progressMap[item.id]?.unlocked ? 1 : 0.55,
                 },
               ]}
               onPress={() =>
@@ -134,7 +172,7 @@ export default function ReadingScreen() {
                   ⭐ +{item.xp} XP
                 </Text>
 
-                {getLessonProgress(item.id).unlocked ? (
+                {progressMap[item.id]?.unlocked ? (
                   <View style={styles.startButton}>
                     <Text style={styles.startText}>
                       ▶ PLAY

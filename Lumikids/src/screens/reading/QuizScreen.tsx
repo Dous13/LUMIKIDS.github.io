@@ -17,10 +17,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { readingQuizzes } from "../../data/readingQuizzes";
 import { RootStackParamList } from "../../types/navigation";
 import { evaluateQuiz } from "../../utils/ruleEngine";
+import { getSession } from "../../services/session/session";
 import {
-  completeLesson,
-  unlockNextLesson,
-} from "../../services/progressService";
+  awardReadingXP,
+  saveReadingProgress,
+} from "../../services/student/studentServices";
+import { readingLessons } from "../../data/readingLessons";
 
 type QuizRouteProp = RouteProp<
   RootStackParamList,
@@ -30,7 +32,13 @@ type QuizRouteProp = RouteProp<
 export default function QuizScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<QuizRouteProp>();
+
   const lessonId = route.params.lessonId;
+
+  const lesson = readingLessons.find(
+    l => l.id === lessonId
+  )!;
+
   const quiz =
     readingQuizzes[
       lessonId as keyof typeof readingQuizzes
@@ -51,7 +59,7 @@ export default function QuizScreen() {
     finishQuiz();
   }
 
-  function finishQuiz() {
+  async function finishQuiz() {
 
     const result = evaluateQuiz(
       score,
@@ -60,12 +68,31 @@ export default function QuizScreen() {
 
     if (result.passed) {
 
-      completeLesson(
-        lessonId,
-        result.stars
-      );
+    const session = await getSession();
 
-      unlockNextLesson(lessonId);
+    if (!session) {
+      Alert.alert("Error", "Student session not found.");
+      return;
+    }
+
+    const currentIndex = readingLessons.findIndex(
+      lesson => lesson.id === lessonId
+    );
+
+    const nextLesson =
+      readingLessons[currentIndex + 1];
+
+    await awardReadingXP(
+      session.studentId,
+      lesson.xp
+    );
+
+    await saveReadingProgress(
+      session.studentId,
+      lessonId,
+      result.stars,
+      nextLesson?.id
+    );
 
       Alert.alert(
         `⭐ ${result.stars} Star${result.stars > 1 ? "s" : ""}`,

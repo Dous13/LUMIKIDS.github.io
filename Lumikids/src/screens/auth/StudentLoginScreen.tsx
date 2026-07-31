@@ -16,6 +16,9 @@ import { classExists } from "../../services/auth/auth";
 import { saveSession } from "../../services/session/session";
 import { testFirestore } from "../../services/firebase/test";
 import { createStudent } from "../../services/student/createStudent";
+import { getStudent } from "../../services/student/studentServices";
+import { saveStudent } from "../../services/database/localStudent";
+import { initializeStudentProgress } from "../../services/database/localProgress";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -31,7 +34,14 @@ export default function StudentLoginScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    testFirestore();
+    (async () => {
+      try {
+        await testFirestore();
+        console.log("Firestore test finished");
+      } catch (e) {
+        console.error("Firestore test failed:", e);
+      }
+    })();
   }, []);
 
 async function handleLogin() {
@@ -67,6 +77,14 @@ async function handleLogin() {
       studentName,
       code
     );
+
+    initializeStudentProgress(studentId);
+
+    const student = await getStudent(studentId);
+
+    if (student) {
+      saveStudent(student);
+    }
 
     // Save login session
     await saveSession({

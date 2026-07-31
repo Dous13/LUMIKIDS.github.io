@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-
 import { Student } from "../models/Student";
-
-import { getStudent } from "../services/student/studentServices";
+import { getLocalStudent } from "../services/database/localStudent";
 
 export function useStudent(studentId: string) {
 
@@ -16,7 +14,7 @@ export function useStudent(studentId: string) {
         if (!studentId) return;
 
         async function loadStudent() {
-            const data = await getStudent(studentId);
+            const data = getLocalStudent(studentId);
 
             console.log("Loaded Student:", data);
 

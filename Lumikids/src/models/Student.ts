@@ -1,23 +1,25 @@
 export interface Student {
+  id: string;
 
-    id: string;
+  name: string;
+  classCode: string;
 
-    name: string;
+  xp: number;
+  readingXP: number;
+  writingXP: number;
+  mathXP: number;
 
-    classCode: string;
+  level: number;
+  streak: number;
 
-    xp: number;
+  avatar: string;
 
-    level: number;
-
-    stars: number;
-
-    streak: number;
-
-    avatar: string;
-
-    currentGoal: number;
-
-    todayXP: number;
-
+  readingProgress?: Record<
+    string,
+    {
+      unlocked: boolean;
+      completed: boolean;
+      stars: number;
+    }
+  >;
 }

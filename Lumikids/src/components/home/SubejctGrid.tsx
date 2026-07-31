@@ -11,17 +11,17 @@ const subjects = [
   {
     emoji: "📖",
     title: "Reading",
-    colors: ["#E9F8EE", "#6CCF8A"] as const,
+    colors: ["#a4ffc3", "#6CCF8A"] as const,
   },
   {
     emoji: "✏️",
     title: "Writing",
-    colors: ["#FFF2E3", "#FFBE73"] as const,
+    colors: ["#ffd4a2", "#FFBE73"] as const,
   },
   {
     emoji: "🔢",
     title: "Math",
-    colors: ["#EAF3FF", "#79B8FF"] as const,
+    colors: ["#93b5ff", "#79B8FF"] as const,
   },
 ];
 
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
 
-    shadowColor: "#70BFFF",
+    shadowColor: "#6fbeff",
     shadowOpacity: 0.28,
     shadowRadius: 12,
     shadowOffset: {
