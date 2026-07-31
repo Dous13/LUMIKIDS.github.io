@@ -14,14 +14,14 @@ Designed as a Bachelor of Science in Computer Science (BSCS) thesis project, LUM
 
 * Interactive reading lessons
 * Letter and word recognition
-* Audio pronunciation *(planned)*
-* Story-based learning *(planned)*
+* Audio pronunciation
+* Story-based learning
 
 ### ✍️ Writing
 
 * Letter formation activities
-* Finger tracing *(planned)*
-* Stroke guidance *(planned)*
+* Finger tracing
+* Stroke guidance 
 * Writing practice
 
 ### 🔢 Mathematics
@@ -29,14 +29,14 @@ Designed as a Bachelor of Science in Computer Science (BSCS) thesis project, LUM
 * Counting
 * Number recognition
 * Basic arithmetic
-* Shape and pattern recognition *(planned)*
+* Shape and pattern recognition
 
 ### 🎮 Gamification
 
 * Experience Points (XP)
 * Achievement Badges
 * Learner Levels
-* Daily Streaks *(planned)*
+* Daily Streaks
 * Rewards and Progress Tracking
 
 ### 🧠 Adaptive Learning
@@ -59,7 +59,7 @@ Teachers can:
 * Monitor learner progress
 * Review assessment scores
 * Track lesson completion
-* View classroom analytics *(planned)*
+* View classroom analytics
 
 ### 👨‍👩‍👧 Parent Progress View
 
@@ -91,25 +91,7 @@ Learner progress is stored locally on the device and automatically synchronized 
 * Firebase Authentication
 * Cloud Firestore
 * Firebase Storage
-
-### Local Database
-
-* Expo SQLite
-
-### Navigation
-
-* React Navigation
-
-### Form Validation
-
-* React Hook Form
-* Zod
-
-### Version Control
-
-* Git
-* GitHub
-
+  
 ---
 
 # 🏗️ Project Structure
@@ -144,7 +126,7 @@ Lumikids/
 ## Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Lumikids.git
+git clone https://github.com/Dous13/Lumikids.git
 ```
 
 ## Install dependencies
@@ -246,12 +228,6 @@ Developed as a Bachelor of Science in Computer Science thesis project.
 **Project Title**
 
 *A Mobile-Based Gamified Adaptive Learning Application for Early Childhood Education Using Rule-Based Difficulty Progression*
-
----
-
-# 📄 License
-
-This project is currently intended for educational and research purposes. A license will be selected before any public production release.
 
 ---
 
