@@ -11,13 +11,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { readingLessons } from "../../data/readingLessons";
+import {
+  getLessonProgress,
+  getAllProgress,
+} from "../../services/progressService";
 
 export default function ReadingScreen() {
   const navigation = useNavigation<any>();
-  const completedLessons = readingLessons.filter(
-    (lesson) => lesson.unlocked
+  const allProgress = getAllProgress();
+  const completedLessons = Object.values(allProgress).filter(
+    (lesson) => lesson.completed
   ).length;
-  const progress =
+  const progressPercentage =
     (completedLessons / readingLessons.length) * 100;
   
   return (
@@ -30,7 +35,7 @@ export default function ReadingScreen() {
 
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => navigation.goBack()}
+        onPress={() => navigation.popToTop()}
       >
         <Ionicons
           name="arrow-back"
@@ -77,7 +82,7 @@ export default function ReadingScreen() {
               style={[
                 styles.progressFill,
                 {
-                  width: `${progress}%`,
+                  width: `${progressPercentage}%`,
                 },
               ]}
             />
@@ -97,12 +102,12 @@ export default function ReadingScreen() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              disabled={!item.unlocked}
+              disabled={!getLessonProgress(item.id).unlocked}
               style={[
                 styles.lessonCard,
                 {
                   backgroundColor: item.color,
-                  opacity: item.unlocked ? 1 : 0.55,
+                  opacity: getLessonProgress(item.id).unlocked ? 1 : 0.55,
                 },
               ]}
               onPress={() =>
@@ -129,7 +134,7 @@ export default function ReadingScreen() {
                   ⭐ +{item.xp} XP
                 </Text>
 
-                {item.unlocked ? (
+                {getLessonProgress(item.id).unlocked ? (
                   <View style={styles.startButton}>
                     <Text style={styles.startText}>
                       ▶ PLAY

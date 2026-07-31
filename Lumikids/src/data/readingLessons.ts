@@ -1,70 +1,93 @@
+export const createReadingLesson = (
+  id: string,
+  letter: string,
+  word: string,
+  emoji: string,
+  color: string,
+  letterSound: string,
+  wordSound: string
+) => ({
+  id,
+  letter,
+  word,
+  emoji,
+  color,
+  xp: 25,
+  unlocked: false,
+
+  letterSound,
+  wordSound,
+
+  levels: [
+    {
+      id: 1,
+      type: "introduce",
+    },
+    {
+      id: 2,
+      type: "listenLetter",
+    },
+    {
+      id: 3,
+      type: "listenWord",
+    },
+    {
+      id: 4,
+      type: "question",
+      question: `What letter does ${word} start with?`,
+      choices: [
+        letter,
+        ...["A", "B", "C", "D"]
+          .filter(l => l !== letter)
+          .slice(0, 2),
+      ],
+      answer: letter,
+    },
+    {
+      id: 5,
+      type: "finish",
+    },
+  ],
+});
+
 export const readingLessons = [
-  {
-    id: "A",
-    letter: "A",
-    word: "Apple",
-    emoji: "🍎",
-    color: "#D7F9D9",
-    xp: 25,
-    unlocked: true,
+  createReadingLesson(
+    "A",
+    "A",
+    "Apple",
+    "🍎",
+    "#D7F9D9",
+    "AHHH",
+    "Apple"
+  ),
 
-    letterSound: "AHHH",
-    wordSound: "Apple",
+  createReadingLesson(
+    "B",
+    "B",
+    "Ball",
+    "⚽",
+    "#FFE9CF",
+    "BUHH",
+    "Ball"
+  ),
 
-    levels: [
-      {
-        id: 1,
-        type: "introduce",
-      },
-      {
-        id: 2,
-        type: "listenLetter",
-      },
-      {
-        id: 3,
-        type: "listenWord",
-      },
-      {
-        id: 4,
-        type: "question",
-        question: "What letter does Apple start with?",
-        choices: ["A", "B", "C"],
-        answer: "A",
-      },
-      {
-        id: 5,
-        type: "finish",
-      },
-    ],
-  },
+  createReadingLesson(
+    "C",
+    "C",
+    "Cat",
+    "🐱",
+    "#f7ddff",
+    "CUHH",
+    "Cat"
+  ),
 
-  {
-    id: "B",
-    letter: "B",
-    word: "Ball",
-    emoji: "⚽",
-    color: "#FFE9CF",
-    xp: 25,
-    unlocked: false,
-
-    letterSound: "BUHH",
-    wordSound: "Ball",
-
-    levels: [],
-  },
-
-  {
-    id: "C",
-    letter: "C",
-    word: "Cat",
-    emoji: "🐱",
-    color: "#DDEFFF",
-    xp: 25,
-    unlocked: false,
-
-    letterSound: "CUHH",
-    wordSound: "Cat",
-
-    levels: [],
-  },
+  createReadingLesson(
+  "D",
+  "D",
+  "Dog",
+  "🐶",
+  "#ffb3bf",
+  "DUHH",
+  "Dog"
+  ),
 ];

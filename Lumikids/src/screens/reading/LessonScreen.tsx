@@ -6,16 +6,31 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-
 import { readingLessons } from "../../data/readingLessons";
+import { RouteProp, useRoute } from "@react-navigation/native";
+import { RootStackParamList } from "../../types/navigation";
+
+type LessonRouteProp = RouteProp<
+  RootStackParamList,
+  "Lesson"
+>;
 
 export default function LessonScreen() {
   const navigation = useNavigation<any>();
-  const lesson = readingLessons[0];
+  const route = useRoute<LessonRouteProp>();
+  const lessonId = route.params.lessonId;
+  console.log("Received lessonId:", lessonId);
+  const lesson =
+    readingLessons.find(
+      lesson => lesson.id === lessonId  
+    )!;
+  console.log("Lesson ID:", lessonId);
+  console.log("Lesson:", lesson);
+  console.log("Levels:", lesson.levels);
   const [currentIndex, setCurrentIndex] = useState(0);
+
   const currentLevel =
     lesson.levels[currentIndex];
 
