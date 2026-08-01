@@ -13,6 +13,7 @@ export const createReadingLesson = (
   emoji,
   color,
   xp: 25,
+  coins: 15,
   unlocked: false,
 
   letterSound,

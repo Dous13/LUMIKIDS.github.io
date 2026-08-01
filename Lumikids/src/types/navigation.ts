@@ -6,10 +6,22 @@ export type RootStackParamList = {
   TeacherLogin: undefined;
   Home: undefined;
   Reading: undefined;
+  Shop: undefined;
+
   Lesson: {
     lessonId: string;
   };
+
   Quiz: {
     lessonId: string;
+  };
+
+  Reward: {
+    lessonId: string;
+    xp: number;
+    coins: number;
+    stars: number;
+    unlocked: boolean;
+    levelUp: boolean;
   };
 };

@@ -18,11 +18,16 @@ import { readingQuizzes } from "../../data/readingQuizzes";
 import { RootStackParamList } from "../../types/navigation";
 import { evaluateQuiz } from "../../utils/ruleEngine";
 import { getSession } from "../../services/session/session";
-import {
-  awardReadingXP,
-  saveReadingProgress,
-} from "../../services/student/studentServices";
 import { readingLessons } from "../../data/readingLessons";
+import {
+  awardLocalReadingXP,
+  awardLocalCoins,
+} from "../../services/database/localStudent";
+import {
+  completeLesson,
+  unlockNextLesson,
+  isLessonCompleted,
+} from "../../services/database/localProgress";
 
 type QuizRouteProp = RouteProp<
   RootStackParamList,
@@ -75,37 +80,52 @@ export default function QuizScreen() {
       return;
     }
 
+    const alreadyCompleted =
+      isLessonCompleted(
+        session.studentId,
+        lessonId
+      );
+
     const currentIndex = readingLessons.findIndex(
       lesson => lesson.id === lessonId
     );
 
     const nextLesson =
       readingLessons[currentIndex + 1];
+      if (!alreadyCompleted) {
 
-    await awardReadingXP(
-      session.studentId,
-      lesson.xp
-    );
+        awardLocalReadingXP(
+          session.studentId,
+          lesson.xp
+        );
 
-    await saveReadingProgress(
+        awardLocalCoins(
+          session.studentId,
+          lesson.coins
+        );
+
+      }
+
+    completeLesson(
       session.studentId,
       lessonId,
-      result.stars,
-      nextLesson?.id
+      result.stars
     );
 
-      Alert.alert(
-        `⭐ ${result.stars} Star${result.stars > 1 ? "s" : ""}`,
-        result.message,
-        [
-          {
-            text: "Continue",
-            onPress: () =>
-              navigation.navigate("Reading"),
-          },
-        ]
-      );
+    unlockNextLesson(
+      session.studentId,
+      lessonId
+    );
 
+    navigation.replace("Reward", {
+      lessonId,
+      xp: lesson.xp,
+      coins: lesson.coins,
+      stars: result.stars,
+      unlocked: !!nextLesson,
+      levelUp: false,
+    });
+    
     } else {
 
       Alert.alert(

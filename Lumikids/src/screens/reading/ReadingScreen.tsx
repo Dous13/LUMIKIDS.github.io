@@ -16,7 +16,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { readingLessons } from "../../data/readingLessons";
 import {
-  getLessonProgress,
   getAllProgress,
 } from "../../services/database/localProgress";
 import { useFocusEffect } from "@react-navigation/native";
@@ -25,32 +24,28 @@ import { getSession } from "../../services/session/session";
 
 export default function ReadingScreen() {
   const navigation = useNavigation<any>();
-  const [studentId, setStudentId] =
-    useState("");
 
   const [progress, setProgress] =
-    useState<any[]>([]);
-  const loadProgress = async () => {
+  useState<any[]>([]);
+
+  const loadProgress = useCallback(async () => {
   const session = await getSession();
 
   if (!session) return;
 
-  setStudentId(session.studentId);
-
-  const data =
-    getAllProgress(session.studentId);
+  const data = getAllProgress(session.studentId);
 
   setProgress(data as any[]);
-  };
-
-  useEffect(() => {
-  loadProgress();
   }, []);
 
-  useFocusEffect(
-  useCallback(() => {
+  useEffect(() => {
     loadProgress();
-  }, [])
+  }, [loadProgress]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProgress();
+    }, [loadProgress])
   );
 
   const completedLessons = progress.filter(
@@ -58,7 +53,9 @@ export default function ReadingScreen() {
   ).length;
 
   const progressPercentage =
-    (completedLessons / readingLessons.length) * 100;
+  readingLessons.length > 0
+    ? (completedLessons / readingLessons.length) * 100
+    : 0;
 
   const progressMap = Object.fromEntries(
     progress.map((p: any) => [p.lessonId, p])

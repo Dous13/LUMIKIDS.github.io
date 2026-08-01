@@ -3,6 +3,7 @@ import * as SQLite from "expo-sqlite";
 export const db = SQLite.openDatabaseSync("lumikids.db");
 
 export function initializeDatabase() {
+
   db.execSync(`
     CREATE TABLE IF NOT EXISTS student (
       id TEXT PRIMARY KEY,
@@ -13,6 +14,8 @@ export function initializeDatabase() {
       readingXP INTEGER DEFAULT 0,
       writingXP INTEGER DEFAULT 0,
       mathXP INTEGER DEFAULT 0,
+
+      coins INTEGER DEFAULT 0,
 
       level INTEGER DEFAULT 1,
       streak INTEGER DEFAULT 0,

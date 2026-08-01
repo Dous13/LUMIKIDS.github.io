@@ -11,6 +11,8 @@ import LessonScreen from "../screens/reading/LessonScreen";
 import QuizScreen from "../screens/reading/QuizScreen";
 import React, { useEffect } from "react";
 import { initializeDatabase } from "../services/database/database";
+import RewardScreen from "../screens/student/RewardScreen";
+import ShopScreen from "../screens/student/ShopScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -60,6 +62,14 @@ useEffect(() => {
         <Stack.Screen
           name="Quiz"
           component={QuizScreen}
+        />
+        <Stack.Screen
+          name="Reward"
+          component={RewardScreen}
+        />
+        <Stack.Screen
+            name="Shop"
+            component={ShopScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -4,6 +4,8 @@ export interface Student {
   classCode: string;
 
   xp: number;
+  coins: number;
+
   level: number;
   streak: number;
 
@@ -13,5 +15,5 @@ export interface Student {
 
   avatar: string;
 
-  createdAt: Date;
+  createdAt?: Date;
 }

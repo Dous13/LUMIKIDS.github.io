@@ -9,7 +9,6 @@ export async function createStudent(student: Student) {
     "classes",
     student.classCode,
     "students",
-    student.studentId
   );
 
   await setDoc(ref, student);

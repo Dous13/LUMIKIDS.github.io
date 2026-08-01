@@ -27,6 +27,7 @@ import {
   getCurrentLevelXP,
   getNextLevelXP,
 } from "../../utils/xp";
+import { useFocusEffect } from "@react-navigation/native";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -56,7 +57,17 @@ export default function HomeScreen() {
     loadSession();
   }, [navigation]);
 
-  const { student, loading } = useStudent(studentId);
+  const {
+    student,
+    loading,
+    reload,
+  } = useStudent(studentId);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      reload();
+    }, [reload])
+  );
 
   async function logout() {
     Alert.alert(
@@ -154,12 +165,13 @@ export default function HomeScreen() {
             }
           />
         </ScrollView>
-
         <BottomMenu
           xp={student.xp}
+          coins={student.coins}
           level={level}
           progress={progress}
           streak={student.streak}
+          onShopPress={() => navigation.navigate("Shop")}
           onParentPress={logout}
         />
       </SafeAreaView>

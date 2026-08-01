@@ -51,7 +51,47 @@ export function getLocalStudent(
     [id]
   );
 
-  if (!result) return null;
+  if (!result) {
+    return null;
+  }
 
   return result as Student;
+}
+
+export function awardLocalReadingXP(
+  studentId: string,
+  xpEarned: number
+) {
+  db.runSync(
+    `
+    UPDATE student
+    SET
+      xp = xp + ?,
+      readingXP = readingXP + ?
+    WHERE id = ?
+    `,
+    [
+      xpEarned,
+      xpEarned,
+      studentId,
+    ]
+  );
+}
+
+export function awardLocalCoins(
+  studentId: string,
+  coinsEarned: number
+) {
+  db.runSync(
+    `
+    UPDATE student
+    SET
+      coins = coins + ?
+    WHERE id = ?
+    `,
+    [
+      coinsEarned,
+      studentId,
+    ]
+  );
 }

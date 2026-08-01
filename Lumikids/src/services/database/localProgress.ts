@@ -137,3 +137,25 @@ export function unlockNextLesson(
     ]
   );
 }
+
+export function isLessonCompleted(
+  studentId: string,
+  lessonId: string
+): boolean {
+
+  const result = db.getFirstSync(
+    `
+    SELECT completed
+    FROM lesson_progress
+    WHERE
+      studentId = ?
+      AND lessonId = ?
+    `,
+    [
+      studentId,
+      lessonId,
+    ]
+  ) as { completed: number } | null;
+
+  return result?.completed === 1;
+}
