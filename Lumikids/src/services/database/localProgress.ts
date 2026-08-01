@@ -15,30 +15,59 @@ export function initializeStudentProgress(studentId: string) {
     [studentId]
   ) as { total: number };
 
-  if (existing.total > 0) return;
-
-  readingLessons.forEach((lesson, index) => {
+  if (existing.total > 0) {
     db.runSync(
       `
-      INSERT INTO lesson_progress
-      (
+      INSERT OR IGNORE INTO owned_mascots (
         studentId,
-        lessonId,
-        unlocked,
-        completed,
-        stars,
-        synced
+        mascotId
       )
-      VALUES (?, ?, ?, 0, 0, 0)
+      VALUES (?, ?)
       `,
       [
         studentId,
-        lesson.id,
-        index === 0 ? 1 : 0,
+        "default",
       ]
     );
-  });
-}
+
+    return;
+  }
+
+readingLessons.forEach((lesson, index) => {
+  db.runSync(
+    `
+    INSERT INTO lesson_progress
+    (
+      studentId,
+      lessonId,
+      unlocked,
+      completed,
+      stars,
+      synced
+    )
+    VALUES (?, ?, ?, 0, 0, 0)
+    `,
+    [
+      studentId,
+      lesson.id,
+      index === 0 ? 1 : 0,
+    ]
+  );
+});
+
+db.runSync(
+  `
+  INSERT OR IGNORE INTO owned_mascots (
+    studentId,
+    mascotId
+  )
+  VALUES (?, ?)
+  `,
+  [
+    studentId,
+    "default",
+  ]
+);}
 
 /**
  * Returns one lesson's progress

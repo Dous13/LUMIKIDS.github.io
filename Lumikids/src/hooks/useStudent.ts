@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Student } from "../models/Student";
 import { getLocalStudent } from "../services/database/localStudent";
 
@@ -12,6 +12,8 @@ export function useStudent(studentId: string) {
   const reload = useCallback(() => {
     if (!studentId) return;
 
+    setLoading(true);
+
     const data = getLocalStudent(studentId);
 
     console.log("Loaded Student:", data);
@@ -19,6 +21,10 @@ export function useStudent(studentId: string) {
     setStudent(data);
     setLoading(false);
   }, [studentId]);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   return {
     student,

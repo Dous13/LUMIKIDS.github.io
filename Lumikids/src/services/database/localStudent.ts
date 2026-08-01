@@ -95,3 +95,37 @@ export function awardLocalCoins(
     ]
   );
 }
+
+export function spendCoins(
+  studentId: string,
+  amount: number
+) {
+  db.runSync(
+    `
+    UPDATE student
+    SET coins = coins - ?
+    WHERE id = ?
+    `,
+    [
+      amount,
+      studentId,
+    ]
+  );
+}
+
+export function equipMascot(
+  studentId: string,
+  mascotId: string
+) {
+  db.runSync(
+    `
+    UPDATE student
+    SET avatar = ?
+    WHERE id = ?
+    `,
+    [
+      mascotId,
+      studentId,
+    ]
+  );
+}

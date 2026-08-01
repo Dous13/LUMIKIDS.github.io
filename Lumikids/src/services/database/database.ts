@@ -36,6 +36,13 @@ export function initializeDatabase() {
       PRIMARY KEY(studentId, lessonId)
     );
 
+    CREATE TABLE IF NOT EXISTS owned_mascots (
+      studentId TEXT NOT NULL,
+      mascotId TEXT NOT NULL,
+
+      PRIMARY KEY(studentId, mascotId)
+    );
+
     CREATE TABLE IF NOT EXISTS sync_queue (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
 

@@ -125,7 +125,7 @@ export default function QuizScreen() {
       unlocked: !!nextLesson,
       levelUp: false,
     });
-    
+
     } else {
 
       Alert.alert(
@@ -192,12 +192,6 @@ export default function QuizScreen() {
           <Text style={styles.progress}>
             Question {currentQuestion + 1} of {quiz.length}
           </Text>
-
-          <View style={styles.xpBadge}>
-            <Text style={styles.xpText}>
-              ⭐ {score * 10} XP
-            </Text>
-          </View>
 
         </View>
 
@@ -302,18 +296,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#64748B",
     fontWeight: "700",
-  },
-
-  xpBadge: {
-    backgroundColor: "#FFE66D",
-    borderRadius: 25,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-  },
-
-  xpText: {
-    fontSize: 18,
-    fontWeight: "800",
   },
 
   title: {

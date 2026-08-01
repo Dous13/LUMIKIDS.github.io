@@ -12,7 +12,7 @@ import QuizScreen from "../screens/reading/QuizScreen";
 import React, { useEffect } from "react";
 import { initializeDatabase } from "../services/database/database";
 import RewardScreen from "../screens/student/RewardScreen";
-import ShopScreen from "../screens/student/ShopScreen";
+import ShopScreen from "../screens/shop/ShopScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

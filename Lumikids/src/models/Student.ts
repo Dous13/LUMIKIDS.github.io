@@ -5,6 +5,8 @@ export interface Student {
   classCode: string;
 
   xp: number;
+  coins: number;
+
   readingXP: number;
   writingXP: number;
   mathXP: number;
