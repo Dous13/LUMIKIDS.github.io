@@ -18,9 +18,27 @@ export async function getStudent(
     return null;
   }
 
+  const data = snapshot.data();
+
   return {
     id: snapshot.id,
-    ...(snapshot.data() as Omit<Student, "id">),
+
+    name: data.name,
+    classCode: data.classCode,
+
+    xp: data.xp ?? 0,
+    coins: data.coins ?? 0,
+
+    readingXP: data.readingXP ?? 0,
+    writingXP: data.writingXP ?? 0,
+    mathXP: data.mathXP ?? 0,
+
+    level: data.level ?? 1,
+    streak: data.streak ?? 0,
+
+    avatar: data.avatar ?? "default",
+
+    readingProgress: data.readingProgress ?? {},
   };
 }
 

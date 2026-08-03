@@ -1,81 +1,52 @@
 import { db } from "./database";
-import { readingLessons } from "../../data/readingLessons";
+import { writingLessons } from "../../data/writingLessons";
 
-export function initializeStudentProgress(studentId: string) {
+export function initializeWritingProgress(studentId: string) {
   const existing = db.getFirstSync(
     `
     SELECT COUNT(*) AS total
-    FROM lesson_progress
+    FROM writing_progress
     WHERE studentId = ?
     `,
     [studentId]
   ) as { total: number };
 
   if (existing.total > 0) {
-    db.runSync(
-      `
-      INSERT OR IGNORE INTO owned_mascots (
-        studentId,
-        mascotId
-      )
-      VALUES (?, ?)
-      `,
-      [
-        studentId,
-        "default",
-      ]
-    );
-
     return;
   }
 
-readingLessons.forEach((lesson, index) => {
-  db.runSync(
-    `
-    INSERT INTO lesson_progress
-    (
-      studentId,
-      lessonId,
-      unlocked,
-      completed,
-      stars,
-      synced
-    )
-    VALUES (?, ?, ?, 0, 0, 0)
-    `,
-    [
-      studentId,
-      lesson.id,
-      index === 0 ? 1 : 0,
-    ]
-  );
-});
 
-db.runSync(
-  `
-  INSERT OR IGNORE INTO owned_mascots (
-    studentId,
-    mascotId
-  )
-  VALUES (?, ?)
-  `,
-  [
-    studentId,
-    "default",
-  ]
-);}
+  writingLessons.forEach((lesson, index) => {
+    db.runSync(
+      `
+      INSERT INTO writing_progress
+      (
+        studentId,
+        lessonId,
+        unlocked,
+        completed,
+        stars,
+        synced
+      )
+      VALUES (?, ?, ?, 0, 0, 0)
+      `,
+      [
+        studentId,
+        lesson.id,
+        index === 0 ? 1 : 0,
+      ]
+    );
+  });
+}
 
-/**
- * Returns one lesson's progress
- */
-export function getLessonProgress(
+export function getWritingProgress(
   studentId: string,
   lessonId: string
 ) {
   return db.getFirstSync(
     `
     SELECT *
-    FROM lesson_progress
+    FROM writing_progress
     WHERE studentId = ?
     AND lessonId = ?
     `,
@@ -83,14 +54,13 @@ export function getLessonProgress(
   );
 }
 
-/**
- * Returns every lesson progress
- */
-export function getAllProgress(studentId: string) {
+export function getAllWritingProgress(
+  studentId: string
+) {
   return db.getAllSync(
     `
     SELECT *
-    FROM lesson_progress
+    FROM writing_progress
     WHERE studentId = ?
     ORDER BY lessonId
     `,
@@ -98,17 +68,14 @@ export function getAllProgress(studentId: string) {
   );
 }
 
-/**
- * Marks lesson complete
- */
-export function completeLesson(
+export function completeWritingLesson(
   studentId: string,
   lessonId: string,
   stars: number
 ) {
   db.runSync(
     `
-    UPDATE lesson_progress
+    UPDATE writing_progress
     SET
       completed = 1,
       stars = ?,
@@ -125,30 +92,27 @@ export function completeLesson(
   );
 }
 
-/**
- * Unlock next lesson
- */
-export function unlockNextLesson(
+export function unlockNextWritingLesson(
   studentId: string,
   currentLessonId: string
 ) {
-  const currentIndex = readingLessons.findIndex(
+  const currentIndex = writingLessons.findIndex(
     lesson => lesson.id === currentLessonId
   );
 
   if (
     currentIndex === -1 ||
-    currentIndex >= readingLessons.length - 1
+    currentIndex >= writingLessons.length - 1
   ) {
     return;
   }
 
   const nextLesson =
-    readingLessons[currentIndex + 1];
+    writingLessons[currentIndex + 1];
 
   db.runSync(
     `
-    UPDATE lesson_progress
+    UPDATE writing_progress
     SET
       unlocked = 1,
       synced = 0
@@ -163,7 +127,7 @@ export function unlockNextLesson(
   );
 }
 
-export function isLessonCompleted(
+export function isWritingLessonCompleted(
   studentId: string,
   lessonId: string
 ): boolean {
@@ -171,7 +135,7 @@ export function isLessonCompleted(
   const result = db.getFirstSync(
     `
     SELECT completed
-    FROM lesson_progress
+    FROM writing_progress
     WHERE
       studentId = ?
       AND lessonId = ?

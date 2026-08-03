@@ -25,11 +25,29 @@ import {
   equipMascot,
 } from "../../services/database/localStudent";
 import RewardModal from "../../components/shop/RewardModal";
+import GameToast from "../../components/common/GameToast";
 
 
 export default function ShopScreen() {
   const navigation = useNavigation();
   const [studentId, setStudentId] = useState("");
+  const [toast, setToast] = useState("");
+  const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+  async function loadSession() {
+    const session = await getSession();
+
+    if (!session) {
+      navigation.goBack();
+      return;
+    }
+
+    setStudentId(session.studentId);
+  }
+
+  loadSession();
+}, []);
   const [rewardVisible, setRewardVisible] = useState(false);
   const [rewardMascot, setRewardMascot] = useState<any>(null);
   const [ownedMascots, setOwnedMascots] = useState<string[]>([]);
@@ -59,27 +77,59 @@ export default function ShopScreen() {
     );
   }
 
+  function showMessage(message: string) {
+    setToast(message);
+    setShowToast(true);
 
-  function purchaseMascot(item: any) {
-    if (!student) return;
-
-    if (ownsMascot(student.id, item.id)) {
-      return;
-    }
-
-    if (student.coins < item.price) {
-      return;
-    }
-
-    spendCoins(student.id, item.price);
-
-    buyMascot(student.id, item.id);
-
-    reload();
-
-    setRewardMascot(item);
-    setRewardVisible(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 2200);
   }
+
+function purchaseMascot(item: any) {
+  console.log("Pressed Buy:", item.name);
+
+  if (!student) {
+    console.log("No student");
+    return;
+  }
+
+  console.log("Coins:", student.coins);
+  console.log("Price:", item.price);
+
+  const alreadyOwned = ownsMascot(student.id, item.id);
+
+  console.log("Already owned:", alreadyOwned);
+
+  if (alreadyOwned) {
+    return;
+  }
+
+  if (student.coins < item.price) {
+      showMessage("🪙 Not enough coins!");
+      return;
+  }
+
+  console.log("Spending coins...");
+  spendCoins(student.id, item.price);
+
+  console.log("Buying mascot...");
+  buyMascot(student.id, item.id);
+
+  console.log("Reloading...");
+  reload();
+
+  const owned = getOwnedMascots(student.id);
+
+  console.log("Owned mascots:", owned);
+
+  setOwnedMascots(
+    owned.map((m: any) => m.mascotId)
+  );
+
+  setRewardMascot(item);
+  setRewardVisible(true);
+}
 
   function handleEquip(item: any) {
     if (!student) return;
@@ -87,6 +137,15 @@ export default function ShopScreen() {
     equipMascot(student.id, item.id);
 
     reload();
+
+    const owned = getOwnedMascots(student.id);
+
+    setOwnedMascots(
+      owned.map((m: any) => m.mascotId)
+    );
+
+    setRewardMascot(item);
+    setRewardVisible(true);
   }
   return (
     <SafeAreaView style={styles.container}>
@@ -177,6 +236,10 @@ export default function ShopScreen() {
 
           </View>);}}
       />
+    <GameToast
+        visible={showToast}
+        message={toast}
+    />
     <RewardModal
       visible={rewardVisible}
       mascotImage={rewardMascot?.image}

@@ -13,20 +13,33 @@ import React, { useEffect } from "react";
 import { initializeDatabase } from "../services/database/database";
 import RewardScreen from "../screens/student/RewardScreen";
 import ShopScreen from "../screens/shop/ShopScreen";
+import { processQueue } from "../services/sync/processQueue";
+import WritingLessonScreen from "../screens/writing/WritingLessonScreen";
+import WritingScreen from "../screens/writing/writingScreen";
+import TraceLetterScreen from "../screens/writing/TraceLetterScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
 
-useEffect(() => {
-  try {
-    console.log("Initializing database...");
-    initializeDatabase();
-    console.log("Database initialized!");
-  } catch (e) {
-    console.error("Database failed:", e);
-  }
-}, []);
+  useEffect(() => {
+    try {
+      console.log("Initializing database...");
+      initializeDatabase();
+      console.log("Database initialized!");
+
+      processQueue();
+
+      const interval = setInterval(() => {
+        processQueue();
+      }, 5000);
+
+      return () => clearInterval(interval);
+
+    } catch (e) {
+      console.error("Database failed:", e);
+    }
+  }, []);
 
   return (
     <NavigationContainer>
@@ -66,6 +79,18 @@ useEffect(() => {
         <Stack.Screen
           name="Reward"
           component={RewardScreen}
+        />
+        <Stack.Screen
+            name="WritingLesson"
+            component={WritingLessonScreen}
+        />
+        <Stack.Screen
+          name="Writing"
+          component={WritingScreen}
+        />
+        <Stack.Screen
+            name="TraceLetter"
+            component={TraceLetterScreen}
         />
         <Stack.Screen
             name="Shop"

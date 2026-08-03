@@ -83,232 +83,232 @@ export const readingLessons = [
   ),
 
   createReadingLesson(
-  "D",
-  "D",
-  "Dog",
-  "🐶",
-  "#ffebb3",
-  "DUHH",
-  "Dog"
+    "D",
+    "D",
+    "Dog",
+    "🐶",
+    "#ffebb3",
+    "DUHH",
+    "Dog"
   ),
 
   createReadingLesson(
-  "E",
-  "E",
-  "Egg",
-  "🥚",
-  "#b3ffe6",
-  "EHHH",
-  "Egg"
+    "E",
+    "E",
+    "Egg",
+    "🥚",
+    "#b3ffe6",
+    "EHHH",
+    "Egg"
   ),
 
   createReadingLesson(
-  "F",
-  "F",
-  "Fox",
-  "🦊",
-  "#b3c5ff",
-  "EFF",
-  "Fox"
+    "F",
+    "F",
+    "Fox",
+    "🦊",
+    "#b3c5ff",
+    "EFF",
+    "Fox"
   ),
 
   createReadingLesson(
-  "G",
-  "G",
-  "Goat",
-  "🐐",
-  "#b6ffb3",
-  "GUHH",
-  "Goat"
+    "G",
+    "G",
+    "Goat",
+    "🐐",
+    "#b6ffb3",
+    "GUHH",
+    "Goat"
   ),
 
   createReadingLesson(
-  "H",
-  "H",
-  "House",
-  "🏠",
-  "#b3ffef",
-  "HUHH",
-  "House"
+    "H",
+    "H",
+    "House",
+    "🏠",
+    "#b3ffef",
+    "HUHH",
+    "House"
   ),
 
   createReadingLesson(
-  "I",
-  "I",
-  "Ice",
-  "🧊",
-  "#bcffb3",
-  "AII",
-  "Ice"
+    "I",
+    "I",
+    "Ice",
+    "🧊",
+    "#bcffb3",
+    "AII",
+    "Ice"
   ),
 
   createReadingLesson(
-  "J",
-  "J",
-  "Jar",
-  "🫙",
-  "#f7ffb3",
-  "JUHH",
-  "Jar"
+    "J",
+    "J",
+    "Jar",
+    "🫙",
+    "#f7ffb3",
+    "JUHH",
+    "Jar"
   ),
 
   createReadingLesson(
-  "K",
-  "K",
-  "Kite",
-  "🪁",
-  "#b3daff",
-  "KUHH",
-  "Kite"
+    "K",
+    "K",
+    "Kite",
+    "🪁",
+    "#b3daff",
+    "KUHH",
+    "Kite"
   ),
 
   createReadingLesson(
-  "L",
-  "L",
-  "Log",
-  "🪵",
-  "#cfb291",
-  "LUHH",
-  "Log"
+    "L",
+    "L",
+    "Log",
+    "🪵",
+    "#cfb291",
+    "LUHH",
+    "Log"
   ),
 
   createReadingLesson(
-  "M",
-  "M",
-  "Monkey",
-  "🐒",
-  "#cfb291",
-  "MUHH",
-  "Monkey"
+    "M",
+    "M",
+    "Monkey",
+    "🐒",
+    "#cfb291",
+    "MUHH",
+    "Monkey"
   ),
 
   createReadingLesson(
-  "N",
-  "N",
-  "Net",
-  "🥅",
-  "#98cf91",
-  "NNN",
-  "Net"
+    "N",
+    "N",
+    "Net",
+    "🥅",
+    "#98cf91",
+    "NNN",
+    "Net"
   ),
 
   createReadingLesson(
-  "O",
-  "O",
-  "Octopus",
-  "🐙",
-  "#91c6cf",
-  "OHH",
-  "Octopus"
+    "O",
+    "O",
+    "Octopus",
+    "🐙",
+    "#91c6cf",
+    "OHH",
+    "Octopus"
   ),
 
   createReadingLesson(
-  "P",
-  "P",
-  "Pig",
-  "🐖",
-  "#cf91ca",
-  "PIHH",
-  "Pig"
+    "P",
+    "P",
+    "Pig",
+    "🐖",
+    "#cf91ca",
+    "PIHH",
+    "Pig"
   ),
 
   createReadingLesson(
-  "Q",
-  "Q",
-  "Queen",
-  "👸🏻",
-  "#cf919e",
-  "CWOHH",
-  "Queen"
+    "Q",
+    "Q",
+    "Queen",
+    "👸🏻",
+    "#cf919e",
+    "CWOHH",
+    "Queen"
   ),
 
   createReadingLesson(
-  "R",
-  "R",
-  "Road",
-  "🛣️",
-  "#91cf99",
-  "ROHH",
-  "Road"
+    "R",
+    "R",
+    "Road",
+    "🛣️",
+    "#91cf99",
+    "ROHH",
+    "Road"
   ),
 
   createReadingLesson(
-  "S",
-  "S",
-  "Snake",
-  "🐍",
-  "#cfce91",
-  "SSS",
-  "Snake"
+    "S",
+    "S",
+    "Snake",
+    "🐍",
+    "#cfce91",
+    "SSS",
+    "Snake"
   ),
 
   createReadingLesson(
-  "T",
-  "T",
-  "Tiger",
-  "🐅",
-  "#cfce91",
-  "TUHH",
-  "Tiger"
+    "T",
+    "T",
+    "Tiger",
+    "🐅",
+    "#cfce91",
+    "TUHH",
+    "Tiger"
   ),
 
   createReadingLesson(
-  "U",
-  "U",
-  "Umbrella",
-  "☂️",
-  "#ac91cf",
-  "UHH",
-  "Umbrella"
+    "U",
+    "U",
+    "Umbrella",
+    "☂️",
+    "#ac91cf",
+    "UHH",
+    "Umbrella"
   ),
 
   createReadingLesson(
-  "V",
-  "V",
-  "Van",
-  "🚐",
-  "#6872ff",
-  "VUHH",
-  "Van"
+    "V",
+    "V",
+    "Van",
+    "🚐",
+    "#6872ff",
+    "VUHH",
+    "Van"
   ),
 
   createReadingLesson(
-  "W",
-  "W",
-  "Worm",
-  "🪱",
-  "#91cf99",
-  "WUHH",
-  "Worm"
+    "W",
+    "W",
+    "Worm",
+    "🪱",
+    "#91cf99",
+    "WUHH",
+    "Worm"
   ),
 
   createReadingLesson(
-  "X",
-  "X",
-  "X-ray",
-  "🩻",
-  "#cfce91",
-  "EKSS",
-  "X-ray"
+    "X",
+    "X",
+    "X-ray",
+    "🩻",
+    "#cfce91",
+    "EKSS",
+    "X-ray"
   ),
 
   createReadingLesson(
-  "Y",
-  "Y",
-  "Yarn",
-  "🧶",
-  "#cf91a0",
-  "YUHH",
-  "Yarn"
+    "Y",
+    "Y",
+    "Yarn",
+    "🧶",
+    "#cf91a0",
+    "YUHH",
+    "Yarn"
   ),
 
   createReadingLesson(
-  "Z",
-  "Z",
-  "Zebra",
-  "🦓",
-  "#cfad91",
-  "ZUHH",
-  "Zebra"
+    "Z",
+    "Z",
+    "Zebra",
+    "🦓",
+    "#cfad91",
+    "ZUHH",
+    "Zebra"
   ),
 ];

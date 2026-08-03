@@ -19,6 +19,7 @@ import { createStudent } from "../../services/student/createStudent";
 import { getStudent } from "../../services/student/studentServices";
 import { saveStudent } from "../../services/database/localStudent";
 import { initializeStudentProgress } from "../../services/database/localProgress";
+import { initializeWritingProgress } from "../../services/database/localWriting";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -79,6 +80,7 @@ async function handleLogin() {
     );
 
     initializeStudentProgress(studentId);
+    initializeWritingProgress(studentId);
 
     const student = await getStudent(studentId);
 

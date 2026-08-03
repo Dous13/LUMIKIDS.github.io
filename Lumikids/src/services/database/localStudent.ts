@@ -1,12 +1,14 @@
 import { db } from "./database";
-
 import { Student } from "../../models/Student";
+import { addToSyncQueue } from "../sync/localQueue";
+import { getLevel } from "../../utils/xp";
 
 export function saveStudent(student: {
   id: string;
   name: string;
   classCode: string;
   xp: number;
+  coins: number;
   readingXP: number;
   writingXP: number;
   mathXP: number;
@@ -19,18 +21,20 @@ export function saveStudent(student: {
       name,
       classCode,
       xp,
+      coins,
       readingXP,
       writingXP,
       mathXP,
       level
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       student.id,
       student.name,
       student.classCode,
       student.xp,
+      student.coins,
       student.readingXP,
       student.writingXP,
       student.mathXP,
@@ -38,6 +42,7 @@ export function saveStudent(student: {
     ]
   );
 }
+
 
 export function getLocalStudent(
   id: string
@@ -76,6 +81,30 @@ export function awardLocalReadingXP(
       studentId,
     ]
   );
+
+  const updatedStudent = getLocalStudent(studentId);
+
+  if (updatedStudent) {
+    const level = getLevel(updatedStudent.xp);
+
+    db.runSync(
+      `
+      UPDATE student
+      SET level = ?
+      WHERE id = ?
+      `,
+      [
+        level,
+        studentId,
+      ]
+    );
+  }
+addToSyncQueue(
+  "SYNC_STUDENT",
+  {
+    studentId,
+  }
+);
 }
 
 export function awardLocalCoins(
@@ -94,6 +123,12 @@ export function awardLocalCoins(
       studentId,
     ]
   );
+addToSyncQueue(
+  "SYNC_STUDENT",
+  {
+    studentId,
+  }
+);
 }
 
 export function spendCoins(
@@ -111,6 +146,12 @@ export function spendCoins(
       studentId,
     ]
   );
+addToSyncQueue(
+  "SYNC_STUDENT",
+  {
+    studentId,
+  }
+);
 }
 
 export function equipMascot(
@@ -128,4 +169,10 @@ export function equipMascot(
       studentId,
     ]
   );
+addToSyncQueue(
+  "SYNC_STUDENT",
+  {
+    studentId,
+  }
+);
 }

@@ -152,7 +152,7 @@ export default function HomeScreen() {
             title="Writing"
             color="#FFF6E8"
             onPress={() =>
-              Alert.alert("Writing", "Coming Soon!")
+              navigation.navigate("Writing")
             }
           />
 

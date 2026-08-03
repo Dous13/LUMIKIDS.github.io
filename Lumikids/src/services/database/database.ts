@@ -36,6 +36,19 @@ export function initializeDatabase() {
       PRIMARY KEY(studentId, lessonId)
     );
 
+    CREATE TABLE IF NOT EXISTS writing_progress (
+        studentId TEXT NOT NULL,
+        lessonId TEXT NOT NULL,
+
+        unlocked INTEGER DEFAULT 0,
+        completed INTEGER DEFAULT 0,
+        stars INTEGER DEFAULT 0,
+
+        synced INTEGER DEFAULT 0,
+
+        PRIMARY KEY(studentId, lessonId)
+    );
+
     CREATE TABLE IF NOT EXISTS owned_mascots (
       studentId TEXT NOT NULL,
       mascotId TEXT NOT NULL,
@@ -44,15 +57,17 @@ export function initializeDatabase() {
     );
 
     CREATE TABLE IF NOT EXISTS sync_queue (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-      action TEXT NOT NULL,
+        action TEXT NOT NULL,
 
-      payload TEXT NOT NULL,
+        payload TEXT NOT NULL,
 
-      createdAt INTEGER,
+        createdAt INTEGER,
 
-      synced INTEGER DEFAULT 0
+        synced INTEGER DEFAULT 0,
+
+        retryCount INTEGER DEFAULT 0
     );
   `);
 }

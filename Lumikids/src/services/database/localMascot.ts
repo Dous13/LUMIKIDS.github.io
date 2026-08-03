@@ -1,4 +1,5 @@
 import { db } from "./database";
+import { addToSyncQueue } from "../sync/localQueue";
 
 export function ownsMascot(
   studentId: string,
@@ -35,6 +36,13 @@ export function buyMascot(
       mascotId,
     ]
   );
+
+addToSyncQueue(
+  "SYNC_STUDENT",
+  {
+    studentId,
+  }
+);
 }
 
 export function getOwnedMascots(studentId: string) {

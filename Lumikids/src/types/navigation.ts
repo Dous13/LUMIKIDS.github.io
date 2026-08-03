@@ -7,6 +7,15 @@ export type RootStackParamList = {
   Home: undefined;
   Reading: undefined;
   Shop: undefined;
+  Writing: undefined;
+
+  TraceLetter: {
+    lessonId: string;
+  };
+
+  WritingLesson: {
+    lessonId: string;
+  };
 
   Lesson: {
     lessonId: string;
