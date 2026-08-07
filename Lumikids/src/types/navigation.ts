@@ -8,6 +8,8 @@ export type RootStackParamList = {
   Reading: undefined;
   Shop: undefined;
   Writing: undefined;
+  Math: undefined;
+  MathLesson: undefined;
 
   TraceLetter: {
     lessonId: string;

@@ -17,6 +17,8 @@ import { processQueue } from "../services/sync/processQueue";
 import WritingLessonScreen from "../screens/writing/WritingLessonScreen";
 import WritingScreen from "../screens/writing/writingScreen";
 import TraceLetterScreen from "../screens/writing/TraceLetterScreen";
+import MathScreen from "../screens/math/MathScreen";
+import MathLessonScreen from "../screens/math/MathLessonScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -91,6 +93,14 @@ export default function AppNavigator() {
         <Stack.Screen
             name="TraceLetter"
             component={TraceLetterScreen}
+        />
+        <Stack.Screen
+          name="Math"
+          component={MathScreen}
+        />
+        <Stack.Screen
+          name="MathLesson"
+          component={MathLessonScreen}
         />
         <Stack.Screen
             name="Shop"

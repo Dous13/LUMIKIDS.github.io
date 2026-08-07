@@ -160,8 +160,7 @@ export default function HomeScreen() {
             emoji="🔢"
             title="Math"
             color="#EDF6FF"
-            onPress={() =>
-              Alert.alert("Math", "Coming Soon!")
+            onPress={() => navigation.navigate("Math")
             }
           />
         </ScrollView>
