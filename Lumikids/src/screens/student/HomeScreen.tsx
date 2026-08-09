@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
   ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -38,6 +38,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
 
   const [studentId, setStudentId] = useState("");
+  const [logoutPrompt, setLogoutPrompt] = useState(false);
 
   useEffect(() => {
     async function loadSession() {
@@ -70,28 +71,11 @@ export default function HomeScreen() {
   );
 
   async function logout() {
-    Alert.alert(
-      "Logout",
-      "Do you want to logout?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            await clearSession();
-
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Welcome" }],
-            });
-          },
-        },
-      ]
-    );
+    await clearSession();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Welcome" }],
+    });
   }
 
   if (loading || studentId === "") {
@@ -171,8 +155,22 @@ export default function HomeScreen() {
           progress={progress}
           streak={student.streak}
           onShopPress={() => navigation.navigate("Shop")}
-          onParentPress={logout}
+          onParentPress={() => setLogoutPrompt(true)}
         />
+        {logoutPrompt ? (
+          <View style={styles.logoutPrompt}>
+            <Text style={styles.logoutTitle}>Leave LUMIKIDS?</Text>
+            <Text style={styles.logoutText}>Your offline progress is saved locally and will sync when a connection is available.</Text>
+            <View style={styles.logoutButtons}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setLogoutPrompt(false)}>
+                <Text style={styles.cancelText}>Stay</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmButton} onPress={logout}>
+                <Text style={styles.confirmText}>Log Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
       </SafeAreaView>
     </LinearGradient>
   );
@@ -188,6 +186,55 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 60,
   },
+
+  logoutPrompt: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 105,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 18,
+    elevation: 10,
+  },
+
+  logoutTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#334155",
+  },
+
+  logoutText: {
+    marginTop: 6,
+    color: "#64748B",
+    lineHeight: 20,
+  },
+
+  logoutButtons: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+
+  cancelButton: {
+    flex: 1,
+    backgroundColor: "#EAF8FF",
+    borderRadius: 15,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+
+  cancelText: { color: "#275B8F", fontWeight: "800" },
+
+  confirmButton: {
+    flex: 1,
+    backgroundColor: "#FFE4E4",
+    borderRadius: 15,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+
+  confirmText: { color: "#B91C1C", fontWeight: "800" },
 
   loadingContainer: {
     flex: 1,

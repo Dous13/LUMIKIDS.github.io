@@ -107,6 +107,62 @@ addToSyncQueue(
 );
 }
 
+export function awardLocalWritingXP(
+  studentId: string,
+  xpEarned: number
+) {
+  db.runSync(
+    `
+    UPDATE student
+    SET
+      xp = xp + ?,
+      writingXP = writingXP + ?
+    WHERE id = ?
+    `,
+    [xpEarned, xpEarned, studentId]
+  );
+
+  const updatedStudent = getLocalStudent(studentId);
+
+  if (updatedStudent) {
+    const level = getLevel(updatedStudent.xp);
+    db.runSync(
+      `UPDATE student SET level = ? WHERE id = ?`,
+      [level, studentId]
+    );
+  }
+
+  addToSyncQueue("SYNC_STUDENT", { studentId });
+}
+
+export function awardLocalMathXP(
+  studentId: string,
+  xpEarned: number
+) {
+  db.runSync(
+    `
+    UPDATE student
+    SET
+      xp = xp + ?,
+      mathXP = mathXP + ?
+    WHERE id = ?
+    `,
+    [xpEarned, xpEarned, studentId]
+  );
+
+  const updatedStudent = getLocalStudent(studentId);
+
+  if (updatedStudent) {
+    const level = getLevel(updatedStudent.xp);
+    db.runSync(
+      `UPDATE student SET level = ? WHERE id = ?`,
+      [level, studentId]
+    );
+  }
+
+  addToSyncQueue("SYNC_STUDENT", { studentId });
+}
+
 export function awardLocalCoins(
   studentId: string,
   coinsEarned: number
@@ -178,35 +234,3 @@ addToSyncQueue(
 }
 
 
-export function awardLocalMathXP(
-  studentId: string,
-  xpEarned: number
-) {
-  db.runSync(
-    `
-    UPDATE student
-    SET
-      xp = xp + ?,
-      mathXP = mathXP + ?
-    WHERE id = ?
-    `,
-    [xpEarned, xpEarned, studentId]
-  );
-
-  const updatedStudent = getLocalStudent(studentId);
-
-  if (updatedStudent) {
-    const level = getLevel(updatedStudent.xp);
-
-    db.runSync(
-      `
-      UPDATE student
-      SET level = ?
-      WHERE id = ?
-      `,
-      [level, studentId]
-    );
-  }
-
-  addToSyncQueue("SYNC_STUDENT", { studentId });
-}

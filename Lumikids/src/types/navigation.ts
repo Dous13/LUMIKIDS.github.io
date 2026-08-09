@@ -43,7 +43,7 @@ export type RootStackParamList = {
 
   Reward: {
     subject: "reading" | "writing" | "math";
-    lessonId: number;
+    lessonId: string | number;
     xp: number;
     coins: number;
     stars: number;

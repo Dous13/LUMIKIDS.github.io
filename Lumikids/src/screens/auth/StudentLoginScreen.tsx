@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Switch,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -34,6 +33,7 @@ export default function StudentLoginScreen() {
   const [classCode, setClassCode] = useState("");
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -49,15 +49,16 @@ export default function StudentLoginScreen() {
 async function handleLogin() {
   try {
     if (!name.trim()) {
-      Alert.alert("Missing Name", "Please enter your name.");
+      setError("Please enter your name.");
       return;
     }
 
     if (!classCode.trim()) {
-      Alert.alert("Missing Class Code", "Please enter your class code.");
+      setError("Please enter your class code.");
       return;
     }
 
+    setError("");
     setLoading(true);
 
     const code = classCode.trim().toUpperCase();
@@ -67,10 +68,7 @@ async function handleLogin() {
     const exists = await classExists(code);
 
     if (!exists) {
-      Alert.alert(
-        "Invalid Class Code",
-        "Please ask your teacher for the correct class code."
-      );
+      setError("That class code was not found. Please ask your teacher for the correct code.");
       return;
     }
 
@@ -103,11 +101,7 @@ async function handleLogin() {
 
   } catch (error) {
     console.error(error);
-
-    Alert.alert(
-      "Login Failed",
-      "Something went wrong."
-    );
+    setError("Something went wrong while starting your account. Please try again.");
   } finally {
     setLoading(false);
   }
@@ -128,6 +122,12 @@ async function handleLogin() {
       />
 
       <View style={{ height: 16 }} />
+
+      {error ? (
+        <View style={styles.errorCard}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
 
       <PrimaryInput
         placeholder="Class Code"
@@ -173,6 +173,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#64748B",
     marginBottom: 40,
+  },
+
+  errorCard: {
+    backgroundColor: "#FFF1F1",
+    borderColor: "#F5B5B5",
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 14,
+  },
+
+  errorText: {
+    color: "#B91C1C",
+    fontWeight: "700",
+    lineHeight: 20,
   },
 
   row: {

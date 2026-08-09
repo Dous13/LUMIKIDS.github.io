@@ -1,56 +1,85 @@
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db as firestore } from "../firebase/firebase";
 import { getLocalStudent } from "../database/localStudent";
 import { getAllProgress } from "../database/localProgress";
+import { getAllWritingProgress } from "../database/localWriting";
 import { getAllMathProgress } from "../database/localMath";
+import { db as localDb } from "../database/database";
 
-export async function syncStudent(
-  studentId: string
-) {
-  const student = getLocalStudent(studentId);
-  if (!student) return;
-  const progress = getAllProgress(studentId) as any[];
-  const mathProgress = getAllMathProgress(studentId) as any[];
-
-  const readingProgress: Record<string, any> = {};
-  const mathProgressMap: Record<string, any> = {};
-
-  progress.forEach((lesson) => {
-    readingProgress[lesson.lessonId] = {
+function toReadingProgress(rows: any[]) {
+  return Object.fromEntries(
+    rows.map((lesson) => [lesson.lessonId, {
       unlocked: lesson.unlocked === 1,
       completed: lesson.completed === 1,
-      stars: lesson.stars,
-    };
-  });
+      stars: lesson.stars ?? 0,
+    }])
+  );
+}
 
-  mathProgress.forEach((lesson) => {
-    mathProgressMap[lesson.lessonId] = {
+function toWritingProgress(rows: any[]) {
+  return Object.fromEntries(
+    rows.map((lesson) => [lesson.lessonId, {
       unlocked: lesson.unlocked === 1,
       completed: lesson.completed === 1,
-      stars: lesson.stars,
+      stars: lesson.stars ?? 0,
+    }])
+  );
+}
+
+function toMathProgress(rows: any[]) {
+  return Object.fromEntries(
+    rows.map((lesson) => [String(lesson.lessonId), {
+      unlocked: lesson.unlocked === 1,
+      completed: lesson.completed === 1,
+      stars: lesson.stars ?? 0,
       quizScore: lesson.quizScore ?? 0,
       quizTotal: lesson.quizTotal ?? 0,
       xpEarned: lesson.xpEarned ?? 0,
-    };
-  });
-
-  const ref = doc(
-    firestore,
-    "students",
-    student.id
+    }])
   );
-  console.log("Reading Progress:", readingProgress);
-    await updateDoc(ref, {
-        xp: student.xp,
-        coins: student.coins,
-        readingXP: student.readingXP,
-        writingXP: student.writingXP,
-        mathXP: student.mathXP,
-        level: student.level,
-        streak: student.streak,
-        avatar: student.avatar,
-        readingProgress,
-        mathProgress: mathProgressMap,
-    });
-    console.log("Firestore updated!");
+}
+
+export async function syncStudent(studentId: string) {
+  const student = getLocalStudent(studentId);
+  if (!student) return;
+
+  const readingProgress = toReadingProgress(
+    getAllProgress(studentId) as any[]
+  );
+  const writingProgress = toWritingProgress(
+    getAllWritingProgress(studentId) as any[]
+  );
+  const mathProgress = toMathProgress(
+    getAllMathProgress(studentId) as any[]
+  );
+
+  const payload = {
+    id: student.id,
+    name: student.name,
+    classCode: student.classCode,
+    xp: student.xp,
+    coins: student.coins,
+    readingXP: student.readingXP,
+    writingXP: student.writingXP,
+    mathXP: student.mathXP,
+    level: student.level,
+    streak: student.streak,
+    avatar: student.avatar,
+    readingProgress,
+    writingProgress,
+    mathProgress,
+    updatedAt: serverTimestamp(),
+  };
+
+  // Root student document is the source of truth for the student app.
+  await setDoc(
+    doc(firestore, "students", student.id),
+    payload,
+    { merge: true }
+  );
+
+  // Mark local progress as synchronized only after Firestore succeeds.
+  localDb.runSync(`UPDATE lesson_progress SET synced = 1 WHERE studentId = ?`, [student.id]);
+  localDb.runSync(`UPDATE writing_progress SET synced = 1 WHERE studentId = ?`, [student.id]);
+  localDb.runSync(`UPDATE math_progress SET synced = 1 WHERE studentId = ?`, [student.id]);
 }

@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -49,6 +50,7 @@ export default function MathResultScreen() {
       style={{ flex: 1 }}
     >
       <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           <Text style={styles.celebrate}>🎉</Text>
 
@@ -106,6 +108,7 @@ export default function MathResultScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -114,6 +117,10 @@ export default function MathResultScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
     padding: 24,
   },

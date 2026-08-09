@@ -1,40 +1,19 @@
 import React from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
-type Props = {
-  letter: string;
-};
+type Props = { target: string };
 
-export default function LetterGuide({
-  letter,
-}: Props) {
+export default function LetterGuide({ target }: Props) {
+  const isWord = target.length > 1;
   return (
-    <View style={styles.container}>
-      <Text style={styles.letter}>
-        {letter}
-      </Text>
+    <View pointerEvents="none" style={styles.container}>
+      <Text style={[styles.target, isWord && styles.word]}>{target}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  letter: {
-  fontSize: 260,
-  fontWeight: "900",
-  color: "#DDDDDD",
-  includeFontPadding: false,
-  marginLeft: 35,
-  },
+  container: { ...StyleSheet.absoluteFillObject, justifyContent: "center", alignItems: "center" },
+  target: { fontSize: 230, fontWeight: "900", color: "#DDE7F0", includeFontPadding: false },
+  word: { fontSize: 78, letterSpacing: 4 },
 });

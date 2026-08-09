@@ -1,5 +1,6 @@
 import { db } from "./database";
 import { writingLessons } from "../../data/writingLessons";
+import { addToSyncQueue } from "../sync/localQueue";
 
 export function initializeWritingProgress(studentId: string) {
   const existing = db.getFirstSync(
@@ -90,6 +91,8 @@ export function completeWritingLesson(
       lessonId,
     ]
   );
+
+  addToSyncQueue("SYNC_STUDENT", { studentId });
 }
 
 export function unlockNextWritingLesson(
@@ -125,6 +128,8 @@ export function unlockNextWritingLesson(
       nextLesson.id,
     ]
   );
+
+  addToSyncQueue("SYNC_STUDENT", { studentId });
 }
 
 export function isWritingLessonCompleted(

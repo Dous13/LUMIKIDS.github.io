@@ -2,6 +2,7 @@ import React from "react";
 import {
   Text,
   StyleSheet,
+  ScrollView,
   TouchableOpacity,
 } from "react-native";
 
@@ -43,7 +44,7 @@ export default function RewardScreen() {
       style={{ flex: 1 }}
     >
       <SafeAreaView style={styles.container}>
-
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>
           🎉 Lesson Complete!
         </Text>
@@ -98,7 +99,7 @@ export default function RewardScreen() {
             Continue →
           </Text>
         </TouchableOpacity>
-
+        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -108,6 +109,10 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
+  },
+
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 30,

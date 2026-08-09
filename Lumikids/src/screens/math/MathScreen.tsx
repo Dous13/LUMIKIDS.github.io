@@ -1,25 +1,11 @@
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-} from "react-native";
+import React, { useCallback, useState } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-
 import { mathLessons } from "../../data/mathLessons";
-import {
-  getAllMathProgress,
-  initializeMathProgress,
-} from "../../services/database/localMath";
 import { getSession } from "../../services/session/session";
+import { getAllMathProgress } from "../../services/database/localMath";
 
 export default function MathScreen() {
   const navigation = useNavigation<any>();
@@ -28,137 +14,54 @@ export default function MathScreen() {
   const loadProgress = useCallback(async () => {
     const session = await getSession();
     if (!session) return;
-
-    initializeMathProgress(session.studentId);
     setProgress(getAllMathProgress(session.studentId));
   }, []);
 
-  useEffect(() => {
-    loadProgress();
-  }, [loadProgress]);
+  useFocusEffect(useCallback(() => { loadProgress(); }, [loadProgress]));
 
-  useFocusEffect(
-    useCallback(() => {
-      loadProgress();
-    }, [loadProgress])
-  );
-
-  const progressMap = Object.fromEntries(
-    progress.map(item => [item.lessonId, item])
-  );
-
-  const completedLessons = progress.filter(
-    item => item.completed === 1
-  ).length;
-
-  const percentage =
-    mathLessons.length > 0
-      ? (completedLessons / mathLessons.length) * 100
-      : 0;
+  const progressMap = Object.fromEntries(progress.map(item => [item.lessonId, item]));
+  const completed = progress.filter(item => item.completed === 1).length;
 
   return (
-    <LinearGradient
-      colors={["#F8FCFF", "#EAF8FF", "#D6F1FF"]}
-      style={styles.container}
-    >
-      <View style={styles.circle1} />
-      <View style={styles.circle2} />
-      <View style={styles.circle3} />
-      <View style={styles.circle4} />
-
-      <SafeAreaView style={{ flex: 1 }}>
+    <LinearGradient colors={["#F8FCFF", "#EAF8FF", "#D6F1FF"]} style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
         <FlatList
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.content}
           data={mathLessons}
           keyExtractor={item => item.id.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
           ListHeaderComponent={
             <>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Text style={styles.backText}>← Home</Text>
+              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Text style={styles.backText}>← Back</Text>
               </TouchableOpacity>
-
               <View style={styles.headerCard}>
                 <Text style={styles.headerEmoji}>🔢</Text>
                 <Text style={styles.title}>Math Adventure</Text>
-                <Text style={styles.subtitle}>
-                  Count, add, subtract, discover shapes, and find patterns!
-                </Text>
-
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${percentage}%` },
-                    ]}
-                  />
-                </View>
-
-                <Text style={styles.progressText}>
-                  {completedLessons} of {mathLessons.length} lessons completed
-                </Text>
+                <Text style={styles.subtitle}>Learn numbers, counting and simple math through fun games!</Text>
+                <Text style={styles.progressSummary}>{completed} of {mathLessons.length} lessons completed</Text>
               </View>
             </>
           }
           renderItem={({ item }) => {
-            const itemProgress = progressMap[item.id];
-            const unlocked = itemProgress?.unlocked === 1;
-            const completed = itemProgress?.completed === 1;
-
+            const unlocked = progressMap[item.id]?.unlocked === 1 || item.id === mathLessons[0]?.id;
+            const completedLesson = progressMap[item.id]?.completed === 1;
             return (
               <TouchableOpacity
-                activeOpacity={unlocked ? 0.88 : 1}
+                style={[styles.lessonCard, !unlocked && styles.lockedCard]}
+                activeOpacity={0.9}
                 disabled={!unlocked}
-                style={[
-                  styles.lessonCard,
-                  !unlocked && styles.lockedCard,
-                ]}
-                onPress={() =>
-                  navigation.navigate("MathLesson", {
-                    lessonId: item.id,
-                  })
-                }
+                onPress={() => navigation.navigate("MathLesson", { lessonId: item.id })}
               >
-                <View style={styles.lessonEmojiBox}>
-                  <Text style={styles.emoji}>{item.emoji}</Text>
-                </View>
-
-                <View style={styles.lessonInfo}>
-                  <View style={styles.lessonTitleRow}>
-                    <Text style={styles.lessonTitle}>{item.title}</Text>
-                    {completed && (
-                      <Text style={styles.completed}>✓</Text>
-                    )}
-                  </View>
-
-                  <Text style={styles.lessonDescription}>
-                    {item.description}
-                  </Text>
-
-                  <Text style={styles.reward}>
-                    ⭐ +{item.xpReward} XP
-                  </Text>
-
-                  {!unlocked && (
-                    <Text style={styles.lockedText}>
-                      🔒 Complete the previous lesson first
-                    </Text>
-                  )}
-                </View>
-
-                <View
-                  style={[
-                    styles.playButton,
-                    !unlocked && styles.lockedPlayButton,
-                  ]}
-                >
-                  <Text style={styles.playText}>
-                    {unlocked ? "▶" : "🔒"}
+                <Text style={styles.emoji}>{item.emoji}</Text>
+                <View style={styles.lessonBody}>
+                  <Text style={styles.lessonTitle}>{item.title}</Text>
+                  <Text style={styles.lessonDescription}>{item.description}</Text>
+                  <Text style={styles.lessonStatus}>
+                    {completedLesson ? "✓ Completed" : unlocked ? "▶ Start lesson" : "🔒 Complete the previous lesson first"}
                   </Text>
                 </View>
+                <View style={styles.xpBadge}><Text style={styles.xpText}>⭐ {item.xpReward}</Text></View>
               </TouchableOpacity>
             );
           }}
@@ -169,209 +72,9 @@ export default function MathScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 50,
-  },
-
-  backButton: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: 30,
-    marginBottom: 12,
-    elevation: 4,
-  },
-
-  backText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#2563EB",
-  },
-
-  headerCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 32,
-    padding: 24,
-    alignItems: "center",
-    marginBottom: 22,
-    elevation: 5,
-  },
-
-  headerEmoji: {
-    fontSize: 58,
-  },
-
-  title: {
-    marginTop: 8,
-    fontSize: 30,
-    fontWeight: "900",
-    color: "#2563EB",
-  },
-
-  subtitle: {
-    marginTop: 8,
-    textAlign: "center",
-    color: "#64748B",
-    fontSize: 16,
-    lineHeight: 23,
-  },
-
-  progressTrack: {
-    width: "100%",
-    height: 12,
-    marginTop: 18,
-    backgroundColor: "#DCEEFF",
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#62C77A",
-    borderRadius: 20,
-  },
-
-  progressText: {
-    marginTop: 8,
-    color: "#64748B",
-    fontWeight: "700",
-  },
-
-  lessonCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 17,
-    marginBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 4,
-  },
-
-  lockedCard: {
-    opacity: 0.55,
-  },
-
-  lessonEmojiBox: {
-    width: 68,
-    height: 68,
-    borderRadius: 22,
-    backgroundColor: "#EAF8FF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 15,
-  },
-
-  emoji: {
-    fontSize: 40,
-  },
-
-  lessonInfo: {
-    flex: 1,
-  },
-
-  lessonTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  lessonTitle: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#334155",
-  },
-
-  completed: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: "#57C36A",
-    marginLeft: 6,
-  },
-
-  lessonDescription: {
-    marginTop: 5,
-    color: "#64748B",
-    fontSize: 14,
-    lineHeight: 20,
-  },
-
-  reward: {
-    marginTop: 8,
-    color: "#F59E0B",
-    fontWeight: "800",
-  },
-
-  lockedText: {
-    marginTop: 7,
-    color: "#64748B",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  playButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "#4DA8FF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 10,
-  },
-
-  lockedPlayButton: {
-    backgroundColor: "#CBD5E1",
-  },
-
-  playText: {
-    color: "#FFFFFF",
-    fontSize: 19,
-    fontWeight: "900",
-  },
-
-  circle1: {
-    position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: "#CDEEFF",
-    top: -90,
-    right: -80,
-  },
-
-  circle2: {
-    position: "absolute",
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: "#FFE8A3",
-    left: -70,
-    top: 330,
-  },
-
-  circle3: {
-    position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "#D7F9D4",
-    right: 20,
-    bottom: 170,
-  },
-
-  circle4: {
-    position: "absolute",
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "#F8C8FF",
-    left: 40,
-    bottom: 60,
-  },
+  container: { flex: 1 }, safeArea: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
+  backButton: { alignSelf: "flex-start", paddingVertical: 8, marginBottom: 10 }, backText: { fontSize: 18, fontWeight: "700", color: "#5A6C7D" },
+  headerCard: { backgroundColor: "#FFF", borderRadius: 24, padding: 22, alignItems: "center", marginBottom: 18, elevation: 3 }, headerEmoji: { fontSize: 50 },
+  title: { fontSize: 28, fontWeight: "900", color: "#334155", marginTop: 6 }, subtitle: { textAlign: "center", color: "#64748B", fontSize: 15, marginTop: 8, lineHeight: 22 }, progressSummary: { marginTop: 12, color: "#16A34A", fontWeight: "800" },
+  lessonCard: { backgroundColor: "#FFF", borderRadius: 22, padding: 17, marginBottom: 14, flexDirection: "row", alignItems: "center", elevation: 2 }, lockedCard: { opacity: 0.55 }, emoji: { fontSize: 45, marginRight: 14 }, lessonBody: { flex: 1 }, lessonTitle: { fontSize: 19, fontWeight: "800", color: "#334155" }, lessonDescription: { color: "#64748B", marginTop: 4, fontSize: 14, lineHeight: 19 }, lessonStatus: { marginTop: 8, color: "#2563EB", fontWeight: "800", fontSize: 13 }, xpBadge: { backgroundColor: "#FFE082", borderRadius: 14, paddingHorizontal: 10, paddingVertical: 7, marginLeft: 8 }, xpText: { fontWeight: "900", color: "#6B5200" },
 });
