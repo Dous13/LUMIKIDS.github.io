@@ -21,11 +21,16 @@ export const mathLessons: MathLesson[] = [
     description: "Learn to count numbers from one to ten.",
     emoji: "🔢",
     xpReward: 50,
+<<<<<<< HEAD
+=======
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
     pages: [
       {
         value: 1,
         emoji: "🍎",
         title: "Number One",
+<<<<<<< HEAD
         description: "This is ONE apple. Can you say one?",
       },
       {
@@ -58,24 +63,76 @@ export const mathLessons: MathLesson[] = [
         title: "Number Six",
         description: "Now let's count SIX strawberries.",
       },
+=======
+        description: "This is ONE apple.",
+      },
+
+      {
+        value: 2,
+        emoji: "🍎🍎",
+        title: "Number Two",
+        description: "Let's count together: ONE... TWO!",
+      },
+
+      {
+        value: 3,
+        emoji: "🍎🍎🍎",
+        title: "Number Three",
+        description: "Great! There are THREE apples.",
+      },
+
+      {
+        value: 4,
+        emoji: "🍎🍎🍎🍎",
+        title: "Number Four",
+        description: "Can you count FOUR apples?",
+      },
+
+      {
+        value: 5,
+        emoji: "🍎🍎🍎🍎🍎",
+        title: "Number Five",
+        description: "Fantastic! There are FIVE apples.",
+      },
+
+      {
+        value: 6,
+        emoji: "🍓🍓🍓🍓🍓🍓",
+        title: "Number Six",
+        description: "Now let's count SIX strawberries.",
+      },
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
       {
         value: 7,
         emoji: "⭐ ⭐ ⭐ ⭐ ⭐ ⭐ ⭐",
         title: "Number Seven",
         description: "Wow! There are SEVEN stars.",
       },
+<<<<<<< HEAD
+=======
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
       {
         value: 8,
         emoji: "🐠 🐠 🐠 🐠 🐠 🐠 🐠 🐠",
         title: "Number Eight",
         description: "Can you count EIGHT fish?",
       },
+<<<<<<< HEAD
+=======
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
       {
         value: 9,
         emoji: "🌸 🌸 🌸 🌸 🌸 🌸 🌸 🌸 🌸",
         title: "Number Nine",
         description: "Excellent! There are NINE flowers.",
       },
+<<<<<<< HEAD
+=======
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
       {
         value: 10,
         emoji: "🎈 🎈 🎈 🎈 🎈 🎈 🎈 🎈 🎈 🎈",
@@ -90,6 +147,7 @@ export const mathLessons: MathLesson[] = [
     description: "Learn to put groups of numbers together.",
     emoji: "➕",
     xpReward: 60,
+<<<<<<< HEAD
     pages: [
       { value: 1, emoji: "🍎 + 🍎", title: "One Plus One", description: "One apple plus one apple makes TWO apples." },
       { value: 2, emoji: "🍎 🍎 + 🍎", title: "Two Plus One", description: "Two apples plus one apple makes THREE apples." },
@@ -97,6 +155,9 @@ export const mathLessons: MathLesson[] = [
       { value: 4, emoji: "🐟 🐟 🐟 + 🐟 🐟", title: "Three Plus Two", description: "Three fish plus two fish makes FIVE fish." },
       { value: 5, emoji: "🍓 🍓 🍓 + 🍓 🍓 🍓", title: "Three Plus Three", description: "Three strawberries plus three strawberries makes SIX." },
     ],
+=======
+    pages: [],
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   },
   {
     id: 3,
@@ -104,6 +165,7 @@ export const mathLessons: MathLesson[] = [
     description: "Learn how to take numbers away.",
     emoji: "➖",
     xpReward: 70,
+<<<<<<< HEAD
     pages: [
       { value: 1, emoji: "🍎 🍎 - 🍎", title: "Two Take Away One", description: "Two apples take away one apple leaves ONE." },
       { value: 2, emoji: "⭐ ⭐ ⭐ - ⭐", title: "Three Take Away One", description: "Three stars take away one star leaves TWO." },
@@ -111,10 +173,14 @@ export const mathLessons: MathLesson[] = [
       { value: 4, emoji: "🐠 🐠 🐠 🐠 🐠 - 🐠 🐠", title: "Five Take Away Two", description: "Five fish take away two fish leaves THREE." },
       { value: 5, emoji: "🎈 🎈 🎈 🎈 🎈 🎈 - 🎈 🎈 🎈", title: "Six Take Away Three", description: "Six balloons take away three leaves THREE." },
     ],
+=======
+    pages: [],
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   },
   {
     id: 4,
     title: "Shapes",
+<<<<<<< HEAD
     description: "Recognize common shapes around us.",
     emoji: "🔺",
     xpReward: 80,
@@ -125,6 +191,12 @@ export const mathLessons: MathLesson[] = [
       { value: 4, emoji: "🟨", title: "Rectangle", description: "A rectangle has four sides and four corners." },
       { value: 5, emoji: "⭐", title: "Let's Find Shapes!", description: "Look around you. Can you find a circle, square, or triangle?" },
     ],
+=======
+    description: "Learn different shapes.",
+    emoji: "🔺",
+    xpReward: 80,
+    pages: [],
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   },
   {
     id: 5,
@@ -132,6 +204,7 @@ export const mathLessons: MathLesson[] = [
     description: "Find what comes next in simple patterns.",
     emoji: "⭐",
     xpReward: 90,
+<<<<<<< HEAD
     pages: [
       { value: 1, emoji: "🔴 🔵 🔴 🔵", title: "Red and Blue", description: "Red, blue, red, blue. What comes next?" },
       { value: 2, emoji: "⭐ 🌙 ⭐ 🌙", title: "Star and Moon", description: "Star, moon, star, moon. The pattern repeats!" },
@@ -141,3 +214,9 @@ export const mathLessons: MathLesson[] = [
     ],
   },
 ];
+=======
+    pages: [],
+  },
+];
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2

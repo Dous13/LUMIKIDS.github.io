@@ -4,10 +4,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+<<<<<<< HEAD
+=======
+  Alert,
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+<<<<<<< HEAD
   RouteProp,
   useNavigation,
   useRoute,
@@ -48,15 +53,33 @@ export default function MathQuizScreen() {
   const route = useRoute<MathQuizRouteProp>();
 
   const { lessonId } = route.params;
+=======
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+
+import { mathQuizzes } from "../../data/mathQuizzes";
+
+export default function MathQuizScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+
+  const lessonId = route.params.lessonId;
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
 
   const questions = useMemo(
     () =>
       mathQuizzes.filter(
+<<<<<<< HEAD
         question => question.lessonId === lessonId
+=======
+        q => q.lessonId === lessonId
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
       ),
     [lessonId]
   );
 
+<<<<<<< HEAD
   const lesson = mathLessons.find(
     item => item.id === lessonId
   );
@@ -310,10 +333,44 @@ export default function MathQuizScreen() {
           : score;
 
       await finishQuiz(actualFinalScore);
+=======
+  const [currentIndex, setCurrentIndex] =
+    useState(0);
+
+  const [score, setScore] = useState(0);
+
+  const currentQuestion =
+    questions[currentIndex];
+
+  function answer(choice: string) {
+    let newScore = score;
+
+    if (
+      choice === currentQuestion.correctAnswer
+    ) {
+      newScore++;
+      setScore(newScore);
+    }
+
+    const isLast =
+      currentIndex === questions.length - 1;
+
+    if (isLast) {
+        navigation.replace("Reward", {
+        subject: "math",
+        lessonId,
+        xp: newScore * 10,
+        coins: newScore * 5,
+        stars: newScore,
+        unlocked: true,
+        levelUp: false,
+        });
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
 
       return;
     }
 
+<<<<<<< HEAD
     /*
      * Move to next question.
      */
@@ -347,11 +404,17 @@ export default function MathQuizScreen() {
    * ---------------------------------------------------------
    */
 
+=======
+    setCurrentIndex(currentIndex + 1);
+  }
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   return (
     <LinearGradient
       colors={[
         "#F8FCFF",
         "#EAF8FF",
+<<<<<<< HEAD
         "#FFF9E6",
       ]}
       style={styles.container}
@@ -361,21 +424,54 @@ export default function MathQuizScreen() {
       >
 
         {/* HEADER */}
+=======
+        "#D6F1FF",
+      ]}
+      style={styles.container}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
         <View style={styles.header}>
 
           <TouchableOpacity
             style={styles.backButton}
+<<<<<<< HEAD
             activeOpacity={0.8}
             onPress={confirmLeave}
+=======
+            onPress={() =>
+              Alert.alert(
+                "Leave Quiz?",
+                "Your progress will be lost.",
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                  {
+                    text: "Leave",
+                    onPress: () =>
+                      navigation.goBack(),
+                  },
+                ]
+              )
+            }
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
           >
             <Text style={styles.backArrow}>
               ←
             </Text>
           </TouchableOpacity>
 
+<<<<<<< HEAD
           <View style={styles.headerCenter}>
             <Text style={styles.title}>
               🌈 Math Quiz
+=======
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>
+              Math Quiz
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
             </Text>
 
             <Text style={styles.subtitle}>
@@ -384,6 +480,7 @@ export default function MathQuizScreen() {
             </Text>
           </View>
 
+<<<<<<< HEAD
           <View
             style={styles.headerSpacer}
           />
@@ -392,16 +489,30 @@ export default function MathQuizScreen() {
 
         {/* PROGRESS BAR */}
         <View style={styles.progressTrack}>
+=======
+        </View>
+
+        <View style={styles.progressBar}>
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
           <View
             style={[
               styles.progressFill,
               {
+<<<<<<< HEAD
                 width: `${percentage}%`,
+=======
+                width: `${
+                  ((currentIndex + 1) /
+                    questions.length) *
+                  100
+                }%`,
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
               },
             ]}
           />
         </View>
 
+<<<<<<< HEAD
         {/* QUIZ CARD */}
         <View style={styles.card}>
 
@@ -555,12 +666,41 @@ export default function MathQuizScreen() {
           )}
 
           {/* SCORE */}
+=======
+        <View style={styles.card}>
+
+          <Text style={styles.question}>
+            {currentQuestion.question}
+          </Text>
+
+          <Text style={styles.emoji}>
+            {currentQuestion.emoji}
+          </Text>
+
+          <View style={styles.options}>
+            
+            {currentQuestion.options.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={styles.optionButton}
+                activeOpacity={0.9}
+                onPress={() => answer(option)}
+              >
+                <Text style={styles.optionText}>
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
           <Text style={styles.score}>
             ⭐ Score: {score}
           </Text>
 
         </View>
 
+<<<<<<< HEAD
         {/* LEAVE CONFIRMATION */}
         {showLeaveConfirmation && (
           <View
@@ -638,22 +778,28 @@ export default function MathQuizScreen() {
           </View>
         )}
 
+=======
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
       </SafeAreaView>
     </LinearGradient>
   );
 }
 
+<<<<<<< HEAD
 /*
  * ============================================================
  * STYLES
  * ============================================================
  */
 
+=======
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
 
+<<<<<<< HEAD
   safeArea: {
     flex: 1,
   },
@@ -702,6 +848,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 12,
+=======
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingTop: 15,
+    marginBottom: 15,
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   },
 
   backButton: {
@@ -711,10 +865,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
+<<<<<<< HEAD
 
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 7,
+=======
+    marginRight: 15,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
     shadowOffset: {
       width: 0,
       height: 3,
@@ -724,6 +886,7 @@ const styles = StyleSheet.create({
   },
 
   backArrow: {
+<<<<<<< HEAD
     fontSize: 27,
     fontWeight: "800",
     color: "#4A90E2",
@@ -742,10 +905,22 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "900",
     color: "#2563EB",
+=======
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#4A90E2",
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#334155",
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   },
 
   subtitle: {
     marginTop: 3,
+<<<<<<< HEAD
     fontSize: 15,
     fontWeight: "700",
     color: "#64748B",
@@ -765,6 +940,24 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#62C77A",
     borderRadius: 20,
+=======
+    color: "#64748B",
+    fontSize: 15,
+  },
+
+  progressBar: {
+    height: 12,
+    backgroundColor: "#D7EAF8",
+    borderRadius: 10,
+    marginHorizontal: 24,
+    overflow: "hidden",
+    marginBottom: 28,
+  },
+
+  progressFill: {
+    flex: 1,
+    backgroundColor: "#67C587",
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   },
 
   card: {
@@ -772,6 +965,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginBottom: 24,
     backgroundColor: "#FFFFFF",
+<<<<<<< HEAD
     borderRadius: 32,
     padding: 24,
     elevation: 6,
@@ -783,11 +977,31 @@ const styles = StyleSheet.create({
     fontSize: 27,
     lineHeight: 34,
     fontWeight: "900",
+=======
+    borderRadius: 30,
+    padding: 25,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    elevation: 5,
+  },
+
+  question: {
+    fontSize: 24,
+    fontWeight: "bold",
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
     textAlign: "center",
     color: "#334155",
   },
 
   emoji: {
+<<<<<<< HEAD
     fontSize: 62,
     textAlign: "center",
     marginVertical: 22,
@@ -978,6 +1192,39 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "800",
+=======
+    fontSize: 72,
+    textAlign: "center",
+    marginVertical: 30,
+  },
+
+  options: {
+    gap: 16,
+  },
+
+  optionButton: {
+    backgroundColor: "#EAF8FF",
+    borderRadius: 22,
+    paddingVertical: 20,
+    alignItems: "center",
+
+    borderWidth: 2,
+    borderColor: "#CFEAFF",
+  },
+
+  optionText: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#275B8F",
+  },
+
+  score: {
+    textAlign: "center",
+    marginTop: 28,
+    fontWeight: "700",
+    color: "#64748B",
+    fontSize: 16,
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   },
 });
 

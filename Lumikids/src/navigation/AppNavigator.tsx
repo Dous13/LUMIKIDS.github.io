@@ -20,7 +20,10 @@ import TraceLetterScreen from "../screens/writing/TraceLetterScreen";
 import MathScreen from "../screens/math/MathScreen";
 import MathLessonScreen from "../screens/math/MathLessonScreen";
 import MathQuizScreen from "../screens/math/MathQuizScreen";
+<<<<<<< HEAD
 import MathResultScreen from "../screens/math/MathResultScreen";
+=======
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -104,6 +107,10 @@ export default function AppNavigator() {
           name="MathLesson"
           component={MathLessonScreen}
         />
+      <Stack.Screen
+        name="MathQuiz"
+        component={MathQuizScreen}
+      />
         <Stack.Screen
           name="MathQuiz"
           component={MathQuizScreen}

@@ -4,17 +4,24 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+<<<<<<< HEAD
   Alert,
+=======
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+<<<<<<< HEAD
   RouteProp,
+=======
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   useNavigation,
   useRoute,
 } from "@react-navigation/native";
 
 import { mathLessons } from "../../data/mathLessons";
+<<<<<<< HEAD
 import { RootStackParamList } from "../../types/navigation";
 import {
   getMathProgress,
@@ -114,14 +121,89 @@ export default function MathLessonScreen() {
           </View>
 
           <Text style={styles.title}>{current.title}</Text>
+=======
+
+export default function MathLessonScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+
+  const lessonId = route.params.lessonId;
+
+  const lesson = mathLessons.find(
+    (l) => l.id === lessonId
+  );
+
+  if (!lesson) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text>Lesson not found.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const [page, setPage] = useState(0);
+
+  const current = lesson.pages[page];
+
+  const lastPage =
+    page === lesson.pages.length - 1;
+
+  return (
+    <LinearGradient
+      colors={[
+        "#F8FCFF",
+        "#EAF8FF",
+        "#D6F1FF",
+      ]}
+      style={styles.container}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+
+    <View style={styles.header}>
+
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backArrow}>←</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.progress}>
+        {page + 1} / {lesson.pages.length}
+      </Text>
+
+      {/* Spacer to keep the progress centered */}
+      <View style={{ width: 48 }} />
+
+    </View>
+
+        <View style={styles.card}>
+
+          <Text style={styles.emoji}>
+            {current.emoji}
+          </Text>
+
+          <Text style={styles.number}>
+            {current.value}
+          </Text>
+
+          <Text style={styles.title}>
+            {current.title}
+          </Text>
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
 
           <Text style={styles.description}>
             {current.description}
           </Text>
+<<<<<<< HEAD
+=======
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
         </View>
 
         <TouchableOpacity
           style={styles.button}
+<<<<<<< HEAD
           activeOpacity={0.88}
           onPress={startLesson}
         >
@@ -129,6 +211,31 @@ export default function MathLessonScreen() {
             {lastPage ? "🧠 Start Quiz" : "Next ➜"}
           </Text>
         </TouchableOpacity>
+=======
+          onPress={() => {
+
+            if (!lastPage) {
+              setPage(page + 1);
+              return;
+            }
+
+            navigation.replace(
+              "MathQuiz",
+              {
+                lessonId,
+              }
+            );
+
+          }}
+        >
+          <Text style={styles.buttonText}>
+            {lastPage
+              ? "Start Quiz ⭐"
+              : "Next ➜"}
+          </Text>
+        </TouchableOpacity>
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
       </SafeAreaView>
     </LinearGradient>
   );
@@ -139,10 +246,15 @@ const styles = StyleSheet.create({
 
   center: {
     flex: 1,
+  },
+
+  center: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
 
+<<<<<<< HEAD
   error: {
     fontSize: 20,
     fontWeight: "700",
@@ -266,11 +378,85 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     alignItems: "center",
     elevation: 4,
+=======
+header: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  paddingHorizontal: 24,
+  paddingTop: 20,
+},
+
+  progress: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#64748B",
+  },
+
+  card: {
+    flex: 1,
+
+    margin: 25,
+
+    backgroundColor: "#FFFFFF",
+
+    borderRadius: 30,
+
+    justifyContent: "center",
+
+    alignItems: "center",
+
+    padding: 30,
+
+    elevation: 5,
+  },
+
+  emoji: {
+    fontSize: 70,
+    textAlign: "center",
+  },
+
+  number: {
+    fontSize: 72,
+    fontWeight: "bold",
+    color: "#4A90E2",
+    marginTop: 20,
+  },
+
+  title: {
+    fontSize: 30,
+    fontWeight: "bold",
+    marginTop: 20,
+    color: "#334155",
+    textAlign: "center",
+  },
+
+  description: {
+    marginTop: 15,
+    fontSize: 20,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 30,
+  },
+
+  button: {
+    marginHorizontal: 25,
+    marginBottom: 30,
+
+    backgroundColor: "#4A90E2",
+
+    borderRadius: 18,
+
+    paddingVertical: 18,
+
+    alignItems: "center",
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
   },
 
   buttonText: {
     color: "#FFFFFF",
     fontSize: 22,
+<<<<<<< HEAD
     fontWeight: "900",
   },
 
@@ -294,3 +480,35 @@ const styles = StyleSheet.create({
     bottom: 80,
   },
 });
+=======
+    fontWeight: "bold",
+  },
+
+backButton: {
+  width: 48,
+  height: 48,
+  borderRadius: 24,
+  backgroundColor: "#FFFFFF",
+
+  justifyContent: "center",
+  alignItems: "center",
+
+  shadowColor: "#000",
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  shadowOffset: {
+    width: 0,
+    height: 4,
+  },
+
+  elevation: 5,
+},
+
+backArrow: {
+  fontSize: 26,
+  fontWeight: "bold",
+  color: "#4A90E2",
+},
+});
+
+>>>>>>> f72fcc3e12dc016ecac867e87b81a0e66690fcd2
