@@ -9,7 +9,21 @@ export type RootStackParamList = {
   Shop: undefined;
   Writing: undefined;
   Math: undefined;
-  MathLesson: undefined;
+  MathQuiz: {
+    lessonId: number;
+  };
+  MathLesson: {
+    lessonId: number;
+  };
+  MathResult: {
+    lessonId: number;
+    score: number;
+    total: number;
+    xp: number;
+    coins: number;
+    stars: number;
+    unlocked: boolean;
+  };
 
   TraceLetter: {
     lessonId: string;
@@ -28,7 +42,8 @@ export type RootStackParamList = {
   };
 
   Reward: {
-    lessonId: string;
+    subject: "reading" | "writing" | "math";
+    lessonId: number;
     xp: number;
     coins: number;
     stars: number;
