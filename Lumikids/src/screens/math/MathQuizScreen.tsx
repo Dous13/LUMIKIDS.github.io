@@ -117,7 +117,7 @@ export default function MathQuizScreen() {
     let coinsEarned = result.stars * 5;
 
     if (!alreadyCompleted) {
-      xpEarned = lesson.xpReward;
+      xpEarned = lesson!.xpReward;
 
       awardLocalMathXP(
         session.studentId,
