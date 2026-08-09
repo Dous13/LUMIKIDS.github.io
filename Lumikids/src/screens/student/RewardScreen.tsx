@@ -28,6 +28,7 @@ export default function RewardScreen() {
   const route = useRoute<RewardRouteProp>();
 
   const {
+    subject,
     lessonId,
     xp,
     coins,
@@ -77,9 +78,21 @@ export default function RewardScreen() {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() =>
-            navigation.replace("Reading")
+          onPress={() => {
+          switch (subject) {
+            case "reading":
+              navigation.replace("Reading");
+              break;
+
+            case "writing":
+              navigation.replace("Writing");
+              break;
+
+            case "math":
+              navigation.replace("Math");
+              break;
           }
+        }}
         >
           <Text style={styles.buttonText}>
             Continue →

@@ -19,6 +19,8 @@ import WritingScreen from "../screens/writing/writingScreen";
 import TraceLetterScreen from "../screens/writing/TraceLetterScreen";
 import MathScreen from "../screens/math/MathScreen";
 import MathLessonScreen from "../screens/math/MathLessonScreen";
+import MathQuizScreen from "../screens/math/MathQuizScreen";
+import MathResultScreen from "../screens/math/MathResultScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -101,6 +103,14 @@ export default function AppNavigator() {
         <Stack.Screen
           name="MathLesson"
           component={MathLessonScreen}
+        />
+        <Stack.Screen
+          name="MathQuiz"
+          component={MathQuizScreen}
+        />
+        <Stack.Screen
+          name="MathResult"
+          component={MathResultScreen}
         />
         <Stack.Screen
             name="Shop"

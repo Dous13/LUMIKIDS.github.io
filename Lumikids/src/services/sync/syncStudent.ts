@@ -2,6 +2,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db as firestore } from "../firebase/firebase";
 import { getLocalStudent } from "../database/localStudent";
 import { getAllProgress } from "../database/localProgress";
+import { getAllMathProgress } from "../database/localMath";
 
 export async function syncStudent(
   studentId: string
@@ -9,13 +10,27 @@ export async function syncStudent(
   const student = getLocalStudent(studentId);
   if (!student) return;
   const progress = getAllProgress(studentId) as any[];
+  const mathProgress = getAllMathProgress(studentId) as any[];
+
   const readingProgress: Record<string, any> = {};
+  const mathProgressMap: Record<string, any> = {};
 
   progress.forEach((lesson) => {
     readingProgress[lesson.lessonId] = {
       unlocked: lesson.unlocked === 1,
       completed: lesson.completed === 1,
       stars: lesson.stars,
+    };
+  });
+
+  mathProgress.forEach((lesson) => {
+    mathProgressMap[lesson.lessonId] = {
+      unlocked: lesson.unlocked === 1,
+      completed: lesson.completed === 1,
+      stars: lesson.stars,
+      quizScore: lesson.quizScore ?? 0,
+      quizTotal: lesson.quizTotal ?? 0,
+      xpEarned: lesson.xpEarned ?? 0,
     };
   });
 
@@ -35,6 +50,7 @@ export async function syncStudent(
         streak: student.streak,
         avatar: student.avatar,
         readingProgress,
+        mathProgress: mathProgressMap,
     });
     console.log("Firestore updated!");
 }
