@@ -124,14 +124,10 @@ const styles = StyleSheet.create({
 
   cloud1: {
     position: "absolute",
-
     width: 120,
     height: 120,
-
     borderRadius: 60,
-
-    backgroundColor: "rgba(255,255,255,0.18)",
-
+    backgroundColor: "rgba(255, 255, 255, 0.36)",
     top: -40,
 
     right: -20,
@@ -145,7 +141,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 40,
 
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.36)",
 
     left: -15,
 

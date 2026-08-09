@@ -1,63 +1,86 @@
 import React, { useEffect, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
-import { Canvas, Path } from "@shopify/react-native-skia";
+import { Canvas, Path, Skia } from "@shopify/react-native-skia";
 
-type Props = {
-  resetKey: number;
-  onDrawingChange: (hasDrawing: boolean) => void;
-};
+type Point = { x: number; y: number };
+type Stroke = Point[];
+
+type Props = { resetKey: number; onDrawingChange: (hasDrawing: boolean) => void };
 
 export default function TracingCanvas({ resetKey, onDrawingChange }: Props) {
-  const [path, setPath] = useState("");
-  const drawingRef = useRef(false);
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const currentStroke = useRef<Stroke>([]);
 
   useEffect(() => {
-    setPath("");
-    drawingRef.current = false;
+    currentStroke.current = [];
+    setStrokes([]);
     onDrawingChange(false);
   }, [resetKey, onDrawingChange]);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: event => {
         const { locationX, locationY } = event.nativeEvent;
-        drawingRef.current = true;
-        setPath(`M ${locationX} ${locationY}`);
+        const point = { x: locationX, y: locationY };
+        currentStroke.current = [point];
+        setStrokes(previous => [...previous, [point]]);
         onDrawingChange(true);
       },
       onPanResponderMove: event => {
         const { locationX, locationY } = event.nativeEvent;
-        setPath(current => `${current} L ${locationX} ${locationY}`);
+        const point = { x: locationX, y: locationY };
+        currentStroke.current = [...currentStroke.current, point];
+        setStrokes(previous => {
+          if (!previous.length) return [[point]];
+          const next = [...previous];
+          next[next.length - 1] = currentStroke.current;
+          return next;
+        });
       },
       onPanResponderRelease: () => {
-        drawingRef.current = false;
+        currentStroke.current = [];
       },
       onPanResponderTerminate: () => {
-        drawingRef.current = false;
+        currentStroke.current = [];
       },
     })
   ).current;
 
   return (
-    <View style={styles.container} {...panResponder.panHandlers}>
+    <View style={styles.touchLayer} {...panResponder.panHandlers}>
       <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-        {path ? (
-          <Path
-            path={path}
-            style="stroke"
-            color="#4DA8FF"
-            strokeWidth={14}
-            strokeCap="round"
-            strokeJoin="round"
-          />
-        ) : null}
+        {strokes.map((stroke, index) => {
+          if (!stroke.length) return null;
+          const path = stroke.reduce((result, point, pointIndex) => {
+            if (pointIndex === 0) result.moveTo(point.x, point.y);
+            else result.lineTo(point.x, point.y);
+            return result;
+          }, Skia.Path.Make());
+          return (
+            <Path
+              key={index}
+              path={path}
+              style="stroke"
+              color="#4DA8FF"
+              strokeWidth={12}
+              strokeCap="round"
+              strokeJoin="round"
+            />
+          );
+        })}
       </Canvas>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, minHeight: 250 },
+  touchLayer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "transparent",
+  },
 });

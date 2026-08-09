@@ -105,7 +105,7 @@ export default function HomeScreen() {
 
   return (
     <LinearGradient
-      colors={["#F8FCFF", "#EAF8FF", "#D6F1FF"]}
+      colors={["#62B8FF", "#A9DDFF", "#FFF3C4"]}
       style={styles.container}
     >
       <View style={styles.circle1} />

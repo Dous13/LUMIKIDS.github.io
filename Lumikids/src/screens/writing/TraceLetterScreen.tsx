@@ -92,7 +92,7 @@ export default function TraceLetterScreen() {
           </View>
 
           <Text style={styles.title}>✏️ Trace & Write</Text>
-          <Text style={styles.subtitle}>Follow the light guide with your finger.</Text>
+          <Text style={styles.subtitle}>Click and drag along the light guide to trace.</Text>
 
           <View style={styles.canvasCard}>
             <LetterGuide target={target} />
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 }, safeArea: { flex: 1 }, content: { padding: 20, paddingBottom: 35 },
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, backButton: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFF", borderRadius: 22, paddingHorizontal: 14, paddingVertical: 10, elevation: 3 }, backText: { marginLeft: 6, fontSize: 17, fontWeight: "800", color: "#2563EB" }, phase: { color: "#64748B", fontWeight: "800" },
   title: { marginTop: 18, fontSize: 30, fontWeight: "900", textAlign: "center", color: "#1E3A8A" }, subtitle: { marginTop: 6, textAlign: "center", color: "#64748B", fontSize: 16 },
-  canvasCard: { height: 390, marginTop: 18, backgroundColor: "#FFF", borderRadius: 30, overflow: "hidden", elevation: 6, position: "relative" },
+  canvasCard: { minHeight: 320, height: 390, marginTop: 18, backgroundColor: "#FFF", borderRadius: 30, overflow: "hidden", elevation: 6, position: "relative" },
   messageCard: { marginTop: 12, backgroundColor: "#FFF8E1", borderRadius: 16, padding: 12 }, message: { textAlign: "center", color: "#7C5D00", fontWeight: "800" },
   buttons: { flexDirection: "row", gap: 12, marginTop: 14 }, clearButton: { flex: 1, backgroundColor: "#FFE4E4", borderRadius: 18, paddingVertical: 16, alignItems: "center" }, clearText: { color: "#B91C1C", fontWeight: "900", fontSize: 17 }, nextButton: { flex: 1.5, backgroundColor: "#4DA8FF", borderRadius: 18, paddingVertical: 16, alignItems: "center" }, nextDisabled: { opacity: 0.5 }, nextText: { color: "#FFF", fontWeight: "900", fontSize: 18 }, center: { flex: 1, justifyContent: "center", alignItems: "center" }, error: { fontSize: 20, fontWeight: "800", color: "#64748B" },
 });
