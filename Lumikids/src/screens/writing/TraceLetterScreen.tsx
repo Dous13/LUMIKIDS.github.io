@@ -3,6 +3,8 @@ import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import ExitLessonModal from "../../components/common/ExitLessonModal";
+import { useExitLessonGuard } from "../../hooks/useExitLessonGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { writingLessons } from "../../data/writingLessons";
 import LetterGuide from "../../components/writing/LetterGuide";
@@ -15,6 +17,7 @@ type Phase = "uppercase" | "lowercase" | "word";
 
 export default function TraceLetterScreen() {
   const navigation = useNavigation<any>();
+  const exitGuard = useExitLessonGuard(() => navigation.goBack());
   const route = useRoute<any>();
   const lesson = writingLessons.find(item => item.id === route.params.lessonId);
   const [phase, setPhase] = useState<Phase>("uppercase");
@@ -85,7 +88,7 @@ export default function TraceLetterScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} disabled={saving}>
+            <TouchableOpacity style={styles.backButton} onPress={exitGuard.requestExit} disabled={saving}>
               <Ionicons name="arrow-back" size={25} color="#2563EB" /><Text style={styles.backText}>Back</Text>
             </TouchableOpacity>
             <Text style={styles.phase}>Step {phaseNumber} of 3</Text>
@@ -110,7 +113,13 @@ export default function TraceLetterScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
+      
+        <ExitLessonModal
+          visible={exitGuard.visible}
+          onStay={exitGuard.stay}
+          onLeave={exitGuard.leave}
+        />
+</SafeAreaView>
     </LinearGradient>
   );
 }

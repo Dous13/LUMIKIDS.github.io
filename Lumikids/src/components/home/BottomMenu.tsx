@@ -14,6 +14,7 @@ type Props = {
   streak: number;
 
   onShopPress: () => void;
+  onDashboardPress: () => void;
   onParentPress: () => void;
 };
 
@@ -24,6 +25,7 @@ export default function BottomMenu({
   progress,
   streak,
   onShopPress,
+  onDashboardPress,
   onParentPress,
 }: Props) {
 
@@ -66,6 +68,19 @@ return (
     </View>
 
     <View style={styles.buttons}>
+
+      <TouchableOpacity
+        style={styles.dashboardButton}
+        onPress={onDashboardPress}
+      >
+        <Text style={styles.buttonEmoji}>
+          📊
+        </Text>
+
+        <Text style={styles.buttonText}>
+          Dashboard
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.shopButton}
@@ -159,9 +174,18 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 
+  dashboardButton: {
+    flex: 1,
+    marginRight: 6,
+    backgroundColor: "#EEF4FF",
+    borderRadius: 18,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+
   shopButton: {
     flex: 1,
-    marginRight: 8,
+    marginHorizontal: 3,
     backgroundColor: "#FFF4CC",
     borderRadius: 18,
     paddingVertical: 14,
@@ -170,7 +194,7 @@ const styles = StyleSheet.create({
 
   logoutButton: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: 6,
     backgroundColor: "#EAF7FF",
     borderRadius: 18,
     paddingVertical: 14,

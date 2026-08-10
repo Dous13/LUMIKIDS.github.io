@@ -29,6 +29,8 @@ export function initializeDatabase() {
       unlocked INTEGER DEFAULT 0,
       completed INTEGER DEFAULT 0,
       stars INTEGER DEFAULT 0,
+      quizScore INTEGER DEFAULT 0,
+      quizTotal INTEGER DEFAULT 0,
 
       synced INTEGER DEFAULT 0,
 
@@ -73,6 +75,19 @@ export function initializeDatabase() {
       PRIMARY KEY(studentId, mascotId)
     );
 
+    CREATE TABLE IF NOT EXISTS mistakes (
+      studentId TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      lessonId TEXT NOT NULL,
+      questionKey TEXT NOT NULL,
+      question TEXT NOT NULL,
+      selectedAnswer TEXT NOT NULL,
+      correctAnswer TEXT NOT NULL,
+      count INTEGER DEFAULT 1,
+      synced INTEGER DEFAULT 0,
+      PRIMARY KEY(studentId, subject, lessonId, questionKey)
+    );
+
     CREATE TABLE IF NOT EXISTS sync_queue (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
 
@@ -87,4 +102,15 @@ export function initializeDatabase() {
       retryCount INTEGER DEFAULT 0
     );
   `);
+
+  const columns = db.getAllSync(`PRAGMA table_info(lesson_progress)`) as Array<{ name: string }>;
+  if (!columns.some(column => column.name === "quizScore")) {
+    db.execSync(`ALTER TABLE lesson_progress ADD COLUMN quizScore INTEGER DEFAULT 0`);
+  }
+  if (!columns.some(column => column.name === "quizTotal")) {
+    db.execSync(`ALTER TABLE lesson_progress ADD COLUMN quizTotal INTEGER DEFAULT 0`);
+  }
 }
+
+    // Existing installations may have been created before quiz score fields
+    // were introduced. Add the fields without destroying local progress.

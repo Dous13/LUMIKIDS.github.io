@@ -105,7 +105,9 @@ export function getAllProgress(studentId: string) {
 export function completeLesson(
   studentId: string,
   lessonId: string,
-  stars: number
+  stars: number,
+  quizScore = 0,
+  quizTotal = 0
 ) {
   db.runSync(
     `
@@ -113,6 +115,8 @@ export function completeLesson(
     SET
       completed = 1,
       stars = ?,
+      quizScore = ?,
+      quizTotal = ?,
       synced = 0
     WHERE
       studentId = ?
@@ -120,6 +124,8 @@ export function completeLesson(
     `,
     [
       stars,
+      quizScore,
+      quizTotal,
       studentId,
       lessonId,
     ]

@@ -3,6 +3,8 @@ import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import ExitLessonModal from "../../components/common/ExitLessonModal";
+import { useExitLessonGuard } from "../../hooks/useExitLessonGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { readingQuizzes } from "../../data/readingQuizzes";
 import { RootStackParamList } from "../../types/navigation";
@@ -11,11 +13,13 @@ import { getSession } from "../../services/session/session";
 import { readingLessons } from "../../data/readingLessons";
 import { awardLocalReadingXP, awardLocalCoins } from "../../services/database/localStudent";
 import { completeLesson, unlockNextLesson, isLessonCompleted } from "../../services/database/localProgress";
+import { recordMistake } from "../../services/database/localMistakes";
 
 type QuizRouteProp = RouteProp<RootStackParamList, "Quiz">;
 
 export default function QuizScreen() {
   const navigation = useNavigation<any>();
+  const exitGuard = useExitLessonGuard(() => navigation.goBack());
   const route = useRoute<QuizRouteProp>();
   const lessonId = route.params.lessonId;
   const lesson = readingLessons.find(item => item.id === lessonId);
@@ -53,7 +57,7 @@ export default function QuizScreen() {
       awardLocalCoins(session.studentId, lesson.coins);
     }
 
-    completeLesson(session.studentId, lessonId, result.stars);
+    completeLesson(session.studentId, lessonId, result.stars, finalScore, quiz.length);
     unlockNextLesson(session.studentId, lessonId);
 
     navigation.replace("Reward", {
@@ -67,13 +71,25 @@ export default function QuizScreen() {
     });
   }
 
-  function chooseAnswer(choice: string) {
+  async function chooseAnswer(choice: string) {
     if (locked) return;
     setSelected(choice);
     setLocked(true);
     const correct = choice === question.answer;
     const nextScore = correct ? score + 1 : score;
     if (!correct) {
+      const session = await getSession();
+      if (session) {
+        recordMistake(
+          session.studentId,
+          "reading",
+          lessonId,
+          currentQuestion,
+          question.question,
+          choice,
+          question.answer
+        );
+      }
       setMessage("😊 Almost! The highlighted answer shows what to look for. Try the next question.");
       return;
     }
@@ -83,7 +99,7 @@ export default function QuizScreen() {
 
   async function nextQuestion() {
     if (!locked) return;
-    const finalScore = score;
+    const finalScore = score + (selected === question.answer ? 1 : 0);
     if (currentQuestion === quiz.length - 1) {
       await finishQuiz(finalScore);
       return;
@@ -98,7 +114,7 @@ export default function QuizScreen() {
     <LinearGradient colors={["#C8F2FF", "#EAFBFF", "#FFF9E6"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={24} color="#2563EB" /><Text style={styles.backText}>Lesson</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.backButton} onPress={exitGuard.requestExit}><Ionicons name="arrow-back" size={24} color="#2563EB" /><Text style={styles.backText}>Lesson</Text></TouchableOpacity>
           <Text style={styles.title}>🌈 Reading Quiz</Text>
           <Text style={styles.progress}>Question {currentQuestion + 1} of {quiz.length}</Text>
           <View style={styles.progressBar}><View style={[styles.progressFill, { width: `${((currentQuestion + 1) / quiz.length) * 100}%` }]} /></View>
@@ -119,7 +135,13 @@ export default function QuizScreen() {
           {locked && <TouchableOpacity style={styles.nextButton} onPress={nextQuestion}><Text style={styles.nextText}>{currentQuestion === quiz.length - 1 ? "Finish Quiz 🎉" : "Next →"}</Text></TouchableOpacity>}
           {passed ? null : null}
         </ScrollView>
-      </SafeAreaView>
+      
+        <ExitLessonModal
+          visible={exitGuard.visible}
+          onStay={exitGuard.stay}
+          onLeave={exitGuard.leave}
+        />
+</SafeAreaView>
     </LinearGradient>
   );
 }

@@ -8,6 +8,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import ExitLessonModal from "../../components/common/ExitLessonModal";
+import { useExitLessonGuard } from "../../hooks/useExitLessonGuard";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 
 import { mathQuizzes } from "../../data/mathQuizzes";
@@ -22,6 +24,7 @@ import {
   unlockNextMathLesson,
 } from "../../services/database/localMath";
 import { awardLocalCoins, awardLocalMathXP } from "../../services/database/localStudent";
+import { recordMistake } from "../../services/database/localMistakes";
 
 type Route = RouteProp<RootStackParamList, "MathQuiz">;
 
@@ -29,6 +32,7 @@ type Feedback = "correct" | "wrong" | "error" | "failed" | null;
 
 export default function MathQuizScreen() {
   const navigation = useNavigation<any>();
+  const exitGuard = useExitLessonGuard(() => navigation.goBack());
   const route = useRoute<Route>();
   const lessonId = route.params.lessonId;
 
@@ -44,14 +48,13 @@ export default function MathQuizScreen() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [message, setMessage] = useState("");
-  const [leavePrompt, setLeavePrompt] = useState(false);
   const [finishing, setFinishing] = useState(false);
 
   if (!lesson || questions.length === 0) {
     return (
       <SafeAreaView style={styles.center}>
         <Text style={styles.error}>Quiz not found.</Text>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.primaryButton} onPress={exitGuard.requestExit}>
           <Text style={styles.primaryButtonText}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -117,7 +120,7 @@ export default function MathQuizScreen() {
     });
   }
 
-  function chooseAnswer(choice: string) {
+  async function chooseAnswer(choice: string) {
     if (answerLocked || finishing) return;
 
     setAnswerLocked(true);
@@ -130,6 +133,18 @@ export default function MathQuizScreen() {
       setFeedback("correct");
       setMessage("Amazing job! You got it right. 🎉");
     } else {
+      const session = await getSession();
+      if (session) {
+        recordMistake(
+          session.studentId,
+          "math",
+          lessonId,
+          currentIndex,
+          question.question,
+          choice,
+          question.correctAnswer
+        );
+      }
       setFeedback("wrong");
       setMessage(`The correct answer is ${question.correctAnswer}. Keep practicing! 💪`);
     }
@@ -139,7 +154,7 @@ export default function MathQuizScreen() {
     if (!answerLocked || finishing) return;
 
     if (currentIndex === questions.length - 1) {
-      const finalScore = score + (selectedAnswer === question.correctAnswer ? 0 : 0);
+      const finalScore = score + (selectedAnswer === question.correctAnswer ? 1 : 0);
       await finishQuiz(finalScore);
       return;
     }
@@ -160,7 +175,7 @@ export default function MathQuizScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={() => setLeavePrompt(true)}>
+            <TouchableOpacity style={styles.backButton} onPress={exitGuard.requestExit}>
               <Text style={styles.backArrow}>←</Text>
             </TouchableOpacity>
             <View style={styles.headerCenter}>
@@ -175,21 +190,6 @@ export default function MathQuizScreen() {
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${percentage}%` }]} />
           </View>
-
-          {leavePrompt && (
-            <View style={styles.promptCard}>
-              <Text style={styles.promptTitle}>Leave the quiz?</Text>
-              <Text style={styles.promptText}>Your current answers will not count as a completed lesson.</Text>
-              <View style={styles.promptButtons}>
-                <TouchableOpacity style={styles.secondaryButton} onPress={() => setLeavePrompt(false)}>
-                  <Text style={styles.secondaryButtonText}>Keep Playing</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.dangerButton} onPress={() => navigation.goBack()}>
-                  <Text style={styles.dangerButtonText}>Leave</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
 
           {feedback && (
             <View style={[styles.feedback, feedback === "correct" ? styles.correct : feedback === "wrong" ? styles.wrong : styles.notice]}>
@@ -246,7 +246,13 @@ export default function MathQuizScreen() {
             )}
           </View>
         </ScrollView>
-      </SafeAreaView>
+      
+        <ExitLessonModal
+          visible={exitGuard.visible}
+          onStay={exitGuard.stay}
+          onLeave={exitGuard.leave}
+        />
+</SafeAreaView>
     </LinearGradient>
   );
 }

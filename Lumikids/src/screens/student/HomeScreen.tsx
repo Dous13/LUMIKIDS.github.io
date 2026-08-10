@@ -67,7 +67,7 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       reload();
-    }, [reload])
+    }, [reload, studentId])
   );
 
   async function logout() {
@@ -122,7 +122,7 @@ export default function HomeScreen() {
             name={student.name}
           />
 
-          <MascotCard />
+          <MascotCard avatar={student.avatar} />
 
           <SubjectButton
             emoji="📖"
@@ -155,6 +155,7 @@ export default function HomeScreen() {
           progress={progress}
           streak={student.streak}
           onShopPress={() => navigation.navigate("Shop")}
+          onDashboardPress={() => navigation.navigate("Dashboard")}
           onParentPress={() => setLogoutPrompt(true)}
         />
         {logoutPrompt ? (

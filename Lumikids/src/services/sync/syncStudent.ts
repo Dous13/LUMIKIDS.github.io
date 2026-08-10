@@ -5,6 +5,8 @@ import { getAllProgress } from "../database/localProgress";
 import { getAllWritingProgress } from "../database/localWriting";
 import { getAllMathProgress } from "../database/localMath";
 import { db as localDb } from "../database/database";
+import { getAllMistakes } from "../database/localMistakes";
+import { getOwnedMascots } from "../database/localMascot";
 
 function toReadingProgress(rows: any[]) {
   return Object.fromEntries(
@@ -12,6 +14,8 @@ function toReadingProgress(rows: any[]) {
       unlocked: lesson.unlocked === 1,
       completed: lesson.completed === 1,
       stars: lesson.stars ?? 0,
+      quizScore: lesson.quizScore ?? 0,
+      quizTotal: lesson.quizTotal ?? 0,
     }])
   );
 }
@@ -53,6 +57,25 @@ export async function syncStudent(studentId: string) {
     getAllMathProgress(studentId) as any[]
   );
 
+  const mistakes = Object.fromEntries(
+    getAllMistakes(studentId).map((mistake) => [
+      `${mistake.subject}_${mistake.lessonId}_${mistake.questionKey}`,
+      {
+        subject: mistake.subject,
+        lessonId: mistake.lessonId,
+        questionKey: mistake.questionKey,
+        question: mistake.question,
+        selectedAnswer: mistake.selectedAnswer,
+        correctAnswer: mistake.correctAnswer,
+        count: mistake.count,
+      },
+    ])
+  );
+
+  const ownedMascots = getOwnedMascots(studentId).map(
+    (item) => item.mascotId
+  );
+
   const payload = {
     id: student.id,
     name: student.name,
@@ -65,6 +88,8 @@ export async function syncStudent(studentId: string) {
     level: student.level,
     streak: student.streak,
     avatar: student.avatar,
+    ownedMascots,
+    mistakes,
     readingProgress,
     writingProgress,
     mathProgress,
@@ -78,8 +103,17 @@ export async function syncStudent(studentId: string) {
     { merge: true }
   );
 
+  // Keep the teacher roster in sync with the same student summary.
+  // Teachers read this document to monitor class progress.
+  await setDoc(
+    doc(firestore, "classes", student.classCode, "students", student.id),
+    payload,
+    { merge: true }
+  );
+
   // Mark local progress as synchronized only after Firestore succeeds.
   localDb.runSync(`UPDATE lesson_progress SET synced = 1 WHERE studentId = ?`, [student.id]);
   localDb.runSync(`UPDATE writing_progress SET synced = 1 WHERE studentId = ?`, [student.id]);
   localDb.runSync(`UPDATE math_progress SET synced = 1 WHERE studentId = ?`, [student.id]);
+  localDb.runSync(`UPDATE mistakes SET synced = 1 WHERE studentId = ?`, [student.id]);
 }

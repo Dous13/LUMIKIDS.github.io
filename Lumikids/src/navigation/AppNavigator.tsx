@@ -6,6 +6,7 @@ import WelcomeScreen from "../screens/onboarding/WelcomeScreen";
 import StudentLoginScreen from "../screens/auth/StudentLoginScreen";
 import TeacherLoginScreen from "../screens/auth/TeacherLoginScreen";
 import HomeScreen from "../screens/student/HomeScreen";
+import DashboardScreen from "../screens/student/DashboardScreen";
 import ReadingScreen from "../screens/reading/ReadingScreen";
 import LessonScreen from "../screens/reading/LessonScreen";
 import QuizScreen from "../screens/reading/QuizScreen";
@@ -21,6 +22,9 @@ import MathScreen from "../screens/math/MathScreen";
 import MathLessonScreen from "../screens/math/MathLessonScreen";
 import MathQuizScreen from "../screens/math/MathQuizScreen";
 import MathResultScreen from "../screens/math/MathResultScreen";
+import TeacherHomeScreen from "../screens/teacher/TeacherHomeScreen";
+import TeacherClassScreen from "../screens/teacher/TeacherClassScreen";
+import TeacherStudentScreen from "../screens/teacher/TeacherStudentScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -67,6 +71,13 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
+        />
+        <Stack.Screen name="TeacherHome" component={TeacherHomeScreen} />
+        <Stack.Screen name="TeacherClass" component={TeacherClassScreen} />
+        <Stack.Screen name="TeacherStudent" component={TeacherStudentScreen} />
+        <Stack.Screen
+          name="Dashboard"
+          component={DashboardScreen}
         />
         <Stack.Screen
           name="Reading"

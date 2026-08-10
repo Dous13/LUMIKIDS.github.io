@@ -1,54 +1,39 @@
 import {
   collection,
+  getDocs,
   query,
   where,
-  getDocs,
-  doc,
-  setDoc,
-  serverTimestamp,
 } from "firebase/firestore";
-
 import { db } from "../firebase/firebase";
-import { generateStudentId } from "../auth/auth";
 
-export async function createStudent(
-  name: string,
+/**
+ * Students are pre-registered by their teacher. This function only looks up
+ * the existing account; it does not create a new student from the login screen.
+ */
+export async function findStudentForLogin(
+  preferredName: string,
   classCode: string
-): Promise<string> {
+): Promise<string | null> {
+  const code = classCode.trim().toUpperCase();
+  const name = preferredName.trim().toLowerCase();
 
-  // Check if this student already exists
-  const q = query(
-    collection(db, "students"),
-    where("name", "==", name),
-    where("classCode", "==", classCode)
+  const snapshot = await getDocs(
+    query(
+      collection(db, "classes", code, "students"),
+      where("preferredNameLower", "==", name)
+    )
   );
 
-  const snapshot = await getDocs(q);
+  if (!snapshot.empty) return snapshot.docs[0].id;
 
-  // Student already exists
-  if (!snapshot.empty) {
-    return snapshot.docs[0].id;
-  }
+  // Legacy compatibility for students created before teacher registration.
+  const legacy = await getDocs(
+    query(
+      collection(db, "students"),
+      where("classCode", "==", code),
+      where("name", "==", preferredName.trim())
+    )
+  );
 
-  // Create a new student
-  const id = generateStudentId();
-
-  await setDoc(doc(db, "students", id), {
-    name,
-    classCode,
-
-    xp: 0,
-    level: 1,
-    streak: 0,
-
-    readingXP: 0,
-    writingXP: 0,
-    mathXP: 0,
-
-    avatar: "default",
-
-    createdAt: serverTimestamp(),
-  });
-
-  return id;
+  return legacy.empty ? null : legacy.docs[0].id;
 }

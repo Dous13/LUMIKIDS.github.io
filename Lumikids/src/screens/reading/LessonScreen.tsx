@@ -3,6 +3,8 @@ import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import ExitLessonModal from "../../components/common/ExitLessonModal";
+import { useExitLessonGuard } from "../../hooks/useExitLessonGuard";
 import { readingLessons } from "../../data/readingLessons";
 import { RootStackParamList } from "../../types/navigation";
 import { RouteProp } from "@react-navigation/native";
@@ -11,6 +13,7 @@ type LessonRouteProp = RouteProp<RootStackParamList, "Lesson">;
 
 export default function LessonScreen() {
   const navigation = useNavigation<any>();
+  const exitGuard = useExitLessonGuard(() => navigation.goBack());
   const route = useRoute<LessonRouteProp>();
   const lesson = readingLessons.find(item => item.id === route.params.lessonId);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -30,7 +33,7 @@ export default function LessonScreen() {
     <LinearGradient colors={["#F8FCFF", "#EAFBFF", "#FFF9E6"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}><Text style={styles.backText}>← Back</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.backButton} onPress={exitGuard.requestExit}><Text style={styles.backText}>← Back</Text></TouchableOpacity>
           <Text style={styles.progress}>Step {currentIndex + 1} of {lesson.levels.length}</Text>
           <View style={styles.card}>
             <Text style={styles.title}>Letter {lesson.letter}</Text>
@@ -48,7 +51,13 @@ export default function LessonScreen() {
             {current.type === "finish" && <><Text style={styles.question}>🎉 Great Job!</Text><Text style={styles.bigAnswer}>You learned{"\n"}Letter {lesson.letter}</Text><TouchableOpacity style={styles.greenButton} onPress={nextStep}><Text style={styles.buttonText}>🧠 Start Quiz</Text></TouchableOpacity></>}
           </View>
         </ScrollView>
-      </SafeAreaView>
+      
+        <ExitLessonModal
+          visible={exitGuard.visible}
+          onStay={exitGuard.stay}
+          onLeave={exitGuard.leave}
+        />
+</SafeAreaView>
     </LinearGradient>
   );
 }

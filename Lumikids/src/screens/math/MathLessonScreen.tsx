@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import ExitLessonModal from "../../components/common/ExitLessonModal";
+import { useExitLessonGuard } from "../../hooks/useExitLessonGuard";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { mathLessons } from "../../data/mathLessons";
 import { getSession } from "../../services/session/session";
@@ -9,6 +11,7 @@ import { getMathProgress } from "../../services/database/localMath";
 
 export default function MathLessonScreen() {
   const navigation = useNavigation<any>();
+  const exitGuard = useExitLessonGuard(() => navigation.goBack());
   const route = useRoute<any>();
   const lessonId = route.params.lessonId;
   const lesson = mathLessons.find(l => l.id === lessonId);
@@ -35,9 +38,16 @@ export default function MathLessonScreen() {
       <SafeAreaView style={styles.center}>
         <Text style={styles.lockEmoji}>🔒</Text>
         <Text style={styles.error}>This lesson is locked.</Text>
-        <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.button} onPress={exitGuard.requestExit}>
           <Text style={styles.buttonText}>Go Back</Text>
         </TouchableOpacity>
+        <ExitLessonModal
+          visible={exitGuard.visible}
+          title="Leave this screen?"
+          message="This lesson is locked, so no progress will be changed."
+          onStay={exitGuard.stay}
+          onLeave={exitGuard.leave}
+        />
       </SafeAreaView>
     );
   }
@@ -50,7 +60,7 @@ export default function MathLessonScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <TouchableOpacity style={styles.backButton} onPress={exitGuard.requestExit}>
               <Text style={styles.backArrow}>←</Text>
             </TouchableOpacity>
             <Text style={styles.progress}>{page + 1} / {lesson.pages.length}</Text>
@@ -73,7 +83,13 @@ export default function MathLessonScreen() {
             <Text style={styles.buttonText}>{lastPage ? "Start Quiz ⭐" : "Next ➜"}</Text>
           </TouchableOpacity>
         </ScrollView>
-      </SafeAreaView>
+      
+        <ExitLessonModal
+          visible={exitGuard.visible}
+          onStay={exitGuard.stay}
+          onLeave={exitGuard.leave}
+        />
+</SafeAreaView>
     </LinearGradient>
   );
 }

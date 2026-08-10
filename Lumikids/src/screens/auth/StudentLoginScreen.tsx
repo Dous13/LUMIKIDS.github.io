@@ -14,12 +14,14 @@ import { RootStackParamList } from "../../types/navigation";
 import { classExists } from "../../services/auth/auth";
 import { saveSession } from "../../services/session/session";
 import { testFirestore } from "../../services/firebase/test";
-import { createStudent } from "../../services/student/createStudent";
+import { findStudentForLogin } from "../../services/student/createStudent";
 import { getStudent } from "../../services/student/studentServices";
 import { saveStudent } from "../../services/database/localStudent";
 import { initializeStudentProgress } from "../../services/database/localProgress";
 import { initializeWritingProgress } from "../../services/database/localWriting";
 import { initializeMathProgress } from "../../services/database/localMath";
+import { addToSyncQueue } from "../../services/sync/localQueue";
+import { processQueue } from "../../services/sync/processQueue";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -72,11 +74,13 @@ async function handleLogin() {
       return;
     }
 
-    // Create student (or return existing one)
-    const studentId = await createStudent(
-      studentName,
-      code
-    );
+    // Students are registered by their teacher. The student login only looks up the account.
+    const studentId = await findStudentForLogin(studentName, code);
+
+    if (!studentId) {
+      setError("We could not find your account in this class. Ask your teacher to register you first.");
+      return;
+    }
 
     initializeStudentProgress(studentId);
     initializeWritingProgress(studentId);
@@ -86,6 +90,8 @@ async function handleLogin() {
 
     if (student) {
       saveStudent(student);
+      addToSyncQueue("SYNC_STUDENT", { studentId });
+      processQueue();
     }
 
     // Save login session
@@ -116,7 +122,7 @@ async function handleLogin() {
       </Text>
 
       <PrimaryInput
-        placeholder="Your Name"
+        placeholder="Preferred First Name"
         value={name}
         onChangeText={setName}
       />

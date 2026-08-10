@@ -7,8 +7,16 @@ import {
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
+import { mascotShop } from "../../data/mascotShop";
 
-export default function MascotCard() {
+type Props = {
+  avatar?: string;
+};
+
+export default function MascotCard({ avatar = "default" }: Props) {
+  const mascot =
+    mascotShop.find(item => item.id === avatar) ??
+    mascotShop.find(item => item.id === "default");
   return (
     <LinearGradient
       colors={["#5AAEFF", "#7BC5FF", "#A9DDFF"]}
@@ -22,7 +30,7 @@ export default function MascotCard() {
       <View style={styles.cloud2} />
 
       <Image
-        source={require("../../../assets/images/mascot.png")}
+        source={mascot?.image ?? require("../../../assets/images/mascot.png")}
         style={styles.mascot}
         resizeMode="contain"
       />

@@ -2,6 +2,8 @@ export interface Student {
   id: string;
 
   name: string;
+  fullName?: string;
+  preferredName?: string;
   classCode: string;
 
   xp: number;

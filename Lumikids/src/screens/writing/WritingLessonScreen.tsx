@@ -3,11 +3,14 @@ import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from "react-nati
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import ExitLessonModal from "../../components/common/ExitLessonModal";
+import { useExitLessonGuard } from "../../hooks/useExitLessonGuard";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { writingLessons } from "../../data/writingLessons";
 
 export default function WritingLessonScreen() {
   const navigation = useNavigation<any>();
+  const exitGuard = useExitLessonGuard(() => navigation.goBack());
   const route = useRoute<any>();
   const lesson = writingLessons.find(item => item.id === route.params.lessonId);
 
@@ -17,7 +20,7 @@ export default function WritingLessonScreen() {
     <LinearGradient colors={["#FFFDF8", "#FFF8EA", "#FFF2D6"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.backButton} onPress={exitGuard.requestExit}>
             <Ionicons name="arrow-back" size={25} color="#2563EB" /><Text style={styles.backText}>Writing</Text>
           </TouchableOpacity>
           <View style={styles.card}>
@@ -31,7 +34,13 @@ export default function WritingLessonScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
+      
+        <ExitLessonModal
+          visible={exitGuard.visible}
+          onStay={exitGuard.stay}
+          onLeave={exitGuard.leave}
+        />
+</SafeAreaView>
     </LinearGradient>
   );
 }
