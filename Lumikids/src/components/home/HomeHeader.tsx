@@ -41,20 +41,20 @@ const styles = StyleSheet.create({
 
   greeting: {
     fontSize: 18,
-    color: "#64748B",
+    color: "#ffffff",
   },
 
   name: {
     marginTop: 6,
     fontSize: 34,
     fontWeight: "800",
-    color: "#0F172A",
+    color: "#ffffff",
   },
 
   subtitle: {
     marginTop: 6,
     fontSize: 17,
-    color: "#64748B",
+    color: "#ffffff",
   },
 
 });

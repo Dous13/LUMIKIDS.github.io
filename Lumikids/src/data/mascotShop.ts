@@ -9,28 +9,28 @@ export const mascotShop = [
   {
     id: "frog",
     name: "Funny frog",
-    price: 300,
+    price: 25,
     image: require("../../assets/mascots/frog.png"),
   },
 
   {
     id: "fox",
     name: "Friendly Fox",
-    price: 500,
+    price: 50,
     image: require("../../assets/mascots/fox.png"),
   },
 
   {
     id: "cat",
     name: "Fat Cat",
-    price: 700,
+    price: 75,
     image: require("../../assets/mascots/cat.png"),
   },
 
   {
     id: "lion",
     name: "Brave Lion",
-    price: 1000,
+    price: 100,
     image: require("../../assets/mascots/lion.png"),
   },
 ];

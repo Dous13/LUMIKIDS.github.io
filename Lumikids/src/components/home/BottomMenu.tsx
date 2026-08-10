@@ -76,7 +76,7 @@ return (
         onPress={onDashboardPress}
       >
         <Text style={styles.buttonEmoji}>
-          📊
+          🖥️
         </Text>
 
         <Text style={styles.buttonText}>
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   shopButton: {
     flex: 1,
     marginHorizontal: 3,
-    backgroundColor: "#FFF4CC",
+    backgroundColor: "#EEF4FF",
     borderRadius: 18,
     paddingVertical: 14,
     alignItems: "center",
