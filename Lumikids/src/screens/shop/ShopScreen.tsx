@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import CoinIcon from "../../components/common/CoinIcon";
 import {
   FlatList,
   Image,
@@ -174,9 +175,10 @@ function purchaseMascot(item: any) {
       </Text>
 
       <View style={styles.coinCard}>
-          <Text style={styles.coinText}>
-            🪙 {student?.coins ?? 0} Coins
-          </Text>
+          <View style={styles.coinRow}>
+            <CoinIcon size={22} />
+            <Text style={styles.coinText}> {student?.coins ?? 0} Coins</Text>
+          </View>
       </View>
 
     </View>
@@ -364,6 +366,7 @@ const styles = StyleSheet.create({
       marginBottom:25,
   },
 
+  coinRow:{flexDirection:"row",alignItems:"center"},
   coinText:{
       fontSize:22,
       fontWeight:"900",

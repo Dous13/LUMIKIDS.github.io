@@ -81,7 +81,7 @@ export default function TeacherLoginScreen() {
 
               {error ? <View style={styles.error}><Text style={styles.errorText}>{error}</Text></View> : null}
 
-              <PrimaryButton title={loading ? "Please wait..." : mode === "login" ? "👩‍🏫 Open Teacher Home" : "✨ Create Teacher Account"} onPress={submit} />
+              <PrimaryButton title={loading ? "Please wait..." : mode === "login" ? "Sign in" : " Create Account"} onPress={submit} />
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -91,7 +91,9 @@ export default function TeacherLoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 }, safe: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
+  container: { 
+    flex: 1 
+  }, safe: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
   back: { alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,.92)", borderRadius: 22, paddingHorizontal: 15, paddingVertical: 10, elevation: 3 }, backText: { color: "#2563EB", fontWeight: "900", fontSize: 16 },
   hero: { alignItems: "center", marginTop: 24, marginBottom: 18 }, heroEmoji: { fontSize: 68 }, kicker: { marginTop: 5, color: "#2563EB", fontWeight: "900", letterSpacing: 1.2, fontSize: 12 }, title: { marginTop: 4, fontSize: 29, fontWeight: "900", color: "#1E3A8A", textAlign: "center" }, subtitle: { marginTop: 7, color: "#475569", textAlign: "center", lineHeight: 21, fontSize: 15 },
   card: { backgroundColor: "rgba(255,255,255,.96)", borderRadius: 30, padding: 22, elevation: 7 }, tabs: { flexDirection: "row", backgroundColor: "#EEF5FB", borderRadius: 16, padding: 4, marginBottom: 18 }, tab: { flex: 1, paddingVertical: 11, borderRadius: 13, alignItems: "center" }, activeTab: { backgroundColor: "#FFF", elevation: 2 }, tabText: { color: "#64748B", fontWeight: "800" }, activeTabText: { color: "#2563EB" }, error: { marginTop: 14, backgroundColor: "#FFF1F1", borderRadius: 14, padding: 12 }, errorText: { color: "#B91C1C", fontWeight: "700", lineHeight: 20 },

@@ -35,6 +35,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
 
     alignItems: "center",
+
+    marginTop: 20,
   },
 
   disabled: {

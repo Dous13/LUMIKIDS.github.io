@@ -15,17 +15,8 @@ export interface MathProgress {
 }
 
 export function initializeMathProgress(studentId: string) {
-  const existing = db.getFirstSync(
-    `
-    SELECT COUNT(*) AS total
-    FROM math_progress
-    WHERE studentId = ?
-    `,
-    [studentId]
-  ) as { total: number };
-
-  if (existing.total > 0) return;
-
+  // Reconcile local rows with the current lesson list without destroying
+  // existing completion or unlock state.
   mathLessons.forEach((lesson, index) => {
     db.runSync(
       `
@@ -39,6 +30,13 @@ export function initializeMathProgress(studentId: string) {
       [studentId, lesson.id, index === 0 ? 1 : 0]
     );
   });
+
+  if (mathLessons.length > 0) {
+    db.runSync(
+      `UPDATE math_progress SET unlocked = 1 WHERE studentId = ? AND lessonId = ?`,
+      [studentId, mathLessons[0].id]
+    );
+  }
 }
 
 export function getMathProgress(
@@ -121,15 +119,24 @@ export function completeMathLesson(
       synced = 0
     WHERE studentId = ? AND lessonId = ?
     `,
-    [
-      stars,
-      quizScore,
-      quizTotal,
-      xpEarned,
-      studentId,
-      lessonId,
-    ]
+    [stars, quizScore, quizTotal, xpEarned, studentId, lessonId]
   );
+
+  // Unlock the next lesson immediately when the current lesson is completed.
+  // Keeping this beside completion prevents the UI from ever showing a
+  // completed lesson while the next lesson remains locked.
+  const currentIndex = mathLessons.findIndex(lesson => lesson.id === lessonId);
+  if (currentIndex >= 0 && currentIndex < mathLessons.length - 1) {
+    const nextLesson = mathLessons[currentIndex + 1];
+    db.runSync(
+      `
+      UPDATE math_progress
+      SET unlocked = 1, synced = 0
+      WHERE studentId = ? AND lessonId = ?
+      `,
+      [studentId, nextLesson.id]
+    );
+  }
 
   addToSyncQueue("SYNC_STUDENT", { studentId });
 }

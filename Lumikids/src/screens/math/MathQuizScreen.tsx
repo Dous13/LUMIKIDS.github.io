@@ -21,7 +21,6 @@ import {
   completeMathLesson,
   isMathLessonCompleted,
   saveMathQuizProgress,
-  unlockNextMathLesson,
 } from "../../services/database/localMath";
 import { awardLocalCoins, awardLocalMathXP } from "../../services/database/localStudent";
 import { recordMistake } from "../../services/database/localMistakes";
@@ -94,7 +93,7 @@ export default function MathQuizScreen() {
     const coinsEarned = result.stars * 5;
 
     if (!alreadyCompleted) {
-      xpEarned = lesson!.xpReward;
+      xpEarned = lesson.xpReward;
       awardLocalMathXP(session.studentId, xpEarned);
       awardLocalCoins(session.studentId, coinsEarned);
     }
@@ -107,8 +106,6 @@ export default function MathQuizScreen() {
       result.stars,
       xpEarned
     );
-    unlockNextMathLesson(session.studentId, lessonId);
-
     navigation.replace("MathResult", {
       lessonId,
       score: finalScore,

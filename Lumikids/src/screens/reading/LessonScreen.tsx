@@ -25,8 +25,14 @@ export default function LessonScreen() {
 
   function nextStep() {
     setMessage("");
-    if (currentIndex < lesson.levels.length - 1) setCurrentIndex(value => value + 1);
-    else navigation.navigate("Quiz", { lessonId: lesson.id });
+
+    if (currentIndex < lesson!.levels.length - 1) {
+      setCurrentIndex(value => value + 1);
+    } else {
+      navigation.navigate("Quiz", {
+        lessonId: lesson!.id,
+      });
+    }
   }
 
   return (
@@ -63,5 +69,5 @@ export default function LessonScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 }, safeArea: { flex: 1 }, content: { flexGrow: 1, padding: 20, paddingBottom: 35 }, center: { flex: 1, justifyContent: "center", alignItems: "center" }, error: { color: "#64748B", fontSize: 20, fontWeight: "800" }, backButton: { alignSelf: "flex-start", paddingVertical: 8 }, backText: { fontSize: 18, fontWeight: "800", color: "#2563EB" }, progress: { textAlign: "center", color: "#64748B", fontWeight: "800", marginTop: 4 }, card: { marginTop: 12, backgroundColor: "#FFF", borderRadius: 30, padding: 24, alignItems: "center", elevation: 5 }, title: { fontSize: 30, fontWeight: "900", color: "#1E3A8A" }, emoji: { fontSize: 72, marginTop: 12 }, letter: { fontSize: 105, color: "#4DA8FF", fontWeight: "900" }, question: { marginTop: 18, fontSize: 24, textAlign: "center", fontWeight: "800", color: "#334155" }, bigAnswer: { marginTop: 16, fontSize: 45, fontWeight: "900", color: "#4DA8FF", textAlign: "center" }, blueButton: { width: "100%", marginTop: 24, backgroundColor: "#4DA8FF", paddingVertical: 16, borderRadius: 19, alignItems: "center" }, greenButton: { width: "100%", marginTop: 24, backgroundColor: "#57C36A", paddingVertical: 16, borderRadius: 19, alignItems: "center" }, buttonText: { color: "#FFF", fontWeight: "900", fontSize: 19 }, soundButton: { width: "100%", marginTop: 18, backgroundColor: "#EAF8FF", borderWidth: 2, borderColor: "#CFEAFF", borderRadius: 20, padding: 17, alignItems: "center" }, soundText: { color: "#275B8F", fontSize: 20, fontWeight: "900" }, answerButton: { width: "100%", backgroundColor: "#EAF8FF", borderRadius: 18, paddingVertical: 16, marginTop: 12, alignItems: "center", borderWidth: 2, borderColor: "#CFEAFF" }, answerText: { fontSize: 22, fontWeight: "900", color: "#275B8F" }, feedback: { marginTop: 14, color: "#B45309", fontWeight: "800", textAlign: "center" },
+  container: { flex: 1 }, safeArea: { flex: 1 }, content: { flexGrow: 1, padding: 20, paddingBottom: 35 }, center: { flex: 1, justifyContent: "center", alignItems: "center" }, error: { color: "#64748B", fontSize: 20, fontWeight: "800" }, backButton: { alignSelf: "flex-start", paddingVertical: 8 }, backText: { fontSize: 18, fontWeight: "800", color: "#2563EB" }, progress: { textAlign: "center", color: "#64748B", fontWeight: "800", marginTop: 4 }, card: { width: "100%", maxWidth: 560, alignSelf: "center", marginTop: 12, backgroundColor: "#FFF", borderRadius: 30, padding: 24, alignItems: "center", elevation: 5 }, title: { fontSize: 30, fontWeight: "900", color: "#1E3A8A" }, emoji: { fontSize: 72, marginTop: 12 }, letter: { fontSize: 105, color: "#4DA8FF", fontWeight: "900" }, question: { width: "100%", maxWidth: 480, marginTop: 18, fontSize: 24, lineHeight: 31, textAlign: "center", fontWeight: "800", color: "#334155" }, bigAnswer: { marginTop: 16, fontSize: 45, lineHeight: 54, fontWeight: "900", color: "#4DA8FF", textAlign: "center" }, blueButton: { width: "100%", marginTop: 24, backgroundColor: "#4DA8FF", paddingVertical: 16, borderRadius: 19, alignItems: "center" }, greenButton: { width: "100%", marginTop: 24, backgroundColor: "#57C36A", paddingVertical: 16, borderRadius: 19, alignItems: "center" }, buttonText: { color: "#FFF", fontWeight: "900", fontSize: 19 }, soundButton: { width: "100%", marginTop: 18, backgroundColor: "#EAF8FF", borderWidth: 2, borderColor: "#CFEAFF", borderRadius: 20, padding: 17, alignItems: "center" }, soundText: { color: "#275B8F", fontSize: 20, fontWeight: "900" }, answerButton: { width: "100%", backgroundColor: "#EAF8FF", borderRadius: 18, paddingVertical: 16, marginTop: 12, alignItems: "center", borderWidth: 2, borderColor: "#CFEAFF" }, answerText: { fontSize: 22, fontWeight: "900", color: "#275B8F" }, feedback: { marginTop: 14, color: "#B45309", fontWeight: "800", textAlign: "center" },
 });

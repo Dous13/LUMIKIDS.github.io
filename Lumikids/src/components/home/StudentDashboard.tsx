@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { DashboardSummary } from "../../services/database/localDashboard";
+import CoinIcon from "../common/CoinIcon";
 
 type Props = {
   summary: DashboardSummary;
@@ -42,7 +43,8 @@ export default function StudentDashboard({ summary }: Props) {
           <Text style={styles.pillText}>⚡ {summary.xp} XP</Text>
         </View>
         <View style={styles.pill}>
-          <Text style={styles.pillText}>🪙 {summary.coins}</Text>
+          <CoinIcon size={18} />
+          <Text style={styles.pillText}> {summary.coins}</Text>
         </View>
         <View style={[styles.pill, summary.mistakes > 0 && styles.practicePill]}>
           <Text style={styles.pillText}>
@@ -181,6 +183,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   pill: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
     paddingHorizontal: 10,

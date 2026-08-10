@@ -1,4 +1,5 @@
 import React from "react";
+import { BackHandler } from "react-native";
 import {
   Text,
   StyleSheet,
@@ -12,9 +13,11 @@ import {
   RouteProp,
   useNavigation,
   useRoute,
+  useFocusEffect,
 } from "@react-navigation/native";
 
 import { RootStackParamList } from "../../types/navigation";
+import CoinIcon from "../../components/common/CoinIcon";
 
 type Route = RouteProp<RootStackParamList, "MathResult">;
 
@@ -31,6 +34,18 @@ export default function MathResultScreen() {
     stars,
     unlocked,
   } = route.params;
+
+  const goToMath = React.useCallback(() => {
+    navigation.reset({ index: 1, routes: [{ name: "Home" }, { name: "Math" }] });
+  }, [navigation]);
+
+  useFocusEffect(React.useCallback(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      goToMath();
+      return true;
+    });
+    return () => sub.remove();
+  }, [goToMath]));
 
   const percentage = Math.round((score / total) * 100);
 
@@ -86,7 +101,7 @@ export default function MathResultScreen() {
             </View>
 
             <View style={styles.rewardCard}>
-              <Text style={styles.rewardEmoji}>🪙</Text>
+              <CoinIcon size={28} />
               <Text style={styles.rewardValue}>+{coins}</Text>
               <Text style={styles.rewardLabel}>Coins</Text>
             </View>
@@ -101,7 +116,7 @@ export default function MathResultScreen() {
           <TouchableOpacity
             style={styles.button}
             activeOpacity={0.88}
-            onPress={() => navigation.replace("Math")}
+            onPress={goToMath}
           >
             <Text style={styles.buttonText}>
               Continue →

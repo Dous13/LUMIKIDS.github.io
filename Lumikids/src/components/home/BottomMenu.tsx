@@ -1,4 +1,5 @@
 import React from "react";
+import CoinIcon from "../common/CoinIcon";
 import {
   View,
   TouchableOpacity,
@@ -40,9 +41,10 @@ return (
           ⭐ Lv.{level}
         </Text>
 
-        <Text style={styles.stat}>
-          🪙 {coins}
-        </Text>
+        <View style={styles.statWithIcon}>
+          <CoinIcon size={20} />
+          <Text style={styles.stat}> {coins}</Text>
+        </View>
 
         <Text style={styles.stat}>
           🔥 {streak}
@@ -140,6 +142,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 14,
   },
+
+  statWithIcon: { flexDirection: "row", alignItems: "center" },
 
   stat: {
     fontSize: 18,
