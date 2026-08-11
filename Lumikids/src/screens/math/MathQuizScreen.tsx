@@ -60,6 +60,7 @@ export default function MathQuizScreen() {
     );
   }
 
+  const currentLesson = lesson;
   const question = questions[currentIndex];
   const percentage = ((currentIndex + 1) / questions.length) * 100;
 
@@ -93,7 +94,7 @@ export default function MathQuizScreen() {
     const coinsEarned = result.stars * 5;
 
     if (!alreadyCompleted) {
-      xpEarned = lesson.xpReward;
+      xpEarned = currentLesson.xpReward;
       awardLocalMathXP(session.studentId, xpEarned);
       awardLocalCoins(session.studentId, coinsEarned);
     }

@@ -7,7 +7,8 @@
     "icon": "./assets/images/splashicon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dous13.Lumikids"
     },
     "android": {
       "adaptiveIcon": {
