@@ -15,11 +15,6 @@ export interface MathProgress {
 }
 
 export function initializeMathProgress(studentId: string) {
-  // Make sure every lesson currently defined in mathLessons
-  // has a local progress row for this student.
-  //
-  // INSERT OR IGNORE means existing progress is preserved,
-  // while newly added lessons are automatically created.
 
   mathLessons.forEach((lesson, index) => {
     db.runSync(
