@@ -1,6 +1,7 @@
 import { db } from "./database";
 import { mathLessons } from "../../data/mathLessons";
 import { addToSyncQueue } from "../sync/localQueue";
+import { evaluateQuiz } from "../../utils/ruleEngine";
 
 export interface MathProgress {
   studentId: string;
@@ -15,7 +16,6 @@ export interface MathProgress {
 }
 
 export function initializeMathProgress(studentId: string) {
-
   mathLessons.forEach((lesson, index) => {
     db.runSync(
       `
@@ -33,27 +33,19 @@ export function initializeMathProgress(studentId: string) {
       )
       VALUES (?, ?, ?, 0, 0, 0, 0, 0, 0)
       `,
-      [
-        studentId,
-        lesson.id,
-        index === 0 ? 1 : 0,
-      ]
+      [studentId, lesson.id, index === 0 ? 1 : 0]
     );
   });
 
-  // Always make the first lesson available.
+  // Ensure the first lesson is always available.
   if (mathLessons.length > 0) {
     db.runSync(
       `
       UPDATE math_progress
       SET unlocked = 1
-      WHERE studentId = ?
-        AND lessonId = ?
+      WHERE studentId = ? AND lessonId = ?
       `,
-      [
-        studentId,
-        mathLessons[0].id,
-      ]
+      [studentId, mathLessons[0].id]
     );
   }
 }
@@ -125,136 +117,129 @@ export function completeMathLesson(
   quizTotal: number,
   stars: number,
   xpEarned: number
-) {
-  // 1. Mark current lesson as completed.
-  const completionResult = db.runSync(
-    `
-    UPDATE math_progress
-    SET
-      completed = 1,
-      stars = ?,
-      quizScore = ?,
-      quizTotal = ?,
-      xpEarned = ?,
-      synced = 0
-    WHERE studentId = ? AND lessonId = ?
-    `,
-    [
-      stars,
-      quizScore,
-      quizTotal,
-      xpEarned,
-      studentId,
-      lessonId,
-    ]
-  );
+): boolean {
+  if (
+    !Number.isFinite(quizScore) ||
+    !Number.isFinite(quizTotal) ||
+    quizTotal <= 0 ||
+    quizScore < 0 ||
+    quizScore > quizTotal ||
+    !Number.isInteger(stars) ||
+    stars < 0 ||
+    stars > 3 ||
+    !Number.isFinite(xpEarned) ||
+    xpEarned < 0
+  ) {
+    throw new Error("Invalid math lesson completion data.");
+  }
 
-  console.log(
-    `[MathProgress] Completed lesson ${lessonId}. ` +
-    `Rows changed: ${completionResult.changes}`
-  );
-
-  // 2. Find the current lesson.
-  const currentIndex = mathLessons.findIndex(
+  const lessonIndex = mathLessons.findIndex(
     lesson => lesson.id === lessonId
   );
 
-  if (
-    currentIndex === -1 ||
-    currentIndex >= mathLessons.length - 1
-  ) {
-    console.log(
-      `[MathProgress] No next lesson for lesson ${lessonId}.`
-    );
-
-    addToSyncQueue("SYNC_STUDENT", {
-      studentId,
-    });
-
-    return;
+  if (lessonIndex === -1) {
+    throw new Error(`Math lesson ${lessonId} does not exist.`);
   }
 
-  // 3. Get the next lesson.
-  const nextLesson = mathLessons[currentIndex + 1];
+  // Evaluate the result using the shared rule engine.
+  const ruleResult = evaluateQuiz(quizScore, quizTotal);
 
-  console.log(
-    `[MathProgress] Next lesson: ${nextLesson.id} - ${nextLesson.title}`
-  );
-
-  // 4. Make sure the next lesson exists locally.
-  db.runSync(
-    `
-    INSERT OR IGNORE INTO math_progress
-    (
+  // Failed assessments save their score but do not unlock
+  // another lesson or mark the current lesson completed.
+  if (!ruleResult.passed) {
+    saveMathQuizProgress(
       studentId,
       lessonId,
-      unlocked,
-      completed,
-      stars,
       quizScore,
-      quizTotal,
-      xpEarned,
-      synced
-    )
-    VALUES (?, ?, 1, 0, 0, 0, 0, 0, 0)
-    `,
-    [
-      studentId,
-      nextLesson.id,
-    ]
-  );
+      quizTotal
+    );
 
-  // 5. Explicitly unlock the next lesson.
-  const unlockResult = db.runSync(
-    `
-    UPDATE math_progress
-    SET
-      unlocked = 1,
-      synced = 0
-    WHERE studentId = ?
-      AND lessonId = ?
-    `,
-    [
-      studentId,
-      nextLesson.id,
-    ]
-  );
+    return false;
+  }
 
-  console.log(
-    `[MathProgress] Unlocked lesson ${nextLesson.id}. ` +
-    `Rows changed: ${unlockResult.changes}`
-  );
+  initializeMathProgress(studentId);
 
-  // 6. Verify the actual SQLite value.
-  const verification = db.getFirstSync(
-    `
-    SELECT
-      lessonId,
-      unlocked,
-      completed
-    FROM math_progress
-    WHERE studentId = ?
-      AND lessonId = ?
-    `,
-    [
-      studentId,
-      nextLesson.id,
-    ]
-  ) as {
-    lessonId: number;
-    unlocked: number;
-    completed: number;
-  } | null;
+  const nextLesson = mathLessons[lessonIndex + 1];
 
-  console.log(
-    "[MathProgress] Unlock verification:",
-    verification
-  );
+  // Update completion and unlock the next lesson atomically.
+  db.withTransactionSync(() => {
+    const completionResult = db.runSync(
+      `
+      UPDATE math_progress
+      SET
+        completed = 1,
+        stars = MAX(stars, ?),
+        quizScore = ?,
+        quizTotal = ?,
+        xpEarned = MAX(xpEarned, ?),
+        synced = 0
+      WHERE studentId = ? AND lessonId = ?
+      `,
+      [
+        stars,
+        quizScore,
+        quizTotal,
+        xpEarned,
+        studentId,
+        lessonId,
+      ]
+    );
 
-  // 7. Queue Firebase synchronization.
-  addToSyncQueue("SYNC_STUDENT", {
-    studentId,
+    if (completionResult.changes === 0) {
+      throw new Error(
+        `Progress record missing for lesson ${lessonId}.`
+      );
+    }
+
+    if (nextLesson) {
+      db.runSync(
+        `
+        INSERT OR IGNORE INTO math_progress
+        (
+          studentId,
+          lessonId,
+          unlocked,
+          completed,
+          stars,
+          quizScore,
+          quizTotal,
+          xpEarned,
+          synced
+        )
+        VALUES (?, ?, 1, 0, 0, 0, 0, 0, 0)
+        `,
+        [studentId, nextLesson.id]
+      );
+
+      db.runSync(
+        `
+        UPDATE math_progress
+        SET unlocked = 1, synced = 0
+        WHERE studentId = ? AND lessonId = ?
+        `,
+        [studentId, nextLesson.id]
+      );
+    }
   });
+
+  console.log(
+    `[MathProgress] Completed lesson ${lessonId}.`
+  );
+
+  if (nextLesson) {
+    console.log(
+      `[MathProgress] Unlocked lesson ${nextLesson.id} - ${nextLesson.title}.`
+    );
+  } else {
+    console.log(
+      `[MathProgress] Final math lesson completed.`
+    );
+  }
+
+  // Queue synchronization only after the database transaction succeeds.
+  addToSyncQueue("SYNC_STUDENT", { studentId });
+
+  return true;
 }
 
 export function unlockNextMathLesson(
@@ -262,9 +247,9 @@ export function unlockNextMathLesson(
   currentLessonId: number
 ) {
   // Kept for compatibility with existing screens.
-  // The actual unlock now happens inside completeMathLesson().
+  // Unlocking is handled by completeMathLesson().
   console.log(
-    `unlockNextMathLesson() is handled by completeMathLesson().`
+    `[MathProgress] unlockNextMathLesson() is handled by completeMathLesson(). Current lesson: ${currentLessonId}, student: ${studentId}.`
   );
 }
 
@@ -274,6 +259,16 @@ export function saveMathQuizProgress(
   quizScore: number,
   quizTotal: number
 ) {
+  if (
+    !Number.isFinite(quizScore) ||
+    !Number.isFinite(quizTotal) ||
+    quizTotal <= 0 ||
+    quizScore < 0 ||
+    quizScore > quizTotal
+  ) {
+    throw new Error("Invalid math quiz progress data.");
+  }
+
   db.runSync(
     `
     UPDATE math_progress

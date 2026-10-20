@@ -1,52 +1,68 @@
 export type RuleResult = {
   passed: boolean;
   stars: number;
+  percentage: number;
   message: string;
+  action: "advance" | "practice";
 };
+
+const PASSING_THRESHOLD = 75;
+const THREE_STAR_THRESHOLD = 90;
 
 export function evaluateQuiz(
   score: number,
   totalQuestions: number
 ): RuleResult {
+  // Validate the assessment data.
+  if (
+    !Number.isFinite(score) ||
+    !Number.isFinite(totalQuestions) ||
+    totalQuestions <= 0 ||
+    score < 0 ||
+    score > totalQuestions
+  ) {
+    console.error("[LUMIKIDS] Invalid quiz evaluation:", {
+      score,
+      totalQuestions,
+      scoreType: typeof score,
+      totalQuestionsType: typeof totalQuestions,
+    });
 
-  const percentage =
-    (score / totalQuestions) * 100;
+    throw new Error("Invalid quiz score or total questions.");
+  }
 
-  // Rule 1
-  if (percentage >= 90) {
+  const percentage = Math.round(
+    (score / totalQuestions) * 100
+  );
+
+  // Rule 1: Excellent performance.
+  if (percentage >= THREE_STAR_THRESHOLD) {
     return {
       passed: true,
       stars: 3,
-      message:
-        "Excellent! You unlocked the next lesson!",
+      percentage,
+      message: "Excellent! You unlocked the next lesson!",
+      action: "advance",
     };
   }
 
-  // Rule 2
-  if (percentage >= 70) {
+  // Rule 2: Meets the passing threshold.
+  if (percentage >= PASSING_THRESHOLD) {
     return {
       passed: true,
       stars: 2,
-      message:
-        "Good job! Keep practicing!",
+      percentage,
+      message: "Great job! You're ready for the next lesson!",
+      action: "advance",
     };
   }
 
-  // Rule 3
-  if (percentage >= 50) {
-    return {
-      passed: true,
-      stars: 1,
-      message:
-        "You passed! Let's continue learning!",
-    };
-  }
-
-  // Rule 4
+  // Rule 3: Requires additional practice.
   return {
     passed: false,
     stars: 0,
-    message:
-      "Let's review this lesson first.",
+    percentage,
+    message: "Let's practice some more before moving on!",
+    action: "practice",
   };
 }
