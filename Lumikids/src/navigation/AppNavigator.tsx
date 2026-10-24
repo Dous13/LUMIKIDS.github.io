@@ -25,6 +25,8 @@ import MathResultScreen from "../screens/math/MathResultScreen";
 import TeacherHomeScreen from "../screens/teacher/TeacherHomeScreen";
 import TeacherClassScreen from "../screens/teacher/TeacherClassScreen";
 import TeacherStudentScreen from "../screens/teacher/TeacherStudentScreen";
+import PhygitalScanScreen from "../screens/phygital/PhygitalScanScreen";
+import WorksheetCaptureScreen from "../screens/phygital/WorksheetCaptureScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -60,6 +62,14 @@ export default function AppNavigator() {
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
+        <Stack.Screen
+          name="PhygitalScan"
+          component={PhygitalScanScreen}
+        />
+        <Stack.Screen
+          name="WorksheetCapture"
+          component={WorksheetCaptureScreen}
+        />
         <Stack.Screen
           name="StudentLogin"
           component={StudentLoginScreen}

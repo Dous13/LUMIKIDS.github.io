@@ -98,8 +98,8 @@ export default function QuizScreen() {
     const nextLesson = readingLessons[currentIndex + 1];
 
     if (!alreadyCompleted) {
-      awardLocalReadingXP(session.studentId, lesson.xp);
-      awardLocalCoins(session.studentId, lesson.coins);
+      awardLocalReadingXP(session.studentId, validLesson.xp);
+      awardLocalCoins(session.studentId, validLesson.coins);
     }
 
     completeLesson(
@@ -115,8 +115,8 @@ export default function QuizScreen() {
     navigation.replace("Reward", {
       subject: "reading",
       lessonId,
-      xp: alreadyCompleted ? 0 : lesson.xp,
-      coins: alreadyCompleted ? 0 : lesson.coins,
+      xp: alreadyCompleted ? 0 : validLesson.xp,
+      coins: alreadyCompleted ? 0 : validLesson.coins,
       stars: result.stars,
       unlocked: !!nextLesson,
       levelUp: false,

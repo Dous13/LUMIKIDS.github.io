@@ -24,7 +24,15 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow LUMIKIDS to scan printed learning cards.",
+          "barcodeScannerEnabled": true
+        }
+      ],
+      "expo-font"
     ]
   }
 }

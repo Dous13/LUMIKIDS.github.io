@@ -28,6 +28,7 @@ import {
   getNextLevelXP,
 } from "../../utils/xp";
 import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -118,10 +119,29 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
-          <HomeHeader
-            name={student.name}
-          />
+          <HomeHeader name={student.name}/>
+          <TouchableOpacity
+            style={styles.phygitalButton}
+            activeOpacity={0.88}
+            onPress={() => navigation.navigate("PhygitalScan")}
+          >
+            <Text style={styles.phygitalEmoji}>📷</Text>
 
+            <View style={styles.phygitalTextContainer}>
+              <Text style={styles.phygitalTitle}>
+                Scan a Learning Card
+              </Text>
+              <Text style={styles.phygitalSubtitle}>
+                Bring paper activities to life!
+              </Text>
+            </View>
+
+            <Ionicons
+              name="chevron-forward"
+              size={24}
+              color="#2563EB"
+            />
+          </TouchableOpacity>
           <MascotCard avatar={student.avatar} />
 
           <SubjectButton
@@ -147,6 +167,22 @@ export default function HomeScreen() {
             onPress={() => navigation.navigate("Math")
             }
           />
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate("WorksheetCapture")}
+          style={{
+            backgroundColor: "#246BFD",
+            padding: 16,
+            borderRadius: 14,
+            alignItems: "center",
+            marginTop: 12,
+          }}
+        >
+          <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>
+            Scan Worksheet
+          </Text>
+        </TouchableOpacity>
+
         </ScrollView>
         <BottomMenu
           xp={student.xp}
@@ -288,5 +324,34 @@ const styles = StyleSheet.create({
     backgroundColor: "rgb(173, 134, 206)",
     left: 60,
     bottom: 120,
+  },
+
+  phygitalButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 2,
+    borderColor: "#DBEAFE",
+    elevation: 4,
+  },
+  phygitalEmoji: {
+    fontSize: 34,
+    marginRight: 13,
+  },
+  phygitalTextContainer: {
+    flex: 1,
+  },
+  phygitalTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: "#1E3A8A",
+  },
+  phygitalSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#64748B",
   },
 });

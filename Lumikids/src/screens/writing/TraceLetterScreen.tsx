@@ -29,8 +29,8 @@ export default function TraceLetterScreen() {
   const onDrawingChange = useCallback((value: boolean) => setHasDrawing(value), []);
 
   if (!lesson) return <SafeAreaView style={styles.center}><Text style={styles.error}>Lesson not found.</Text></SafeAreaView>;
-
-  const target = phase === "uppercase" ? lesson.letter : phase === "lowercase" ? lesson.letter.toLowerCase() : lesson.word;
+  const validLesson = lesson;
+  const target = phase === "uppercase" ? validLesson.letter : phase === "lowercase" ? validLesson.letter.toLowerCase() : validLesson.word;
   const phaseNumber = phase === "uppercase" ? 1 : phase === "lowercase" ? 2 : 3;
 
   function clearDrawing() {
@@ -64,21 +64,21 @@ export default function TraceLetterScreen() {
       return;
     }
 
-    const alreadyCompleted = isWritingLessonCompleted(session.studentId, lesson.id);
+    const alreadyCompleted = isWritingLessonCompleted(session.studentId, validLesson.id);
     if (!alreadyCompleted) {
-      awardLocalWritingXP(session.studentId, lesson.xp);
-      awardLocalCoins(session.studentId, lesson.coins);
+      awardLocalWritingXP(session.studentId, validLesson.xp);
+      awardLocalCoins(session.studentId, validLesson.coins);
     }
-    completeWritingLesson(session.studentId, lesson.id, 3);
-    unlockNextWritingLesson(session.studentId, lesson.id);
+    completeWritingLesson(session.studentId, validLesson.id, 3);
+    unlockNextWritingLesson(session.studentId, validLesson.id);
 
     navigation.replace("Reward", {
       subject: "writing",
-      lessonId: lesson.id,
-      xp: alreadyCompleted ? 0 : lesson.xp,
-      coins: alreadyCompleted ? 0 : lesson.coins,
+      lessonId: validLesson.id,
+      xp: alreadyCompleted ? 0 : validLesson.xp,
+      coins: alreadyCompleted ? 0 : validLesson.coins,
       stars: 3,
-      unlocked: writingLessons.findIndex(item => item.id === lesson.id) < writingLessons.length - 1,
+      unlocked: writingLessons.findIndex(item => item.id === validLesson.id) < writingLessons.length - 1,
       levelUp: false,
     });
   }

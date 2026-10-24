@@ -13,6 +13,8 @@ export type RootStackParamList = {
   Shop: undefined;
   Writing: undefined;
   Math: undefined;
+  PhygitalScan: undefined;
+  WorksheetCapture: undefined;
   MathQuiz: {
     lessonId: number;
   };

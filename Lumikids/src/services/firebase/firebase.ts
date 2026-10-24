@@ -1,6 +1,12 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { Auth, initializeAuth, getAuth, getReactNativePersistence } from "firebase/auth";
+import {
+  Auth,
+  initializeAuth,
+  getAuth,
+  // @ts-expect-error Firebase 12 React Native export is missing from some type declarations
+  getReactNativePersistence,
+} from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
