@@ -15,6 +15,7 @@ export type RootStackParamList = {
   Math: undefined;
   PhygitalScan: undefined;
   WorksheetCapture: undefined;
+  WorksheetPreview: undefined;
   MathQuiz: {
     lessonId: number;
   };

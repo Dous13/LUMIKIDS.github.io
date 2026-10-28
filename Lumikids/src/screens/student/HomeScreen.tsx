@@ -142,6 +142,30 @@ export default function HomeScreen() {
               color="#2563EB"
             />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.phygitalButton}
+            activeOpacity={0.88}
+            onPress={() => navigation.navigate("WorksheetPreview")}
+          >
+            <Text style={styles.phygitalEmoji}>📝</Text>
+
+            <View style={styles.phygitalTextContainer}>
+              <Text style={styles.phygitalTitle}>
+                Printable Worksheets
+              </Text>
+              <Text style={styles.phygitalSubtitle}>
+                Create and print learning activities!
+              </Text>
+            </View>
+
+            <Ionicons
+              name="chevron-forward"
+              size={24}
+              color="#2563EB"
+            />
+          </TouchableOpacity>
+
           <MascotCard avatar={student.avatar} />
 
           <SubjectButton
@@ -167,21 +191,6 @@ export default function HomeScreen() {
             onPress={() => navigation.navigate("Math")
             }
           />
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate("WorksheetCapture")}
-          style={{
-            backgroundColor: "#246BFD",
-            padding: 16,
-            borderRadius: 14,
-            alignItems: "center",
-            marginTop: 12,
-          }}
-        >
-          <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "700" }}>
-            Scan Worksheet
-          </Text>
-        </TouchableOpacity>
 
         </ScrollView>
         <BottomMenu

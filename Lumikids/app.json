@@ -32,7 +32,8 @@
           "barcodeScannerEnabled": true
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-sharing"
     ]
   }
 }
