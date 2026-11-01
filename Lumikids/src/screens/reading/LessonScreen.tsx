@@ -29,7 +29,8 @@ export default function LessonScreen() {
     if (currentIndex < lesson!.levels.length - 1) {
       setCurrentIndex(value => value + 1);
     } else {
-      navigation.navigate("Quiz", {
+      navigation.navigate("LessonActivityChoice", {
+        subject: "reading",
         lessonId: lesson!.id,
       });
     }

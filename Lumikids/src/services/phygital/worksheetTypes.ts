@@ -43,9 +43,23 @@ export type WorksheetResponseStatus =
   | "multiple-marks"
   | "unreadable";
 
-export interface WorksheetResponse {
-  questionId: string;
-  answer: WorksheetAnswer | null;
-  status: WorksheetResponseStatus;
-  confidence: number;
+export interface WorksheetTracing {
+  uppercase: string;
+  lowercase: string;
+  word: string;
+  emoji: string;
+}
+
+export interface GeneratedWorksheet {
+  id: string;
+  title: string;
+  subject: WorksheetSubject;
+  ageRange: {
+    min: number;
+    max: number;
+  };
+  lessonId: string;
+  questions: WorksheetQuestion[];
+  tracing?: WorksheetTracing;
+  createdAt: string;
 }

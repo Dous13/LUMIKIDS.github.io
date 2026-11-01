@@ -29,7 +29,12 @@ export default function WritingLessonScreen() {
             <Text style={styles.letter}>{lesson.letter}</Text>
             <Text style={styles.word}>{lesson.word}</Text>
             <Text style={styles.description}>Trace the letter carefully, then practice writing the word.</Text>
-            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("TraceLetter", { lessonId: lesson.id })}>
+            <TouchableOpacity style={styles.button} onPress={() =>
+  navigation.navigate("LessonActivityChoice", {
+    subject: "writing",
+    lessonId: lesson.id,
+  })
+}>
               <Text style={styles.buttonText}>Start Tracing →</Text>
             </TouchableOpacity>
           </View>

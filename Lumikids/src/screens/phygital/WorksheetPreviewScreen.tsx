@@ -10,15 +10,25 @@ import {
   View,
   Alert,
 } from "react-native";
+
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { Ionicons } from "@expo/vector-icons";
-import { createMathWorksheet } from "../../data/phygitalWorksheets";
-import { useNavigation } from "@react-navigation/native";
+
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
+
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+import { createMathWorksheet } from "../../data/phygitalWorksheets";
+
+import type { GeneratedWorksheet } from "../../services/phygital/worksheetTypes";
 import type { RootStackParamList } from "../../types/navigation";
 
-const worksheet = createMathWorksheet([1, 2, 3]);
+import { createWorksheet } from "../../data/phygitalWorksheets";
 
 function escapeHtml(value: string): string {
   return value
@@ -29,16 +39,50 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#039;");
 }
 
-function createWorksheetHtml(): string {
+function createWorksheetHtml(worksheet: GeneratedWorksheet): string {
+  const tracingHtml = worksheet.tracing
+  ? `
+    <section class="tracing-section">
+      <h2>1. Trace the uppercase letter</h2>
+      <div class="trace-sample">
+        ${escapeHtml(worksheet.tracing.uppercase)}
+      </div>
+      <div class="writing-lines"></div>
+
+      <h2>2. Trace the lowercase letter</h2>
+      <div class="trace-sample">
+        ${escapeHtml(worksheet.tracing.lowercase)}
+      </div>
+      <div class="writing-lines"></div>
+
+      <h2>3. Trace the word</h2>
+      <div class="trace-word">
+        ${escapeHtml(worksheet.tracing.word)}
+      </div>
+      <div class="writing-lines"></div>
+
+      <div class="trace-picture">
+        ${escapeHtml(worksheet.tracing.emoji)}
+      </div>
+      <p class="encouragement">Great work! Keep practicing!</p>
+    </section>
+  `
+  : "";
   const questionsHtml = worksheet.questions
     .map(
       (question, index) => `
         <section class="question question-${index + 1}">
+        
           <div class="question-number">QUESTION ${index + 1}</div>
-          <div class="illustration">${escapeHtml(
-            question.illustration ?? ""
-          )}</div>
-          <div class="prompt">${escapeHtml(question.prompt)}</div>
+
+          <div class="illustration">
+            ${escapeHtml(question.illustration ?? "")}
+          </div>
+
+          <div class="prompt">
+            ${escapeHtml(question.prompt)}
+          </div>
+
           <div class="bubbles">
             ${question.choices
               .map(
@@ -46,9 +90,9 @@ function createWorksheetHtml(): string {
                   <div class="choice">
                     <div class="bubble"></div>
                     <div class="choice-label">${choice.id}</div>
-                    <div class="choice-text">${escapeHtml(
-                      choice.text
-                    )}</div>
+                    <div class="choice-text">
+                      ${escapeHtml(choice.text)}
+                    </div>
                   </div>
                 `
               )
@@ -65,6 +109,7 @@ function createWorksheetHtml(): string {
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+
         <style>
           @page {
             size: A4 portrait;
@@ -148,20 +193,23 @@ function createWorksheetHtml(): string {
             position: absolute;
             left: 16mm;
             right: 16mm;
-            height: 42mm;
+            height: 34mm;
             border: 1px solid #d5e2f2;
             border-radius: 4mm;
-            padding: 4mm;
+            padding: 3mm;
           }
 
           .question-1 { top: 77mm; }
-          .question-2 { top: 121.5mm; }
-          .question-3 { top: 166mm; }
+          .question-2 { top: 114mm; }
+          .question-3 { top: 151mm; }
+          .question-4 { top: 188mm; }
 
-          .question-number {
-            font-size: 9pt;
-            font-weight: bold;
-            color: #246bce;
+          .bubbles {
+            top: 22mm;
+          }
+
+          .footer {
+            top: 238mm;
           }
 
           .illustration {
@@ -232,8 +280,67 @@ function createWorksheetHtml(): string {
             font-size: 8pt;
             color: #64748b;
           }
+
+        .tracing-section {
+          position: absolute;
+          top: 68mm;
+          left: 16mm;
+          right: 16mm;
+        }
+
+        .tracing-section h2 {
+          font-size: 13pt;
+          color: #246bce;
+          margin: 7mm 0 3mm;
+        }
+
+        .trace-sample {
+          font-size: 48pt;
+          font-weight: bold;
+          color: #d3dce9;
+          letter-spacing: 8mm;
+          text-align: center;
+          padding: 3mm;
+        }
+
+        .trace-word {
+          font-size: 34pt;
+          font-weight: bold;
+          color: #d3dce9;
+          letter-spacing: 3mm;
+          text-align: center;
+          padding: 4mm;
+        }
+
+        .writing-lines {
+          height: 15mm;
+          margin: 2mm 0 5mm;
+          border-top: 1px dashed #8ba4c4;
+          border-bottom: 1px solid #8ba4c4;
+          background: repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 7mm,
+            #dce6f2 7mm,
+            #dce6f2 7.2mm
+          );
+        }
+
+        .trace-picture {
+          font-size: 34pt;
+          text-align: center;
+          margin-top: 3mm;
+        }
+
+        .encouragement {
+          text-align: center;
+          color: #246bce;
+          font-size: 12pt;
+          font-weight: bold;
+        }
         </style>
       </head>
+
       <body>
         <main class="page">
           <header class="header">
@@ -247,13 +354,20 @@ function createWorksheetHtml(): string {
           </div>
 
           <div class="instruction">
-            Look at each question. Fill in ONE bubble for your answer.
+            ${
+              worksheet.subject === "writing"
+                ? "Trace the letters and word using your pencil."
+                : "Look at each question. Fill in ONE bubble for your answer."
+            }
           </div>
 
-          ${questionsHtml}
+          ${worksheet.subject === "writing" ? tracingHtml : questionsHtml}
 
           <footer class="footer">
-            Great job! Check that you answered all three questions.
+          ${worksheet.subject === "writing"
+            ? "Great job! Keep practicing your letters."
+            : "Great job! Check that you answered all the questions."}
+
             <div class="worksheet-id">
               Worksheet ID: ${escapeHtml(worksheet.id)}
             </div>
@@ -264,7 +378,6 @@ function createWorksheetHtml(): string {
   `;
 }
 
-
 export default function WorksheetPreviewScreen() {
   const navigation =
     useNavigation<
@@ -274,14 +387,21 @@ export default function WorksheetPreviewScreen() {
       >
     >();
 
-  const [busy, setBusy] = useState(false);
+  const route =
+    useRoute<RouteProp<RootStackParamList, "WorksheetPreview">>();
 
+  const { subject, lessonId } = route.params;
+
+  const worksheet = createWorksheet(subject, lessonId);
+
+  const [busy, setBusy] = useState(false);
 
   async function printWorksheet() {
     try {
       setBusy(true);
+
       await Print.printAsync({
-        html: createWorksheetHtml(),
+        html: createWorksheetHtml(worksheet),
       });
     } catch (error) {
       Alert.alert(
@@ -300,7 +420,7 @@ export default function WorksheetPreviewScreen() {
       setBusy(true);
 
       const file = await Print.printToFileAsync({
-        html: createWorksheetHtml(),
+        html: createWorksheetHtml(worksheet),
       });
 
       const sharingAvailable = await Sharing.isAvailableAsync();
@@ -333,34 +453,40 @@ export default function WorksheetPreviewScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-
         <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-        activeOpacity={0.85}
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.85}
         >
-        <Ionicons name="arrow-back" size={21} color="#246BCE" />
-        <Text style={styles.backButtonText}>Back</Text>
+          <Ionicons name="arrow-back" size={21} color="#246BCE" />
+          <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
 
-
         <TouchableOpacity
-        style={[styles.primaryButton, busy && styles.disabled]}
-        onPress={printWorksheet}
-        disabled={busy}
+          style={[styles.primaryButton, busy && styles.disabled]}
+          onPress={printWorksheet}
+          disabled={busy}
         >
-        <Ionicons name="print-outline" size={21} color="#FFFFFF" />
-        <Text style={styles.primaryButtonText}>Print Worksheet</Text>
+          <Ionicons name="print-outline" size={21} color="#FFFFFF" />
+          <Text style={styles.primaryButtonText}>Print Worksheet</Text>
         </TouchableOpacity>
-
 
         <Text style={styles.heading}>{worksheet.title}</Text>
+
         <Text style={styles.subtitle}>
-          Printable worksheet • A4 portrait • 3 questions
+          Printable worksheet • A4 portrait •{" "}
+          {worksheet.subject === "writing"
+            ? "Letter tracing"
+            : `${worksheet.questions.length} questions`}
         </Text>
 
         <View style={styles.notice}>
-          <Ionicons name="information-circle" size={22} color="#246BCE" />
+          <Ionicons
+            name="information-circle"
+            size={22}
+            color="#246BCE"
+          />
+
           <Text style={styles.noticeText}>
             Print the page at its original size. The child should fill
             only one bubble per question using a pencil or dark pen.
@@ -382,8 +508,14 @@ export default function WorksheetPreviewScreen() {
             {question.choices.map((choice) => (
               <View key={choice.id} style={styles.choice}>
                 <View style={styles.bubble} />
-                <Text style={styles.choiceLabel}>{choice.id}.</Text>
-                <Text style={styles.choiceText}>{choice.text}</Text>
+
+                <Text style={styles.choiceLabel}>
+                  {choice.id}.
+                </Text>
+
+                <Text style={styles.choiceText}>
+                  {choice.text}
+                </Text>
               </View>
             ))}
           </View>
@@ -398,7 +530,12 @@ export default function WorksheetPreviewScreen() {
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
-              <Ionicons name="document-outline" size={22} color="#FFFFFF" />
+              <Ionicons
+                name="document-outline"
+                size={22}
+                color="#FFFFFF"
+              />
+
               <Text style={styles.primaryButtonText}>
                 Save / Share Printable PDF
               </Text>
@@ -419,11 +556,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F0F7FF",
   },
-    content: {
+
+  content: {
     paddingHorizontal: 20,
     paddingTop: 62,
     paddingBottom: 40,
-    },
+  },
+
   backButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -435,21 +574,25 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 18,
   },
+
   backButtonText: {
     color: "#246BCE",
     fontWeight: "700",
   },
+
   heading: {
     fontSize: 26,
     fontWeight: "800",
     color: "#244A86",
     marginBottom: 8,
   },
+
   subtitle: {
     fontSize: 14,
     color: "#52657D",
     marginBottom: 18,
   },
+
   notice: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -459,12 +602,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#E2EEFF",
     marginBottom: 18,
   },
+
   noticeText: {
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
     color: "#244A86",
   },
+
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -473,15 +618,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#DCE8F8",
   },
+
   questionNumber: {
     color: "#5277B8",
     fontSize: 13,
     fontWeight: "800",
   },
+
   illustration: {
     fontSize: 28,
     marginTop: 8,
   },
+
   prompt: {
     fontSize: 17,
     fontWeight: "700",
@@ -489,6 +637,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 12,
   },
+
   choice: {
     flexDirection: "row",
     alignItems: "center",
@@ -496,6 +645,7 @@ const styles = StyleSheet.create({
     marginTop: 9,
     minHeight: 28,
   },
+
   bubble: {
     width: 22,
     height: 22,
@@ -503,16 +653,19 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#25354D",
   },
+
   choiceLabel: {
     fontSize: 15,
     fontWeight: "800",
     color: "#5277B8",
   },
+
   choiceText: {
     flex: 1,
     fontSize: 16,
     color: "#25354D",
   },
+
   primaryButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -523,25 +676,21 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginTop: 8,
   },
+
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "800",
   },
+
   disabled: {
     opacity: 0.6,
   },
+
   footer: {
     textAlign: "center",
     color: "#64748B",
     fontSize: 12,
     marginTop: 18,
-  },
-  backText: {
-    marginTop: 6,
-    lineHeight: 20, 
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#2563EB",
   },
 });

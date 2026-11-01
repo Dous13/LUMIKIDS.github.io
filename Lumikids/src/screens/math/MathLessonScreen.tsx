@@ -77,7 +77,10 @@ export default function MathLessonScreen() {
           <TouchableOpacity
             style={styles.button}
             onPress={() => lastPage
-              ? navigation.replace("MathQuiz", { lessonId })
+              ? navigation.navigate("LessonActivityChoice", {
+                  subject: "math",
+                  lessonId: lessonId,
+                })
               : setPage(value => value + 1)}
           >
             <Text style={styles.buttonText}>{lastPage ? "Start Quiz ⭐" : "Next ➜"}</Text>

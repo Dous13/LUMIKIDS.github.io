@@ -15,7 +15,14 @@ export type RootStackParamList = {
   Math: undefined;
   PhygitalScan: undefined;
   WorksheetCapture: undefined;
-  WorksheetPreview: undefined;
+  LessonActivityChoice: {
+    subject: "reading" | "writing" | "math";
+    lessonId: string | number;
+  };
+  WorksheetPreview: {
+    subject: "reading" | "writing" | "math";
+    lessonId: string | number;
+  };
   MathQuiz: {
     lessonId: number;
   };

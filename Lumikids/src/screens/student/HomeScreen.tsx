@@ -143,29 +143,6 @@ export default function HomeScreen() {
             />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.phygitalButton}
-            activeOpacity={0.88}
-            onPress={() => navigation.navigate("WorksheetPreview")}
-          >
-            <Text style={styles.phygitalEmoji}>📝</Text>
-
-            <View style={styles.phygitalTextContainer}>
-              <Text style={styles.phygitalTitle}>
-                Printable Worksheets
-              </Text>
-              <Text style={styles.phygitalSubtitle}>
-                Create and print learning activities!
-              </Text>
-            </View>
-
-            <Ionicons
-              name="chevron-forward"
-              size={24}
-              color="#2563EB"
-            />
-          </TouchableOpacity>
-
           <MascotCard avatar={student.avatar} />
 
           <SubjectButton
