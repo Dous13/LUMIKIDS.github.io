@@ -72,9 +72,10 @@ export default function QuizScreen() {
     const result = evaluateQuiz(finalScore, quiz.length);
 
     if (!result.passed) {
-      setMessage(
-        result.message || "Let's review the lesson and try again."
-      );
+      navigation.replace("RemedialQuiz", {
+        subject: "reading",
+        lessonId,
+      });
       return;
     }
 
@@ -135,15 +136,16 @@ export default function QuizScreen() {
       const session = await getSession();
 
       if (session) {
-        recordMistake(
-          session.studentId,
-          "reading",
-          lessonId,
-          currentQuestion,
-          question.question,
-          choice,
-          question.answer
-        );
+      recordMistake(
+        session.studentId,
+        "reading",
+        lessonId,
+        currentQuestion,
+        question.question,
+        choice,
+        question.answer,
+        question.skillId
+      );
       }
 
       setMessage(

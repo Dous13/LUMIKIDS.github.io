@@ -120,28 +120,6 @@ export default function HomeScreen() {
           contentContainerStyle={styles.content}
         >
           <HomeHeader name={student.name}/>
-          <TouchableOpacity
-            style={styles.phygitalButton}
-            activeOpacity={0.88}
-            onPress={() => navigation.navigate("PhygitalScan")}
-          >
-            <Text style={styles.phygitalEmoji}>📷</Text>
-
-            <View style={styles.phygitalTextContainer}>
-              <Text style={styles.phygitalTitle}>
-                Scan a Learning Card
-              </Text>
-              <Text style={styles.phygitalSubtitle}>
-                Bring paper activities to life!
-              </Text>
-            </View>
-
-            <Ionicons
-              name="chevron-forward"
-              size={24}
-              color="#2563EB"
-            />
-          </TouchableOpacity>
 
           <MascotCard avatar={student.avatar} />
 

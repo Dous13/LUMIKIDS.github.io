@@ -29,6 +29,7 @@ import PhygitalScanScreen from "../screens/phygital/PhygitalScanScreen";
 import WorksheetCaptureScreen from "../screens/phygital/WorksheetCaptureScreen";
 import WorksheetPreviewScreen from "../screens/phygital/WorksheetPreviewScreen";
 import LessonActivityChoiceScreen from "../screens/student/LessonActivityChoiceScreen";
+import RemedialQuizScreen from "../screens/student/RemedialQuizScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -146,6 +147,10 @@ export default function AppNavigator() {
         <Stack.Screen
           name="LessonActivityChoice"
           component={LessonActivityChoiceScreen}
+        />
+        <Stack.Screen
+          name="RemedialQuiz"
+          component={RemedialQuizScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

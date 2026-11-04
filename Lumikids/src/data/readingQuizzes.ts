@@ -24,6 +24,7 @@ function createQuiz(lesson: any) {
   return [
     {
       id: 1,
+      skillId: "letter-recognition",
       question: "Which letter is this?",
       image: lesson.emoji,
       choices: shuffle([
@@ -35,6 +36,7 @@ function createQuiz(lesson: any) {
 
     {
       id: 2,
+      skillId: "vocabulary",
       question: `What word starts with ${lesson.letter}?`,
       choices: shuffle([
         lesson.word,
@@ -45,6 +47,7 @@ function createQuiz(lesson: any) {
 
     {
       id: 3,
+      skillId: "picture-letter-association",
       question: `Which picture starts with ${lesson.letter}?`,
       choices: shuffle([
         lesson.emoji,
@@ -55,19 +58,13 @@ function createQuiz(lesson: any) {
 
     {
       id: 4,
+      skillId: "letter-recognition",
       question: `Tap the letter ${lesson.letter}`,
       choices: shuffle([
         lesson.letter,
         ...randomLetters,
       ]),
       answer: lesson.letter,
-    },
-
-    {
-      id: 5,
-      question: "Great job! Ready to finish?",
-      choices: ["Yes!"],
-      answer: "Yes!",
     },
   ];
 }

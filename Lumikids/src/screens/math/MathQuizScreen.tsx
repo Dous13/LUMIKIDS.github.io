@@ -113,8 +113,10 @@ export default function MathQuizScreen() {
       );
 
       if (!result.passed) {
-        setFeedback("failed");
-        setMessage(result.message);
+        navigation.replace("RemedialQuiz", {
+          subject: "math",
+          lessonId,
+        });
         return;
       }
 
@@ -208,7 +210,8 @@ export default function MathQuizScreen() {
           currentIndex,
           question.question,
           choice,
-          question.correctAnswer
+          question.correctAnswer,
+          question.skillId
         );
       }
     } catch (error) {

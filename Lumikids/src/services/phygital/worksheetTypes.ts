@@ -23,31 +23,24 @@ export interface WorksheetQuestion {
   difficulty: number;
 }
 
-export interface GeneratedWorksheet {
-  id: string;
-  title: string;
-  subject: WorksheetSubject;
-  ageRange: {
-    min: number;
-    max: number;
-  };
-  lessonId: string;
-  questions: WorksheetQuestion[];
-  createdAt: string;
-}
-
-export type WorksheetResponseStatus =
-  | "recognized"
-  | "blank"
-  | "ambiguous"
-  | "multiple-marks"
-  | "unreadable";
-
 export interface WorksheetTracing {
   uppercase: string;
   lowercase: string;
   word: string;
   emoji: string;
+}
+
+export interface WorksheetBubblePosition {
+  questionId: string;
+  answer: WorksheetAnswer;
+  x: number;
+  y: number;
+}
+
+export interface WorksheetBubbleLayout {
+  pageWidthMm: number;
+  pageHeightMm: number;
+  positions: WorksheetBubblePosition[];
 }
 
 export interface GeneratedWorksheet {
@@ -62,4 +55,19 @@ export interface GeneratedWorksheet {
   questions: WorksheetQuestion[];
   tracing?: WorksheetTracing;
   createdAt: string;
+  bubbleLayout?: WorksheetBubbleLayout;
+}
+
+export type WorksheetResponseStatus =
+  | "recognized"
+  | "blank"
+  | "ambiguous"
+  | "multiple-marks"
+  | "unreadable";
+
+export interface WorksheetResponse {
+  questionId: string;
+  answer: WorksheetAnswer | null;
+  status: WorksheetResponseStatus;
+  confidence: number;
 }

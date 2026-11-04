@@ -3,48 +3,33 @@ import React from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
+  StyleSheet,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../types/navigation";
 
-type Subject = "reading" | "writing" | "math";
-
-type ChoiceRoute = RouteProp<RootStackParamList, "LessonActivityChoice">;
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
-const subjectDetails = {
-  reading: {
-    title: "Reading",
-    emoji: "📚",
-    description: "Practice letters, sounds, and words.",
-    color: "#4DA8FF",
-  },
-  writing: {
-    title: "Writing",
-    emoji: "✏️",
-    description: "Practice tracing letters and writing words.",
-    color: "#F2A65A",
-  },
-  math: {
-    title: "Math",
-    emoji: "🔢",
-    description: "Practice numbers and problem-solving.",
-    color: "#57C36A",
-  },
-};
+type ActivityChoiceRoute = RouteProp<
+  RootStackParamList,
+  "LessonActivityChoice"
+>;
 
 export default function LessonActivityChoiceScreen() {
   const navigation = useNavigation<Navigation>();
-  const route = useRoute<ChoiceRoute>();
+  const route = useRoute<ActivityChoiceRoute>();
 
   const { subject, lessonId } = route.params;
-  const details = subjectDetails[subject];
+
+  const subjectName =
+    subject === "math"
+      ? "Math"
+      : subject === "reading"
+        ? "Reading"
+        : "Writing";
 
   function startDigitalActivity() {
     if (subject === "reading") {
@@ -56,7 +41,7 @@ export default function LessonActivityChoiceScreen() {
     }
   }
 
-  function openPrintableWorksheet() {
+  function openWorksheet() {
     navigation.navigate("WorksheetPreview", {
       subject,
       lessonId,
@@ -64,164 +49,105 @@ export default function LessonActivityChoiceScreen() {
   }
 
   return (
-    <LinearGradient
-      colors={["#F8FCFF", "#EAF8FF", "#D6F1FF"]}
-      style={styles.container}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={22} color="#246BCE" />
-            <Text style={styles.backText}>Back to Lesson</Text>
-          </TouchableOpacity>
+    <View style={styles.container}>
+      <Text style={styles.emoji}>🌟</Text>
+      <Text style={styles.title}>How would you like to learn?</Text>
+      <Text style={styles.subtitle}>
+        {subjectName} · Lesson {lessonId}
+      </Text>
 
-          <View style={styles.header}>
-            <Text style={styles.emoji}>{details.emoji}</Text>
-            <Text style={styles.title}>{details.title} Activity</Text>
-            <Text style={styles.description}>
-              Choose how you want to complete this lesson.
-            </Text>
-          </View>
+      <TouchableOpacity
+        style={styles.digitalCard}
+        onPress={startDigitalActivity}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.cardEmoji}>📱</Text>
+        <Text style={styles.cardTitle}>Digital Activity</Text>
+        <Text style={styles.cardDescription}>
+          Complete your activity directly in LUMIKIDS.
+        </Text>
+      </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.digitalCard}
-            onPress={startDigitalActivity}
-            activeOpacity={0.85}
-          >
-            <View style={styles.iconCircle}>
-              <Ionicons name="phone-portrait-outline" size={30} color="#246BCE" />
-            </View>
+      <TouchableOpacity
+        style={styles.physicalCard}
+        onPress={openWorksheet}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.cardEmoji}>📝</Text>
+        <Text style={styles.cardTitle}>Physical Worksheet</Text>
+        <Text style={styles.cardDescription}>
+          Print your worksheet, answer it on paper, and scan it.
+        </Text>
+      </TouchableOpacity>
 
-            <View style={styles.cardText}>
-              <Text style={styles.cardTitle}>Complete Digitally</Text>
-              <Text style={styles.cardDescription}>
-                Complete the activity directly in LUMIKIDS.
-              </Text>
-            </View>
-
-            <Ionicons name="chevron-forward" size={24} color="#246BCE" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.printCard}
-            onPress={openPrintableWorksheet}
-            activeOpacity={0.85}
-          >
-            <View style={styles.printIconCircle}>
-              <Ionicons name="print-outline" size={30} color="#FFFFFF" />
-            </View>
-
-            <View style={styles.cardText}>
-              <Text style={styles.printTitle}>Use Printable Worksheet</Text>
-              <Text style={styles.printDescription}>
-                Print the lesson and complete it using paper and pencil.
-              </Text>
-            </View>
-
-            <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </LinearGradient>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backText}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  safeArea: { flex: 1 },
-  content: {
+  container: {
     flex: 1,
-    padding: 22,
+    backgroundColor: "#F3F8FF",
+    padding: 24,
     justifyContent: "center",
   },
-  backButton: {
-    position: "absolute",
-    top: 15,
-    left: 22,
-    zIndex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  emoji: {
+    fontSize: 54,
+    textAlign: "center",
+    marginBottom: 12,
   },
-  backText: {
-    color: "#246BCE",
-    fontWeight: "800",
-    fontSize: 15,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 35,
-  },
-  emoji: { fontSize: 65, marginBottom: 12 },
   title: {
-    fontSize: 29,
-    fontWeight: "900",
-    color: "#244A86",
+    fontSize: 25,
+    fontWeight: "800",
+    color: "#1E3A8A",
     textAlign: "center",
   },
-  description: {
-    color: "#52657D",
-    fontSize: 16,
+  subtitle: {
+    fontSize: 15,
+    color: "#64748B",
     textAlign: "center",
     marginTop: 8,
+    marginBottom: 28,
   },
   digitalCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: "#DBEAFE",
+    borderRadius: 20,
+    padding: 22,
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: "#DCE8F8",
   },
-  printCard: {
-    backgroundColor: "#246BCE",
-    borderRadius: 22,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "center",
+  physicalCard: {
+    backgroundColor: "#DCFCE7",
+    borderRadius: 20,
+    padding: 22,
   },
-  iconCircle: {
-    width: 55,
-    height: 55,
-    borderRadius: 28,
-    backgroundColor: "#E2EEFF",
-    justifyContent: "center",
-    alignItems: "center",
+  cardEmoji: {
+    fontSize: 35,
+    marginBottom: 8,
   },
-  printIconCircle: {
-    width: 55,
-    height: 55,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cardText: { flex: 1, marginHorizontal: 13 },
   cardTitle: {
-    fontSize: 17,
-    fontWeight: "900",
-    color: "#244A86",
+    fontSize: 19,
+    fontWeight: "800",
+    color: "#1E3A8A",
   },
   cardDescription: {
-    fontSize: 13,
-    color: "#64748B",
-    marginTop: 5,
-    lineHeight: 19,
+    fontSize: 14,
+    color: "#475569",
+    marginTop: 6,
+    lineHeight: 21,
   },
-  printTitle: {
-    fontSize: 17,
-    fontWeight: "900",
-    color: "#FFFFFF",
+  backButton: {
+    alignSelf: "center",
+    padding: 16,
+    marginTop: 14,
   },
-  printDescription: {
-    fontSize: 13,
-    color: "#EAF3FF",
-    marginTop: 5,
-    lineHeight: 19,
+  backText: {
+    color: "#2563EB",
+    fontWeight: "700",
   },
 });

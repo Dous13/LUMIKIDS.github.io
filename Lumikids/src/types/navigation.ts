@@ -14,12 +14,17 @@ export type RootStackParamList = {
   Writing: undefined;
   Math: undefined;
   PhygitalScan: undefined;
-  WorksheetCapture: undefined;
   LessonActivityChoice: {
     subject: "reading" | "writing" | "math";
     lessonId: string | number;
   };
+
   WorksheetPreview: {
+    subject: "reading" | "writing" | "math";
+    lessonId: string | number;
+  };
+
+  WorksheetCapture: {
     subject: "reading" | "writing" | "math";
     lessonId: string | number;
   };
@@ -63,5 +68,9 @@ export type RootStackParamList = {
     stars: number;
     unlocked: boolean;
     levelUp: boolean;
+  };
+  RemedialQuiz: {
+    subject: "reading" | "math";
+    lessonId: string | number;
   };
 };

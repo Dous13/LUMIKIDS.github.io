@@ -13,6 +13,7 @@ export interface Mistake {
   correctAnswer: string;
   count: number;
   synced: number;
+  skillId: string;
 }
 
 export function recordMistake(
@@ -22,7 +23,8 @@ export function recordMistake(
   questionKey: string | number,
   question: string,
   selectedAnswer: string,
-  correctAnswer: string
+  correctAnswer: string,
+  skillId: string
 ) {
   db.runSync(
     `

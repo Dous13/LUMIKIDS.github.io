@@ -23,7 +23,11 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 
-import { useNavigation } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../types/navigation";
 
@@ -32,6 +36,11 @@ export default function WorksheetCaptureScreen() {
     useNavigation<
       NativeStackNavigationProp<RootStackParamList, "WorksheetCapture">
     >();
+
+    const route =
+      useRoute<RouteProp<RootStackParamList, "WorksheetCapture">>();
+
+    const { subject, lessonId } = route.params;
 
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
@@ -121,6 +130,12 @@ export default function WorksheetCaptureScreen() {
           <Ionicons name="arrow-back" size={24} color="#173B75" />
       </Pressable>
       <Text style={styles.title}>Paper Activity Scanner</Text>
+
+      <Text style={styles.description}>
+        Subject: {subject.charAt(0).toUpperCase() + subject.slice(1)}
+        {"\n"}
+        Lesson ID: {lessonId}
+      </Text>
       <Text style={styles.description}>
         Place the matching three-question worksheet in the frame.
         Keep the page flat and well lit.

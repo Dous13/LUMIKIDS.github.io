@@ -23,8 +23,6 @@ import {
 
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { createMathWorksheet } from "../../data/phygitalWorksheets";
-
 import type { GeneratedWorksheet } from "../../services/phygital/worksheetTypes";
 import type { RootStackParamList } from "../../types/navigation";
 
@@ -390,11 +388,34 @@ export default function WorksheetPreviewScreen() {
   const route =
     useRoute<RouteProp<RootStackParamList, "WorksheetPreview">>();
 
-  const { subject, lessonId } = route.params;
+    const { subject, lessonId } = route.params;
 
-  const worksheet = createWorksheet(subject, lessonId);
+    const worksheet = createWorksheet(subject, lessonId);
 
   const [busy, setBusy] = useState(false);
+
+  if (!worksheet) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={21} color="#246BCE" />
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.heading}>Writing Worksheet</Text>
+
+        <Text style={styles.noticeText}>
+          Printable tracing worksheets will use handwriting recognition.
+          That scanning feature is not connected yet.
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+}
 
   async function printWorksheet() {
     try {
@@ -461,16 +482,24 @@ export default function WorksheetPreviewScreen() {
           <Ionicons name="arrow-back" size={21} color="#246BCE" />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
-          style={[styles.primaryButton, busy && styles.disabled]}
-          onPress={printWorksheet}
+          style={[
+            styles.primaryButton,
+            busy && styles.disabled,
+          ]}
+          onPress={() =>
+            navigation.navigate("WorksheetCapture", {
+              subject,
+              lessonId,
+            })
+          }
           disabled={busy}
         >
-          <Ionicons name="print-outline" size={21} color="#FFFFFF" />
-          <Text style={styles.primaryButtonText}>Print Worksheet</Text>
+          <Ionicons name="scan-outline" size={21} color="#FFFFFF" />
+          <Text style={styles.primaryButtonText}>
+            Scan Completed Worksheet
+          </Text>
         </TouchableOpacity>
-
         <Text style={styles.heading}>{worksheet.title}</Text>
 
         <Text style={styles.subtitle}>
