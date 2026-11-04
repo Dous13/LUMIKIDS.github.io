@@ -107,6 +107,16 @@ export function initializeDatabase() {
   if (!columns.some(column => column.name === "quizScore")) {
     db.execSync(`ALTER TABLE lesson_progress ADD COLUMN quizScore INTEGER DEFAULT 0`);
   }
+  // Add skillId to existing mistakes tables without deleting saved records.
+  const mistakeColumns = db.getAllSync(
+    `PRAGMA table_info(mistakes)`
+  ) as Array<{ name: string }>;
+
+  if (!mistakeColumns.some(column => column.name === "skillId")) {
+    db.execSync(
+      `ALTER TABLE mistakes ADD COLUMN skillId TEXT DEFAULT 'general'`
+    );
+  }
   if (!columns.some(column => column.name === "quizTotal")) {
     db.execSync(`ALTER TABLE lesson_progress ADD COLUMN quizTotal INTEGER DEFAULT 0`);
   }

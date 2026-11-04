@@ -28,28 +28,38 @@ export function recordMistake(
 ) {
   db.runSync(
     `
-    INSERT INTO mistakes (
-      studentId, subject, lessonId, questionKey,
-      question, selectedAnswer, correctAnswer, count, synced
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0)
-    ON CONFLICT(studentId, subject, lessonId, questionKey)
-    DO UPDATE SET
-      question = excluded.question,
-      selectedAnswer = excluded.selectedAnswer,
-      correctAnswer = excluded.correctAnswer,
-      count = mistakes.count + 1,
-      synced = 0
+  INSERT INTO mistakes (
+    studentId,
+    subject,
+    lessonId,
+    questionKey,
+    question,
+    selectedAnswer,
+    correctAnswer,
+    skillId,
+    count,
+    synced
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0)
+  ON CONFLICT(studentId, subject, lessonId, questionKey)
+  DO UPDATE SET
+    question = excluded.question,
+    selectedAnswer = excluded.selectedAnswer,
+    correctAnswer = excluded.correctAnswer,
+    skillId = excluded.skillId,
+    count = mistakes.count + 1,
+    synced = 0
     `,
-    [
-      studentId,
-      subject,
-      String(lessonId),
-      String(questionKey),
-      question,
-      selectedAnswer,
-      correctAnswer,
-    ]
+  [
+    studentId,
+    subject,
+    String(lessonId),
+    String(questionKey),
+    question,
+    selectedAnswer,
+    correctAnswer,
+    skillId,
+  ]
   );
 
   addToSyncQueue("SYNC_STUDENT", { studentId });
