@@ -77,6 +77,31 @@ export function getAllMistakes(studentId: string): Mistake[] {
   ) as Mistake[];
 }
 
+export function getMistakesBySkill(
+  studentId: string,
+  subject: MistakeSubject,
+  lessonId: string | number,
+  skillId: string
+): Mistake[] {
+  return db.getAllSync(
+    `
+    SELECT *
+    FROM mistakes
+    WHERE studentId = ?
+      AND subject = ?
+      AND lessonId = ?
+      AND skillId = ?
+    ORDER BY count DESC
+    `,
+    [
+      studentId,
+      subject,
+      String(lessonId),
+      skillId,
+    ]
+  ) as Mistake[];
+}
+
 export function getMistakeCount(studentId: string): number {
   const result = db.getFirstSync(
     `SELECT COALESCE(SUM(count), 0) AS total FROM mistakes WHERE studentId = ?`,

@@ -30,8 +30,10 @@ import {
   completeLesson,
   unlockNextLesson,
   isLessonCompleted,
+  getAllProgress,
 } from "../../services/database/localProgress";
 import { recordMistake } from "../../services/database/localMistakes";
+
 
 type QuizRouteProp = RouteProp<RootStackParamList, "Quiz">;
 
@@ -112,6 +114,11 @@ export default function QuizScreen() {
     );
 
     unlockNextLesson(session.studentId, lessonId);
+    
+console.log(
+  "[READING] Progress after unlock:",
+  getAllProgress(session.studentId)
+);
 
     navigation.replace("Reward", {
       subject: "reading",

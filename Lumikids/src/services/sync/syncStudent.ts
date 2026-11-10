@@ -7,6 +7,7 @@ import { getAllMathProgress } from "../database/localMath";
 import { db as localDb } from "../database/database";
 import { getAllMistakes } from "../database/localMistakes";
 import { getOwnedMascots } from "../database/localMascot";
+import { restoreStudentProgress } from "./restoreStudentProgress";
 
 function toReadingProgress(rows: any[]) {
   return Object.fromEntries(
@@ -44,6 +45,9 @@ function toMathProgress(rows: any[]) {
 }
 
 export async function syncStudent(studentId: string) {
+  // Always merge existing cloud progress before uploading local records.
+  await restoreStudentProgress(studentId);
+
   const student = getLocalStudent(studentId);
   if (!student) return;
 

@@ -3,68 +3,40 @@ import { readingLessons } from "../../data/readingLessons";
 import { addToSyncQueue } from "../sync/localQueue";
 
 export function initializeStudentProgress(studentId: string) {
-  const existing = db.getFirstSync(
-    `
-    SELECT COUNT(*) AS total
-    FROM lesson_progress
-    WHERE studentId = ?
-    `,
-    [studentId]
-  ) as { total: number };
-
-  if (existing.total > 0) {
+  readingLessons.forEach((lesson, index) => {
     db.runSync(
       `
-      INSERT OR IGNORE INTO owned_mascots (
+      INSERT OR IGNORE INTO lesson_progress (
         studentId,
-        mascotId
+        lessonId,
+        unlocked,
+        completed,
+        stars,
+        quizScore,
+        quizTotal,
+        synced
       )
-      VALUES (?, ?)
+      VALUES (?, ?, ?, 0, 0, 0, 0, 0)
       `,
       [
         studentId,
-        "default",
+        String(lesson.id),
+        index === 0 ? 1 : 0,
       ]
     );
+  });
 
-    return;
-  }
-
-readingLessons.forEach((lesson, index) => {
   db.runSync(
     `
-    INSERT INTO lesson_progress
-    (
+    INSERT OR IGNORE INTO owned_mascots (
       studentId,
-      lessonId,
-      unlocked,
-      completed,
-      stars,
-      synced
+      mascotId
     )
-    VALUES (?, ?, ?, 0, 0, 0)
+    VALUES (?, ?)
     `,
-    [
-      studentId,
-      lesson.id,
-      index === 0 ? 1 : 0,
-    ]
+    [studentId, "default"]
   );
-});
-
-db.runSync(
-  `
-  INSERT OR IGNORE INTO owned_mascots (
-    studentId,
-    mascotId
-  )
-  VALUES (?, ?)
-  `,
-  [
-    studentId,
-    "default",
-  ]
-);}
+}
 
 /**
  * Returns one lesson's progress

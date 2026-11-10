@@ -14,6 +14,13 @@ export default function ReadingScreen() {
 
   const loadProgress = useCallback(async () => {
     const session = await getSession();
+    console.log("[READING] Current student ID:", session?.studentId);
+
+    if (session) {
+      const savedProgress = getAllProgress(session.studentId);
+      console.log("[READING] Saved progress:", savedProgress);
+      setProgress(savedProgress as any[]);
+    }
     if (session) setProgress(getAllProgress(session.studentId) as any[]);
   }, []);
 

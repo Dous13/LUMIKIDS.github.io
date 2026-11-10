@@ -18,6 +18,7 @@ import { initializeWritingProgress } from "../../services/database/localWriting"
 import { initializeMathProgress } from "../../services/database/localMath";
 import { addToSyncQueue } from "../../services/sync/localQueue";
 import { processQueue } from "../../services/sync/processQueue";
+import { restoreStudentProgress } from "../../services/sync/restoreStudentProgress";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "StudentLogin">;
 
@@ -65,13 +66,21 @@ export default function StudentLoginScreen() {
       initializeWritingProgress(studentId);
       initializeMathProgress(studentId);
 
-      const student = await getStudent(studentId);
-      if (student) {
-        saveStudent(student);
-        addToSyncQueue("SYNC_STUDENT", { studentId });
-        processQueue();
-      }
+    const student = await getStudent(studentId);
 
+    if (student) {
+      saveStudent(student);
+    }
+
+    // Restore the student's existing Firebase progress
+    // before allowing the student to enter the Home screen.
+    await restoreStudentProgress(studentId);
+
+    if (student) {
+      addToSyncQueue("SYNC_STUDENT", { studentId });
+      await processQueue();
+    }
+      console.log("[LOGIN] Student ID:", studentId);
       await saveSession({ studentId, remember });
       navigation.reset({ index: 0, routes: [{ name: "Home" }] });
     } catch (e) {

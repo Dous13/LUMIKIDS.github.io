@@ -3,25 +3,10 @@ import { writingLessons } from "../../data/writingLessons";
 import { addToSyncQueue } from "../sync/localQueue";
 
 export function initializeWritingProgress(studentId: string) {
-  const existing = db.getFirstSync(
-    `
-    SELECT COUNT(*) AS total
-    FROM writing_progress
-    WHERE studentId = ?
-    `,
-    [studentId]
-  ) as { total: number };
-
-  if (existing.total > 0) {
-    return;
-  }
-
-
   writingLessons.forEach((lesson, index) => {
     db.runSync(
       `
-      INSERT INTO writing_progress
-      (
+      INSERT OR IGNORE INTO writing_progress (
         studentId,
         lessonId,
         unlocked,
@@ -33,11 +18,26 @@ export function initializeWritingProgress(studentId: string) {
       `,
       [
         studentId,
-        lesson.id,
+        String(lesson.id),
         index === 0 ? 1 : 0,
       ]
     );
   });
+
+  // Ensure the first writing lesson is available
+  // without changing the student's existing progress.
+  if (writingLessons.length > 0) {
+    db.runSync(
+      `
+      UPDATE writing_progress
+      SET unlocked = 1, synced = 0
+      WHERE studentId = ?
+        AND lessonId = ?
+        AND unlocked = 0
+      `,
+      [studentId, String(writingLessons[0].id)]
+    );
+  }
 }
 
 export function getWritingProgress(

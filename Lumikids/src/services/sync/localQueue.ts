@@ -4,41 +4,46 @@ export function addToSyncQueue(
   action: string,
   payload: any
 ) {
-
-  // Prevent duplicate student sync jobs
-  if (action === "SYNC_STUDENT") {
-
-    const existing = db.getFirstSync(
+  if (action === "SYNC_STUDENT" && payload?.studentId) {
+    const pendingJobs = db.getAllSync(
       `
-      SELECT id
+      SELECT payload
       FROM sync_queue
       WHERE action = ?
-      AND synced = 0
-      LIMIT 1
+        AND synced = 0
       `,
       [action]
-    );
+    ) as Array<{ payload: string }>;
 
-    if (existing) {
+    const alreadyQueued = pendingJobs.some(job => {
+      try {
+        const existingPayload = JSON.parse(job.payload);
+        return existingPayload.studentId === payload.studentId;
+      } catch {
+        return false;
+      }
+    });
+
+    // Avoid duplicate jobs for this student only.
+    if (alreadyQueued) {
       return;
     }
   }
 
   db.runSync(
     `
-    INSERT INTO sync_queue
-    (
-    action,
-    payload,
-    createdAt,
-    synced
+    INSERT INTO sync_queue (
+      action,
+      payload,
+      createdAt,
+      synced
     )
     VALUES (?, ?, ?, 0)
     `,
     [
-    action,
-    JSON.stringify(payload),
-    Date.now(),
+      action,
+      JSON.stringify(payload),
+      Date.now(),
     ]
   );
 }
