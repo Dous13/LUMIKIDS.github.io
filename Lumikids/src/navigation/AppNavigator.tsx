@@ -121,8 +121,12 @@ export default function AppNavigator() {
           component={WritingScreen}
         />
         <Stack.Screen
-            name="TraceLetter"
-            component={TraceLetterScreen}
+          name="TraceLetter"
+          component={TraceLetterScreen}
+          options={{
+            gestureEnabled: false,
+            fullScreenGestureEnabled: false,
+          }}
         />
         <Stack.Screen
           name="Math"

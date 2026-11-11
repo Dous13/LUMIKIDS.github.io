@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useState } from "react";
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -7,7 +7,6 @@ import ExitLessonModal from "../../components/common/ExitLessonModal";
 import { useExitLessonGuard } from "../../hooks/useExitLessonGuard";
 import { Ionicons } from "@expo/vector-icons";
 import { writingLessons } from "../../data/writingLessons";
-import LetterGuide from "../../components/writing/LetterGuide";
 import TracingCanvas from "../../components/writing/TracingCanvas";
 import { getSession } from "../../services/session/session";
 import { awardLocalCoins, awardLocalWritingXP } from "../../services/database/localStudent";
@@ -22,11 +21,10 @@ export default function TraceLetterScreen() {
   const lesson = writingLessons.find(item => item.id === route.params.lessonId);
   const [phase, setPhase] = useState<Phase>("uppercase");
   const [resetKey, setResetKey] = useState(0);
-  const [hasDrawing, setHasDrawing] = useState(false);
+  const [isPhaseComplete, setIsPhaseComplete] = useState(false);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-
-  const onDrawingChange = useCallback((value: boolean) => setHasDrawing(value), []);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   if (!lesson) return <SafeAreaView style={styles.center}><Text style={styles.error}>Lesson not found.</Text></SafeAreaView>;
   const validLesson = lesson;
@@ -35,13 +33,13 @@ export default function TraceLetterScreen() {
 
   function clearDrawing() {
     setResetKey(value => value + 1);
-    setHasDrawing(false);
+    setIsPhaseComplete(false);
     setMessage("");
   }
 
   async function next() {
-    if (!hasDrawing) {
-      setMessage("Trace the guide first, then tap Next. ✏️");
+    if (!isPhaseComplete) {
+      setMessage("Complete every stroke of the letter before continuing. ✏️");
       return;
     }
 
@@ -86,7 +84,12 @@ export default function TraceLetterScreen() {
   return (
     <LinearGradient colors={["#CFEFFF", "#EAFBFF", "#FFF9E8"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          scrollEnabled={!isDrawing}
+          disableScrollViewPanResponder
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.topRow}>
             <TouchableOpacity style={styles.backButton} onPress={exitGuard.requestExit} disabled={saving}>
               <Ionicons name="arrow-back" size={25} color="#2563EB" /><Text style={styles.backText}>Back</Text>
@@ -95,11 +98,16 @@ export default function TraceLetterScreen() {
           </View>
 
           <Text style={styles.title}>✏️ Trace & Write</Text>
-          <Text style={styles.subtitle}>Click and drag along the light guide to trace.</Text>
+          <Text style={styles.subtitle}>{target === "A" ? "Trace all three strokes of the letter, in order." : "This letter guide is not yet available for validated tracing."}</Text>
 
           <View style={styles.canvasCard}>
-            <LetterGuide target={target} />
-            <TracingCanvas resetKey={resetKey} onDrawingChange={onDrawingChange} />
+            <TracingCanvas
+              target={target}
+              resetKey={resetKey}
+              onPhaseComplete={setIsPhaseComplete}
+              onDrawingStart={() => setIsDrawing(true)}
+              onDrawingEnd={() => setIsDrawing(false)}
+            />
           </View>
 
           {message ? <View style={styles.messageCard}><Text style={styles.message}>{message}</Text></View> : null}
@@ -108,7 +116,7 @@ export default function TraceLetterScreen() {
             <TouchableOpacity style={styles.clearButton} onPress={clearDrawing} disabled={saving}>
               <Text style={styles.clearText}>Clear</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.nextButton, !hasDrawing && styles.nextDisabled]} onPress={next} disabled={saving}>
+            <TouchableOpacity style={[styles.nextButton, !isPhaseComplete && styles.nextDisabled]} onPress={next} disabled={saving || !isPhaseComplete}>
               <Text style={styles.nextText}>{saving ? "Saving..." : phase === "word" ? "Finish 🎉" : "Next →"}</Text>
             </TouchableOpacity>
           </View>
