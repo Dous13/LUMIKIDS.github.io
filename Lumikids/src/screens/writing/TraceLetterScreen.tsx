@@ -32,6 +32,7 @@ export default function TraceLetterScreen() {
   const phaseNumber = phase === "uppercase" ? 1 : phase === "lowercase" ? 2 : 3;
 
   function clearDrawing() {
+    setIsDrawing(false);
     setResetKey(value => value + 1);
     setIsPhaseComplete(false);
     setMessage("");
@@ -98,7 +99,7 @@ export default function TraceLetterScreen() {
           </View>
 
           <Text style={styles.title}>✏️ Trace & Write</Text>
-          <Text style={styles.subtitle}>{target === "A" ? "Trace all three strokes of the letter, in order." : "This letter guide is not yet available for validated tracing."}</Text>
+          <Text style={styles.subtitle}>{"Trace each numbered stroke in order. Complete every letter to continue."}</Text>
 
           <View style={styles.canvasCard}>
             <TracingCanvas
