@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -55,7 +56,7 @@ export default function DashboardScreen() {
 
   return (
     <LinearGradient
-      colors={["#EAF7FF", "#EAF7FF"]}
+      colors={[Colors.background, Colors.background]}
       style={styles.container}
     >
       <View style={styles.circle1} />
@@ -81,7 +82,7 @@ export default function DashboardScreen() {
 
         {loading || !summary ? (
           <View style={styles.loading}>
-            <ActivityIndicator size="large" color="#176BC1" />
+            <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={styles.loadingText}>Loading your adventure...</Text>
           </View>
         ) : (
@@ -92,7 +93,7 @@ export default function DashboardScreen() {
             <StudentDashboard summary={summary} />
 
             <LinearGradient
-              colors={["#EAF7FF", "#EAF7FF"]}
+              colors={[Colors.background, Colors.background]}
               style={styles.tipCard}
             >
               <Text style={styles.tipEmoji}>🌟</Text>
@@ -114,26 +115,15 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 8, width: "100%", maxWidth: 720, alignSelf: "center" },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-  },
+  backButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.white, justifyContent: "center", alignItems: "center", elevation: 1, borderWidth: 1, borderColor: Colors.border },
   backText: {
     fontSize: 28,
     fontWeight: "900",
-    color: "#176BC1",
+    color: Colors.primary,
   },
-  headerText: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  title: { fontSize: 26, fontWeight: "900", color: "#23394A" },
-  subtitle: { marginTop: 3, fontSize: 13, lineHeight: 18, color: "#5D7080", fontWeight: "700" },
+  headerText: { flex: 1, marginLeft: 14, minWidth: 0 },
+  title: { fontSize: 25, fontWeight: "800", color: Colors.text, lineHeight: 33, flexShrink: 1 },
+  subtitle: { marginTop: 3, fontSize: 15, lineHeight: 22, color: Colors.textSecondary, fontWeight: "500" },
   content: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 30, width: "100%", maxWidth: 720, alignSelf: "center" },
   loading: {
     flex: 1,
@@ -145,21 +135,11 @@ const styles = StyleSheet.create({
     color: "#475569",
     fontWeight: "800",
   },
-  tipCard: { marginTop: 2, borderRadius: 16, padding: 18, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#E1E7E5", elevation: 1, backgroundColor: "#FFFFFF" },
+  tipCard: { marginTop: 2, borderRadius: 16, padding: 18, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: Colors.rewardBorder, elevation: 1, backgroundColor: Colors.rewardSurface },
   tipEmoji: { fontSize: 38, marginRight: 14 },
   tipContent: { flex: 1 },
-  tipTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#334155",
-  },
-  tipText: {
-    marginTop: 4,
-    fontSize: 13,
-    lineHeight: 19,
-    color: "#64748B",
-    fontWeight: "600",
-  },
+  tipTitle: { fontSize: 18, fontWeight: "800", color: Colors.rewardText },
+  tipText: { marginTop: 4, fontSize: 15, lineHeight: 22, color: Colors.textSecondary, fontWeight: "600" },
   circle1: { position: "absolute", width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(116, 204, 153, 0.35)", top: -100, right: -80, display: "none" },
   circle2: { position: "absolute", width: 180, height: 180, borderRadius: 90, backgroundColor: "rgba(173, 134, 206, 0.25)", bottom: 40, left: -80, display: "none" },
 });

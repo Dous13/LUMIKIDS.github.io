@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 import AnimatedProgress from "../../components/common/AnimatedProgress";
 import FadeIn from "../../components/common/FadeIn";
 import TouchableOpacity from "../../components/common/MotionTouchable";
@@ -238,7 +239,7 @@ export default function MathQuizScreen() {
 
   return (
     <LinearGradient
-      colors={["#EAF7FF", "#EAF7FF"]}
+      colors={[Colors.background, Colors.background]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -266,7 +267,7 @@ export default function MathQuizScreen() {
             <View style={styles.headerSpacer} />
           </View>
 
-          <AnimatedProgress value={percentage} color="#007C70" style={styles.progressTrack} />
+          <AnimatedProgress value={percentage} color={Colors.math} style={styles.progressTrack} />
 
           {feedback && (
             <View
@@ -401,38 +402,23 @@ const styles = StyleSheet.create({
   error: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#64748B",
+    color: Colors.textSecondary,
     marginBottom: 18,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
   },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#FFF",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 4,
-  },
-  backArrow: {
-    fontSize: 27,
-    fontWeight: "800",
-    color: "#4A90E2",
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: "center",
-  },
+  backButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.white, justifyContent: "center", alignItems: "center", elevation: 1, borderWidth: 1, borderColor: Colors.mathBorder },
+  backArrow: { fontSize: 27, fontWeight: "800", color: Colors.math },
+  headerCenter: { flex: 1, alignItems: "center", minWidth: 0 },
   headerSpacer: { width: 48 },
-  title: { fontSize: 27, fontWeight: "900", color: "#007C70" },
+  title: { fontSize: 25, fontWeight: "800", color: Colors.math, lineHeight: 32, textAlign: "center", flexShrink: 1 },
   subtitle: {
     marginTop: 2,
     fontSize: 14,
     fontWeight: "700",
-    color: "#64748B",
+    color: Colors.textSecondary,
   },
   progressTrack: {
     height: 13,
@@ -447,8 +433,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#62C77A",
     borderRadius: 20,
   },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#8CD3BF" },
-  question: { fontSize: 25, lineHeight: 32, fontWeight: "900", textAlign: "center", color: "#23394A" },
+  card: { backgroundColor: Colors.white, borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: Colors.mathBorder, borderBottomWidth: 3 },
+  question: { fontSize: 25, lineHeight: 32, fontWeight: "800", textAlign: "center", color: Colors.text },
   emoji: {
     fontSize: 62,
     marginVertical: 18,
@@ -457,15 +443,10 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 12,
   },
-  option: { minHeight: 58, backgroundColor: "#FFFFFF", borderRadius: 16, paddingHorizontal: 18, paddingVertical: 14, borderWidth: 1, borderColor: "#8CD3BF", justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1 },
-  correctOption: { backgroundColor: "#E4F3EB", borderColor: "#007C70" },
-  wrongOption: { backgroundColor: "#FFF0EC", borderColor: "#C96859" },
-  optionText: {
-    fontSize: 23,
-    fontWeight: "900",
-    color: "#275B8F",
-    textAlign: "center",
-  },
+  option: { minHeight: 58, backgroundColor: Colors.white, borderRadius: 16, paddingHorizontal: 40, paddingVertical: 14, borderWidth: 2, borderColor: Colors.mathBorder, justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1, borderBottomWidth: 3 },
+  correctOption: { backgroundColor: Colors.successSurface, borderColor: Colors.math },
+  wrongOption: { backgroundColor: Colors.errorSurface, borderColor: "#C96859" },
+  optionText: { fontSize: 23, fontWeight: "800", color: "#275B8F", textAlign: "center", flexShrink: 1 },
   optionIcon: {
     position: "absolute",
     right: 16,
@@ -476,7 +457,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     fontSize: 16,
     fontWeight: "800",
-    color: "#64748B",
+    color: Colors.textSecondary,
   },
   feedback: {
     borderRadius: 20,
@@ -496,38 +477,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF6FF",
     borderColor: "#CDE3FF",
   },
-  feedbackTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#334155",
-  },
-  feedbackText: {
-    marginTop: 4,
-    fontSize: 15,
-    lineHeight: 21,
-    color: "#64748B",
-  },
-  primaryButton: { width: "100%", marginTop: 18, backgroundColor: "#007C70", borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52 },
-  primaryButtonText: {
-    color: "#FFF",
-    fontSize: 19,
-    fontWeight: "900",
-  },
-  promptCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 22,
-    padding: 16,
-    marginBottom: 14,
-    elevation: 4,
-  },
+  feedbackTitle: { fontSize: 18, fontWeight: "800", color: Colors.text },
+  feedbackText: { marginTop: 4, fontSize: 16, lineHeight: 23, color: Colors.textSecondary },
+  primaryButton: { width: "100%", marginTop: 18, backgroundColor: Colors.math, borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52, borderBottomWidth: 3, borderBottomColor: Colors.mathDark },
+  primaryButtonText: { color: Colors.white, fontSize: 19, fontWeight: "800", lineHeight: 26, textAlign: "center" },
+  promptCard: { backgroundColor: Colors.white, borderRadius: 22, padding: 16, marginBottom: 14, elevation: 1, borderWidth: 1, borderColor: Colors.mathBorder },
   promptTitle: {
     fontSize: 19,
     fontWeight: "900",
-    color: "#334155",
+    color: Colors.text,
   },
   promptText: {
     marginTop: 5,
-    color: "#64748B",
+    color: Colors.textSecondary,
     lineHeight: 20,
   },
   promptButtons: {
@@ -535,24 +497,12 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 14,
   },
-  secondaryButton: {
-    flex: 1,
-    backgroundColor: "#EAF8FF",
-    borderRadius: 16,
-    paddingVertical: 13,
-    alignItems: "center",
-  },
+  secondaryButton: { flex: 1, backgroundColor: "#EAF8FF", borderRadius: 16, paddingVertical: 13, alignItems: "center", minHeight: 48 },
   secondaryButtonText: {
     color: "#275B8F",
     fontWeight: "800",
   },
-  dangerButton: {
-    flex: 1,
-    backgroundColor: "#FFE4E4",
-    borderRadius: 16,
-    paddingVertical: 13,
-    alignItems: "center",
-  },
+  dangerButton: { flex: 1, backgroundColor: "#FFE4E4", borderRadius: 16, paddingVertical: 13, alignItems: "center", minHeight: 48 },
   dangerButtonText: {
     color: "#B91C1C",
     fontWeight: "800",

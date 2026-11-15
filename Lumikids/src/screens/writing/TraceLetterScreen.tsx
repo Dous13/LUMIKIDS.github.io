@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -83,7 +84,7 @@ export default function TraceLetterScreen() {
   }
 
   return (
-    <LinearGradient colors={["#CFEFFF", "#EAFBFF", "#FFF9E8"]} style={styles.container}>
+    <LinearGradient colors={[Colors.background, Colors.background]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           scrollEnabled={!isDrawing}
@@ -135,9 +136,9 @@ export default function TraceLetterScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 }, safeArea: { flex: 1 }, content: { padding: 20, paddingBottom: 35 },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, backButton: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFF", borderRadius: 22, paddingHorizontal: 14, paddingVertical: 10, elevation: 3 }, backText: { marginLeft: 6, fontSize: 17, fontWeight: "800", color: "#2563EB" }, phase: { color: "#64748B", fontWeight: "800" },
-  title: { marginTop: 18, fontSize: 30, fontWeight: "900", textAlign: "center", color: "#1E3A8A" }, subtitle: { marginTop: 6, textAlign: "center", color: "#64748B", fontSize: 16 },
+  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, backButton: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFF", borderRadius: 22, paddingHorizontal: 14, paddingVertical: 10, elevation: 3 }, backText: { marginLeft: 6, fontSize: 17, fontWeight: "800", color: Colors.writing }, phase: { color: Colors.writing, fontWeight: "800" },
+  title: { marginTop: 18, fontSize: 30, fontWeight: "900", textAlign: "center", color: Colors.writing }, subtitle: { marginTop: 6, textAlign: "center", color: "#64748B", fontSize: 16 },
   canvasCard: { minHeight: 320, height: 390, marginTop: 18, backgroundColor: "#FFF", borderRadius: 30, overflow: "hidden", elevation: 6, position: "relative" },
-  messageCard: { marginTop: 12, backgroundColor: "#FFF8E1", borderRadius: 16, padding: 12 }, message: { textAlign: "center", color: "#7C5D00", fontWeight: "800" },
-  buttons: { flexDirection: "row", gap: 12, marginTop: 14 }, clearButton: { flex: 1, backgroundColor: "#FFE4E4", borderRadius: 18, paddingVertical: 16, alignItems: "center" }, clearText: { color: "#B91C1C", fontWeight: "900", fontSize: 17 }, nextButton: { flex: 1.5, backgroundColor: "#4DA8FF", borderRadius: 18, paddingVertical: 16, alignItems: "center" }, nextDisabled: { opacity: 0.5 }, nextText: { color: "#FFF", fontWeight: "900", fontSize: 18 }, center: { flex: 1, justifyContent: "center", alignItems: "center" }, error: { fontSize: 20, fontWeight: "800", color: "#64748B" },
+  messageCard: { marginTop: 12, backgroundColor: Colors.rewardSurface, borderRadius: 16, padding: 12 }, message: { textAlign: "center", color: Colors.rewardText, fontWeight: "800" },
+  buttons: { flexDirection: "row", gap: 12, marginTop: 14 }, clearButton: { flex: 1, backgroundColor: Colors.errorSurface, borderRadius: 18, paddingVertical: 16, alignItems: "center" }, clearText: { color: "#B91C1C", fontWeight: "900", fontSize: 17 }, nextButton: { flex: 1.5, backgroundColor: Colors.writing, borderRadius: 18, paddingVertical: 16, alignItems: "center" }, nextDisabled: { opacity: 0.5 }, nextText: { color: Colors.white, fontWeight: "900", fontSize: 18 }, center: { flex: 1, justifyContent: "center", alignItems: "center" }, error: { fontSize: 20, fontWeight: "800", color: Colors.textSecondary },
 });

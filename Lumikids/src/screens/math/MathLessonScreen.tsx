@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 import FadeIn from "../../components/common/FadeIn";
 import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useEffect, useState } from "react";
@@ -58,7 +59,7 @@ export default function MathLessonScreen() {
   const lastPage = page === lesson.pages.length - 1;
 
   return (
-    <LinearGradient colors={["#EAF7FF", "#EAF7FF"]} style={styles.container}>
+    <LinearGradient colors={[Colors.background, Colors.background]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
@@ -104,18 +105,18 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   content: { flexGrow: 1, padding: 20, paddingBottom: 34, width: "100%", maxWidth: 720, alignSelf: "center" },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
-  error: { fontSize: 21, fontWeight: "800", color: "#64748B", textAlign: "center" },
+  error: { fontSize: 21, fontWeight: "800", color: Colors.textSecondary, textAlign: "center" },
   lockEmoji: { fontSize: 58, marginBottom: 12 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  backButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: "#FFF", justifyContent: "center", alignItems: "center", elevation: 4 },
-  backArrow: { fontSize: 26, fontWeight: "800", color: "#4A90E2" },
-  progress: { fontSize: 18, fontWeight: "800", color: "#64748B" },
+  backButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.white, justifyContent: "center", alignItems: "center", elevation: 4 },
+  backArrow: { fontSize: 26, fontWeight: "800", color: Colors.math },
+  progress: { fontSize: 18, fontWeight: "700", color: Colors.math },
   headerSpacer: { width: 48 },
-  card: { width: "100%", maxWidth: 560, alignSelf: "center", minHeight: 390, marginTop: 18, backgroundColor: "#FFFFFF", borderRadius: 20, justifyContent: "center", alignItems: "center", padding: 24, elevation: 1, borderWidth: 1, borderColor: "#8CD3BF" },
+  card: { width: "100%", maxWidth: 560, alignSelf: "center", minHeight: 390, marginTop: 18, backgroundColor: Colors.white, borderRadius: 20, justifyContent: "center", alignItems: "center", padding: 24, elevation: 1, borderWidth: 1, borderColor: Colors.mathBorder, borderBottomWidth: 3 },
   emoji: { fontSize: 64, textAlign: "center" },
-  number: { fontSize: 70, fontWeight: "900", color: "#007C70", marginTop: 16 },
-  title: { width: "100%", maxWidth: 500, fontSize: 28, lineHeight: 34, fontWeight: "900", marginTop: 16, color: "#007C70", textAlign: "center" },
-  description: { width: "100%", maxWidth: 500, marginTop: 12, fontSize: 19, color: "#64748B", textAlign: "center", lineHeight: 29 },
-  button: { marginTop: 18, backgroundColor: "#007C70", borderRadius: 16, paddingVertical: 17, alignItems: "center", width: "100%", minHeight: 52 },
-  buttonText: { color: "#FFF", fontSize: 21, fontWeight: "900" },
+  number: { fontSize: 70, fontWeight: "900", color: Colors.math, marginTop: 16 },
+  title: { width: "100%", maxWidth: 500, fontSize: 28, lineHeight: 34, fontWeight: "800", marginTop: 16, color: Colors.math, textAlign: "center" },
+  description: { width: "100%", maxWidth: 500, marginTop: 12, fontSize: 18, color: Colors.textSecondary, textAlign: "center", lineHeight: 27 },
+  button: { marginTop: 18, backgroundColor: Colors.math, borderRadius: 16, paddingVertical: 17, alignItems: "center", width: "100%", minHeight: 52, borderBottomWidth: 3, borderBottomColor: Colors.mathDark },
+  buttonText: { color: Colors.white, fontSize: 21, fontWeight: "800", lineHeight: 27, textAlign: "center" },
 });

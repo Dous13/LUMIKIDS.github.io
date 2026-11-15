@@ -1,6 +1,7 @@
+import { Colors } from "../../theme";
 import TouchableOpacity from "../common/MotionTouchable";
 import React, { useEffect, useRef } from "react";
-import { Modal, View, Text, StyleSheet, Animated } from "react-native";
+import { Modal, View, Text, StyleSheet, Animated, ScrollView } from "react-native";
 
 import ConfettiCannon from "react-native-confetti-cannon";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
@@ -54,6 +55,7 @@ export default function RewardModal({
         />
         </View> : null}
 
+        <ScrollView style={{ width: "100%" }} contentContainerStyle={styles.modalContent} showsVerticalScrollIndicator={false}>
         <Animated.Image
           source={mascotImage}
           style={[
@@ -84,6 +86,7 @@ export default function RewardModal({
             Continue
           </Text>
         </TouchableOpacity>
+        </ScrollView>
 
       </View>
     </Modal>
@@ -91,55 +94,18 @@ export default function RewardModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(23,44,60,0.92)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 30,
-  },
+  modalContent: { flexGrow: 1, alignItems: "center", justifyContent: "center", paddingVertical: 20 },
+  overlay: { flex: 1, backgroundColor: "rgba(23,44,60,0.92)", justifyContent: "center", alignItems: "center", padding: 24 },
 
-  image: {
-    width: 220,
-    height: 220,
-    resizeMode: "contain",
-    marginBottom: 20,
-  },
+  image: { width: 200, height: 200, resizeMode: "contain", marginBottom: 16 },
 
-  title: {
-    fontSize: 30,
-    textAlign: "center",
-    fontWeight: "900",
-    color: "white",
-  },
+  title: { fontSize: 30, textAlign: "center", fontWeight: "800", color: "white", lineHeight: 38 },
 
-  name: {
-    textAlign: "center",
-    fontSize: 28,
-    color: "#FFD54F",
-    fontWeight: "900",
-    marginTop: 8,
-  },
+  name: { textAlign: "center", fontSize: 26, color: "#FFD54F", fontWeight: "900", marginTop: 8, lineHeight: 35 },
 
-  subtitle: {
-    textAlign: "center",
-    lineHeight: 26,
-    fontSize: 18,
-    color: "white",
-    marginTop: 15,
-    marginBottom: 35,
-  },
+  subtitle: { textAlign: "center", lineHeight: 25, fontSize: 17, color: "white", marginTop: 15, marginBottom: 24 },
 
-  button: {
-    backgroundColor: "#176BC1",
-    paddingHorizontal: 35,
-    paddingVertical: 15,
-    borderRadius: 20,
-  },
+  button: { backgroundColor: Colors.primary, paddingHorizontal: 35, paddingVertical: 15, borderRadius: 18, width: "100%", maxWidth: 320, minHeight: 54, borderBottomWidth: 4, borderBottomColor: Colors.primaryDark, alignItems: "center" },
 
-  buttonText: {
-    color: "white",
-    fontWeight: "900",
-    fontSize: 20,
-  },
+  buttonText: { color: "white", fontWeight: "800", fontSize: 19, lineHeight: 26, textAlign: "center" },
 });

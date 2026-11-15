@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 import CelebrationText from "../../components/common/CelebrationText";
 import TouchableOpacity from "../../components/common/MotionTouchable";
 import React from "react";
@@ -29,7 +30,7 @@ export default function RewardScreen() {
   }, [continueToSubject]));
 
   return (
-    <LinearGradient colors={["#EAF7FF", "#EAF7FF"]} style={{ flex: 1 }}>
+    <LinearGradient colors={[Colors.background, Colors.background]} style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.title}>🎉 Lesson Complete!</Text>
@@ -50,14 +51,14 @@ export default function RewardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { flexGrow: 1, justifyContent: "center", alignItems: "center", padding: 24, width: "100%", maxWidth: 620, alignSelf: "center" },
-  title: { fontSize: 30, fontWeight: "900", color: "#23394A", textAlign: "center", lineHeight: 38 },
-  lesson: { marginTop: 10, fontSize: 18, fontWeight: "700", color: "#5D7080" },
-  stars: { fontSize: 48, marginVertical: 26 },
-  rewardRow: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
-  reward: { marginLeft: 9, fontSize: 26, fontWeight: "800", color: "#23394A" },
-  unlock: { marginTop: 25, fontSize: 18, color: "#007C70", fontWeight: "700", textAlign: "center", lineHeight: 26 },
-  levelUp: { marginTop: 15, fontSize: 28, color: "#986100", fontWeight: "900" },
-  button: { marginTop: 40, backgroundColor: "#176BC1", paddingHorizontal: 45, paddingVertical: 18, borderRadius: 16, minHeight: 52, width: "100%", maxWidth: 360 },
-  buttonText: { color: "white", fontSize: 19, fontWeight: "800" },
+  scrollContent: { flexGrow: 1, justifyContent: "center", alignItems: "center", padding: 24, width: "100%", maxWidth: 620, alignSelf: "center", paddingVertical: 24 },
+  title: { fontSize: 30, fontWeight: "800", color: Colors.text, textAlign: "center", lineHeight: 38 },
+  lesson: { marginTop: 10, fontSize: 17, fontWeight: "600", color: Colors.textSecondary, lineHeight: 24 },
+  stars: { fontSize: 46, marginVertical: 20, textAlign: "center" },
+  rewardRow: { flexDirection: "row", alignItems: "center", marginVertical: 10, gap: 10 },
+  reward: { marginLeft: 0, fontSize: 24, fontWeight: "800", color: Colors.rewardText, lineHeight: 33, paddingHorizontal: 18, paddingVertical: 10, borderRadius: 14, backgroundColor: Colors.rewardSurface },
+  unlock: { marginTop: 20, fontSize: 18, color: Colors.math, fontWeight: "700", textAlign: "center", lineHeight: 26 },
+  levelUp: { marginTop: 15, fontSize: 24, color: Colors.rewardText, fontWeight: "900", lineHeight: 32, backgroundColor: Colors.rewardSurface, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
+  button: { marginTop: 28, backgroundColor: Colors.primary, paddingHorizontal: 45, paddingVertical: 18, borderRadius: 16, minHeight: 52, width: "100%", maxWidth: 360, borderBottomWidth: 4, borderBottomColor: Colors.primaryDark },
+  buttonText: { color: "white", fontSize: 19, fontWeight: "800", lineHeight: 26 },
 });

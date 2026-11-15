@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 import AnimatedProgress from "../../components/common/AnimatedProgress";
 import FadeIn from "../../components/common/FadeIn";
 import TouchableOpacity from "../../components/common/MotionTouchable";
@@ -178,7 +179,7 @@ console.log(
 
   return (
     <LinearGradient
-      colors={["#EAF7FF", "#EAF7FF"]}
+      colors={[Colors.background, Colors.background]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -193,7 +194,7 @@ console.log(
             <Ionicons
               name="arrow-back"
               size={24}
-              color="#176BC1"
+              color={Colors.primary}
             />
             <Text style={styles.backText}>Lesson</Text>
           </TouchableOpacity>
@@ -204,7 +205,7 @@ console.log(
             Question {currentQuestion + 1} of {quiz.length}
           </Text>
 
-          <AnimatedProgress value={((currentQuestion + 1) / quiz.length) * 100} color="#C9462C" style={styles.progressBar} />
+          <AnimatedProgress value={((currentQuestion + 1) / quiz.length) * 100} color={Colors.reading} style={styles.progressBar} />
 
           {message ? (
             <View
@@ -298,33 +299,23 @@ const styles = StyleSheet.create({
   error: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#64748B",
+    color: Colors.textSecondary,
   },
-  primaryButton: { backgroundColor: "#176BC1", borderRadius: 16, paddingVertical: 14, paddingHorizontal: 24, marginTop: 18, alignItems: "center", minHeight: 52 },
+  primaryButton: { backgroundColor: Colors.primary, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 24, marginTop: 18, alignItems: "center", minHeight: 52 },
   primaryButtonText: {
-    color: "#FFF",
+    color: Colors.white,
     fontSize: 17,
     fontWeight: "900",
   },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    paddingVertical: 8,
-  },
+  backButton: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", paddingVertical: 8, minHeight: 44 },
   backText: {
     marginLeft: 7,
     fontSize: 17,
     fontWeight: "800",
-    color: "#176BC1",
+    color: Colors.primary,
   },
-  title: { marginTop: 8, fontSize: 28, fontWeight: "900", color: "#C9462C", textAlign: "center" },
-  progress: {
-    marginTop: 5,
-    textAlign: "center",
-    color: "#64748B",
-    fontWeight: "800",
-  },
+  title: { marginTop: 8, fontSize: 28, fontWeight: "800", color: Colors.reading, textAlign: "center", lineHeight: 36 },
+  progress: { marginTop: 5, textAlign: "center", color: Colors.textSecondary, fontWeight: "700", fontSize: 15, lineHeight: 22 },
   progressBar: {
     height: 12,
     backgroundColor: "#D7EAF8",
@@ -348,35 +339,23 @@ const styles = StyleSheet.create({
   notice: {
     backgroundColor: "#FFF1E6",
   },
-  feedbackText: {
-    color: "#334155",
-    fontWeight: "800",
-    lineHeight: 20,
-  },
-  questionCard: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#F2B49D" },
-  question: { fontSize: 24, lineHeight: 31, fontWeight: "900", color: "#23394A", textAlign: "center" },
+  feedbackText: { color: Colors.text, fontWeight: "700", lineHeight: 23, fontSize: 16 },
+  questionCard: { backgroundColor: Colors.white, borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: Colors.readingBorder, borderBottomWidth: 3 },
+  question: { fontSize: 24, lineHeight: 31, fontWeight: "800", color: Colors.text, textAlign: "center" },
   image: {
     fontSize: 62,
     marginTop: 15,
   },
-  choice: { minHeight: 58, backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#F2B49D", marginTop: 12, padding: 15, justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1 },
-  correctChoice: { backgroundColor: "#E4F3EB", borderColor: "#007C70" },
-  wrongChoice: { backgroundColor: "#FFF0EC", borderColor: "#C96859" },
-  choiceText: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#275B8F",
-  },
+  choice: { minHeight: 58, backgroundColor: Colors.white, borderRadius: 16, borderWidth: 2, borderColor: Colors.readingBorder, marginTop: 12, padding: 15, justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1, borderBottomWidth: 3, paddingHorizontal: 40 },
+  correctChoice: { backgroundColor: Colors.successSurface, borderColor: Colors.math },
+  wrongChoice: { backgroundColor: Colors.errorSurface, borderColor: "#C96859" },
+  choiceText: { fontSize: 22, fontWeight: "800", color: "#275B8F", textAlign: "center", flexShrink: 1 },
   icon: {
     position: "absolute",
     right: 16,
     fontSize: 22,
     fontWeight: "900",
   },
-  nextButton: { backgroundColor: "#C9462C", borderRadius: 16, paddingVertical: 16, marginTop: 18, alignItems: "center", minHeight: 52 },
-  nextText: {
-    color: "#FFF",
-    fontSize: 19,
-    fontWeight: "900",
-  },
+  nextButton: { backgroundColor: Colors.reading, borderRadius: 16, paddingVertical: 16, marginTop: 18, alignItems: "center", minHeight: 52, borderBottomWidth: 3, borderBottomColor: Colors.readingDark },
+  nextText: { color: Colors.white, fontSize: 19, fontWeight: "800", lineHeight: 26, textAlign: "center" },
 });

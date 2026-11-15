@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 
 import React, { useState } from "react";
 import {
@@ -581,10 +582,7 @@ export default function WorksheetPreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F0F7FF",
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
 
   content: {
     paddingHorizontal: 20,
@@ -596,7 +594,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.white,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
@@ -604,40 +602,15 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
 
-  backButtonText: {
-    color: "#246BCE",
-    fontWeight: "700",
-  },
+  backButtonText: { color: Colors.primary, fontWeight: "700" },
 
-  heading: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#244A86",
-    marginBottom: 8,
-  },
+  heading: { fontSize: 26, fontWeight: "800", color: Colors.text, marginBottom: 8 },
 
-  subtitle: {
-    fontSize: 14,
-    color: "#52657D",
-    marginBottom: 18,
-  },
+  subtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: 18, lineHeight: 21 },
 
-  notice: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    padding: 14,
-    borderRadius: 14,
-    backgroundColor: "#E2EEFF",
-    marginBottom: 18,
-  },
+  notice: { flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 14, borderRadius: 14, backgroundColor: Colors.rewardSurface, marginBottom: 18 },
 
-  noticeText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#244A86",
-  },
+  noticeText: { flex: 1, fontSize: 15, lineHeight: 22, color: Colors.rewardText },
 
   card: {
     backgroundColor: "#FFFFFF",
@@ -695,31 +668,13 @@ const styles = StyleSheet.create({
     color: "#25354D",
   },
 
-  primaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    backgroundColor: "#246BCE",
-    padding: 16,
-    borderRadius: 14,
-    marginTop: 8,
-  },
+  primaryButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: Colors.primary, padding: 16, borderRadius: 16, marginTop: 8, minHeight: 52, borderBottomWidth: 3, borderBottomColor: Colors.primaryDark },
 
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
+  primaryButtonText: { color: Colors.white, fontSize: 16, fontWeight: "800", lineHeight: 23, textAlign: "center", flexShrink: 1 },
 
   disabled: {
     opacity: 0.6,
   },
 
-  footer: {
-    textAlign: "center",
-    color: "#64748B",
-    fontSize: 12,
-    marginTop: 18,
-  },
+  footer: { textAlign: "center", color: Colors.textSecondary, fontSize: 13, marginTop: 18, lineHeight: 20 },
 });

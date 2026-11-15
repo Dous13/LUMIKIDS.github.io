@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 
 import React, { useRef, useState } from "react";
 import {
@@ -216,12 +217,7 @@ export default function WorksheetCaptureScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    gap: 14,
-    backgroundColor: "#F5F8FF",
-  },
+  container: { flexGrow: 1, padding: 20, gap: 14, backgroundColor: Colors.background },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -229,16 +225,8 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 14,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#173B75",
-  },
-  description: {
-    fontSize: 15,
-    color: "#53657D",
-    lineHeight: 22,
-  },
+  title: { fontSize: 24, fontWeight: "800", color: Colors.text },
+  description: { fontSize: 15, color: Colors.textSecondary, lineHeight: 22 },
   cameraContainer: {
     height: 430,
     overflow: "hidden",
@@ -255,51 +243,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#152238",
     borderRadius: 18,
   },
-  button: {
-    backgroundColor: "#246BFD",
-    padding: 16,
-    borderRadius: 14,
-    alignItems: "center",
-  },
+  button: { backgroundColor: Colors.primary, padding: 16, borderRadius: 16, alignItems: "center", minHeight: 52, borderBottomWidth: 3, borderBottomColor: Colors.primaryDark, justifyContent: "center" },
   disabled: {
     opacity: 0.5,
   },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  results: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    gap: 12,
-  },
-  resultTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#173B75",
-  },
-  answer: {
-    fontSize: 17,
-    color: "#24364B",
-  },
-  note: {
-    fontSize: 13,
-    color: "#69788B",
-    lineHeight: 19,
-  },
+  buttonText: { color: Colors.white, fontSize: 16, fontWeight: "800", textAlign: "center", lineHeight: 23 },
+  results: { padding: 16, borderRadius: 16, backgroundColor: Colors.white, gap: 12, borderWidth: 1, borderColor: Colors.teacherBorder },
+  resultTitle: { fontSize: 20, fontWeight: "700", color: Colors.text },
+  answer: { fontSize: 17, color: Colors.text },
+  note: { fontSize: 14, color: Colors.textSecondary, lineHeight: 21 },
   error: {
     color: "#B42318",
     lineHeight: 21,
   },
-  backButton: {
-  width: 44,
-  height: 44,
-  borderRadius: 22,
-  backgroundColor: "#E5EEFF",
-  alignItems: "center",
-  justifyContent: "center",
-  marginBottom: 2,
-},
+  backButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.teacherSurface, alignItems: "center", justifyContent: "center", marginBottom: 2 },
 });

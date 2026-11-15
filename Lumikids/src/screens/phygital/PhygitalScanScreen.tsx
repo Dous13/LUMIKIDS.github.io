@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 
 import React, { useRef, useState } from "react";
 import {
@@ -91,7 +92,7 @@ export default function PhygitalScanScreen() {
 
   return (
     <LinearGradient
-      colors={["#62B8FF", "#A9DDFF", "#FFF3C4"]}
+      colors={[Colors.background, Colors.background]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -249,33 +250,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.white,
     borderRadius: 22,
     paddingHorizontal: 14,
     paddingVertical: 10,
     elevation: 3,
   },
-  backText: {
-    marginLeft: 7,
-    color: "#2563EB",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  title: {
-    marginTop: 20,
-    fontSize: 27,
-    lineHeight: 34,
-    fontWeight: "900",
-    color: "#1E3A8A",
-    textAlign: "center",
-  },
-  subtitle: {
-    marginTop: 8,
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#334155",
-    textAlign: "center",
-  },
+  backText: { marginLeft: 7, color: Colors.primary, fontSize: 16, fontWeight: "900" },
+  title: { marginTop: 20, fontSize: 27, lineHeight: 34, fontWeight: "800", color: Colors.text, textAlign: "center" },
+  subtitle: { marginTop: 8, fontSize: 15, lineHeight: 22, color: Colors.textSecondary, textAlign: "center" },
   cameraFrame: {
     width: "100%",
     maxWidth: 520,
@@ -309,80 +292,29 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: "transparent",
   },
-  instruction: {
-    marginTop: 12,
-    color: "#1E3A8A",
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  permissionCard: {
-    marginTop: 24,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 26,
-    padding: 24,
-    alignItems: "center",
-    elevation: 4,
-  },
+  instruction: { marginTop: 12, color: Colors.primary, fontWeight: "800", textAlign: "center" },
+  permissionCard: { marginTop: 24, backgroundColor: Colors.white, borderRadius: 22, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: Colors.teacherBorder },
   permissionEmoji: {
     fontSize: 48,
   },
-  permissionTitle: {
-    marginTop: 12,
-    fontSize: 21,
-    fontWeight: "900",
-    color: "#1E3A8A",
-    textAlign: "center",
-  },
-  permissionText: {
-    marginTop: 8,
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#64748B",
-    textAlign: "center",
-  },
+  permissionTitle: { marginTop: 12, fontSize: 21, fontWeight: "800", color: Colors.text, textAlign: "center" },
+  permissionText: { marginTop: 8, fontSize: 15, lineHeight: 22, color: Colors.textSecondary, textAlign: "center" },
   statusText: {
     marginTop: 12,
     color: "#475569",
     fontWeight: "700",
   },
-  messageCard: {
-    marginTop: 12,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#DBEAFE",
-  },
+  messageCard: { marginTop: 12, backgroundColor: Colors.white, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: Colors.teacherBorder },
   messageText: {
-    color: "#334155",
+    color: Colors.text,
     fontWeight: "800",
     textAlign: "center",
     lineHeight: 21,
   },
-  primaryButton: {
-    marginTop: 14,
-    backgroundColor: "#2563EB",
-    borderRadius: 18,
-    paddingHorizontal: 22,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  tipCard: {
-    marginTop: 18,
-    padding: 16,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.94)",
-  },
-  tipTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#1E3A8A",
-  },
+  primaryButton: { marginTop: 14, backgroundColor: Colors.primary, borderRadius: 18, paddingHorizontal: 22, paddingVertical: 14, alignItems: "center", minHeight: 52, borderBottomWidth: 3, borderBottomColor: Colors.primaryDark, justifyContent: "center" },
+  primaryButtonText: { color: Colors.white, fontSize: 16, fontWeight: "800", lineHeight: 23, textAlign: "center" },
+  tipCard: { marginTop: 18, padding: 16, borderRadius: 16, backgroundColor: Colors.rewardSurface },
+  tipTitle: { fontSize: 16, fontWeight: "800", color: Colors.rewardText },
   tipText: {
     marginTop: 6,
     fontSize: 14,

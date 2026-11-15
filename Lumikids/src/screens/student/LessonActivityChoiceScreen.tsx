@@ -1,7 +1,8 @@
+import { Colors } from "../../theme";
 import TouchableOpacity from "../../components/common/MotionTouchable";
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { ScrollView, Text, StyleSheet } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -45,7 +46,7 @@ export default function LessonActivityChoiceScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={{ flex: 1, backgroundColor: Colors.background }} contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <Text style={styles.emoji}>🌟</Text>
       <Text style={styles.title}>How would you like to learn?</Text>
       <Text style={styles.subtitle}>
@@ -82,49 +83,33 @@ export default function LessonActivityChoiceScreen() {
       >
         <Text style={styles.backText}>Go Back</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FAF8F2", padding: 24, justifyContent: "center" },
+  container: { flexGrow: 1, backgroundColor: Colors.background, padding: 24, justifyContent: "center" },
   emoji: {
     fontSize: 54,
     textAlign: "center",
     marginBottom: 12,
   },
-  title: { fontSize: 25, fontWeight: "800", color: "#23394A", textAlign: "center" },
+  title: { fontSize: 25, fontWeight: "800", color: Colors.text, textAlign: "center", lineHeight: 33, maxWidth: 620, alignSelf: "center" },
   subtitle: {
     fontSize: 15,
-    color: "#64748B",
+    color: Colors.textSecondary,
     textAlign: "center",
     marginTop: 8,
     marginBottom: 28,
   },
-  digitalCard: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, marginBottom: 16, elevation: 1, borderWidth: 1, borderColor: "#BDD4E8" },
-  physicalCard: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, elevation: 1, borderWidth: 1, borderColor: "#D4DECC" },
-  cardEmoji: {
-    fontSize: 35,
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#1E3A8A",
-  },
-  cardDescription: {
-    fontSize: 14,
-    color: "#475569",
-    marginTop: 6,
-    lineHeight: 21,
-  },
-  backButton: {
-    alignSelf: "center",
-    padding: 16,
-    marginTop: 14,
-  },
+  digitalCard: { backgroundColor: Colors.white, borderRadius: 20, padding: 22, marginBottom: 16, elevation: 1, borderWidth: 1, borderColor: "#BDD4E8", width: "100%", maxWidth: 620, alignSelf: "center", borderBottomWidth: 3 },
+  physicalCard: { backgroundColor: Colors.white, borderRadius: 20, padding: 22, elevation: 1, borderWidth: 1, borderColor: "#D4DECC", width: "100%", maxWidth: 620, alignSelf: "center", borderBottomWidth: 3 },
+  cardEmoji: { fontSize: 35, marginBottom: 8, textAlignVertical: "center", includeFontPadding: false },
+  cardTitle: { fontSize: 19, fontWeight: "800", color: "#1E3A8A", lineHeight: 27 },
+  cardDescription: { fontSize: 16, color: "#475569", marginTop: 6, lineHeight: 24 },
+  backButton: { alignSelf: "center", padding: 16, marginTop: 14, minHeight: 48 },
   backText: {
-    color: "#2867AD",
+    color: Colors.primary,
     fontWeight: "700",
   },
 });

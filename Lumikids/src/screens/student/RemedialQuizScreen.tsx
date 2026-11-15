@@ -1,3 +1,5 @@
+import FadeIn from "../../components/common/FadeIn";
+import { Colors } from "../../theme";
 import AnimatedProgress from "../../components/common/AnimatedProgress";
 import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useState } from "react";
@@ -115,7 +117,7 @@ export default function RemedialQuizScreen() {
 
   return (
     <LinearGradient
-      colors={["#EAF7FF", "#EAF7FF"]}
+      colors={[Colors.background, Colors.background]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -141,7 +143,7 @@ export default function RemedialQuizScreen() {
                 Question {currentIndex + 1} of {questions.length}
               </Text>
 
-              <AnimatedProgress value={((currentIndex + 1) / questions.length) * 100} color="#176BC1" style={styles.progressTrack} />
+              <AnimatedProgress value={((currentIndex + 1) / questions.length) * 100} color={Colors.primary} style={styles.progressTrack} />
 
               {message ? (
                 <View
@@ -156,7 +158,7 @@ export default function RemedialQuizScreen() {
                 </View>
               ) : null}
 
-              <View style={styles.card}>
+              <FadeIn style={styles.card}>
                 <Text style={styles.question}>
                   {question.question}
                 </Text>
@@ -204,12 +206,12 @@ export default function RemedialQuizScreen() {
                     </Text>
                   </TouchableOpacity>
                 )}
-              </View>
+              </FadeIn>
             </>
           )}
 
           {finished && (
-            <View style={styles.card}>
+            <FadeIn style={styles.card}>
               <Text style={styles.resultEmoji}>
                 {passed ? "🎉" : "🌟"}
               </Text>
@@ -232,7 +234,7 @@ export default function RemedialQuizScreen() {
                   {passed ? "Try the Lesson Quiz" : "Practice Again"}
                 </Text>
               </TouchableOpacity>
-            </View>
+            </FadeIn>
           )}
         </ScrollView>
       </SafeAreaView>
@@ -261,19 +263,15 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginTop: 12,
   },
-  title: { fontSize: 29, fontWeight: "900", color: "#23394A", textAlign: "center", marginTop: 14 },
+  title: { fontSize: 29, fontWeight: "800", color: Colors.text, textAlign: "center", marginTop: 14, lineHeight: 36 },
   subtitle: {
     textAlign: "center",
-    color: "#64748B",
+    color: Colors.textSecondary,
     fontWeight: "700",
     marginTop: 6,
     marginBottom: 20,
   },
-  progress: {
-    textAlign: "center",
-    color: "#64748B",
-    fontWeight: "800",
-  },
+  progress: { textAlign: "center", color: Colors.textSecondary, fontWeight: "700", fontSize: 15, lineHeight: 22 },
   progressTrack: {
     height: 12,
     backgroundColor: "#D7EAF8",
@@ -282,14 +280,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 18,
   },
-  progressFill: { height: "100%", backgroundColor: "#176BC1" },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
-  question: {
-    fontSize: 23,
-    fontWeight: "900",
-    color: "#334155",
-    textAlign: "center",
-  },
+  progressFill: { height: "100%", backgroundColor: Colors.primary },
+  card: { backgroundColor: Colors.white, borderRadius: 20, padding: 22, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5", borderBottomWidth: 3 },
+  question: { fontSize: 23, fontWeight: "800", color: Colors.text, textAlign: "center" },
   emoji: {
     fontSize: 58,
     marginVertical: 20,
@@ -299,12 +292,8 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 12,
   },
-  option: { minHeight: 56, borderRadius: 16, borderWidth: 1, borderColor: "#E1E7E5", backgroundColor: "#FFFFFF", justifyContent: "center", alignItems: "center", padding: 14, elevation: 1 },
-  optionText: {
-    fontSize: 21,
-    fontWeight: "900",
-    color: "#275B8F",
-  },
+  option: { minHeight: 56, borderRadius: 16, borderWidth: 2, borderColor: "#E1E7E5", backgroundColor: Colors.white, justifyContent: "center", alignItems: "center", padding: 14, elevation: 1, borderBottomWidth: 3, paddingHorizontal: 20 },
+  optionText: { fontSize: 21, fontWeight: "800", color: "#275B8F", textAlign: "center", flexShrink: 1 },
   correctOption: {
     backgroundColor: "#DDF8E4",
     borderColor: "#65C97A",
@@ -324,17 +313,9 @@ const styles = StyleSheet.create({
   noticeFeedback: {
     backgroundColor: "#FFF1E6",
   },
-  feedbackText: {
-    color: "#334155",
-    fontWeight: "800",
-    lineHeight: 21,
-  },
-  button: { width: "100%", marginTop: 20, backgroundColor: "#176BC1", borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52 },
-  buttonText: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "900",
-  },
+  feedbackText: { color: Colors.text, fontWeight: "800", lineHeight: 23, fontSize: 16 },
+  button: { width: "100%", marginTop: 20, backgroundColor: Colors.primary, borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52, borderBottomWidth: 3, borderBottomColor: Colors.primaryDark },
+  buttonText: { color: Colors.white, fontSize: 17, fontWeight: "800", lineHeight: 26, textAlign: "center" },
   resultEmoji: {
     fontSize: 65,
     marginBottom: 10,
@@ -342,18 +323,18 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 25,
     fontWeight: "900",
-    color: "#176BC1",
+    color: Colors.primary,
   },
   score: {
     marginTop: 12,
     fontSize: 19,
     fontWeight: "900",
-    color: "#334155",
+    color: Colors.text,
   },
   message: {
     marginTop: 12,
     textAlign: "center",
-    color: "#64748B",
+    color: Colors.textSecondary,
     fontWeight: "700",
     lineHeight: 22,
   },

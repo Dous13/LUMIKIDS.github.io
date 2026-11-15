@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 import AnimatedProgress from "../../components/common/AnimatedProgress";
 import FadeIn from "../../components/common/FadeIn";
 import TouchableOpacity from "../../components/common/MotionTouchable";
@@ -112,7 +113,7 @@ export default function MathScreen() {
 
   return (
     <LinearGradient
-      colors={["#EAF7FF", "#EAF7FF"]}
+      colors={[Colors.background, Colors.background]}
       style={styles.container}
     >
       {/* Decorative background */}
@@ -140,7 +141,7 @@ export default function MathScreen() {
                 <Ionicons
                   name="arrow-back"
                   size={22}
-                  color="#176BC1"
+                  color={Colors.primary}
                 />
 
                 <Text style={styles.backText}>
@@ -188,7 +189,7 @@ export default function MathScreen() {
                 </View>
 
                 {/* Progress Bar */}
-                <AnimatedProgress value={progressPercent} color="#FFCD54" style={styles.track} />
+                <AnimatedProgress value={progressPercent} color={Colors.sunshine} style={styles.track} />
               </FadeIn>
 
               {/* Section Header */}
@@ -330,16 +331,11 @@ const styles = StyleSheet.create({
 
   backButton: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", backgroundColor: "transparent", borderRadius: 22, paddingHorizontal: 0, paddingVertical: 9, elevation: 0, marginTop: 6, minHeight: 44 },
 
-  backText: {
-    marginLeft: 7,
-    color: "#176BC1",
-    fontSize: 16,
-    fontWeight: "900",
-  },
+  backText: { marginLeft: 7, color: Colors.math, fontSize: 16, fontWeight: "700" },
 
   /* Hero */
 
-  hero: { marginTop: 14, borderRadius: 24, padding: 24, backgroundColor: "#007C70", alignItems: "center", overflow: "hidden", elevation: 0 },
+  hero: { marginTop: 14, borderRadius: 24, padding: 24, backgroundColor: Colors.math, alignItems: "center", overflow: "hidden", elevation: 0, borderBottomWidth: 4, borderBottomColor: Colors.mathDark },
 
   decorLeft: { position: "absolute", left: 12, top: 18, display: "none" },
 
@@ -347,24 +343,19 @@ const styles = StyleSheet.create({
 
   heroEmoji: { fontSize: 44 },
 
-  kicker: { marginTop: 8, fontSize: 11, fontWeight: "900", letterSpacing: 1.8, color: "#FFFFFF" },
+  kicker: { marginTop: 8, fontSize: 11, fontWeight: "800", letterSpacing: 1.8, color: Colors.white },
 
-  title: { marginTop: 8, fontSize: 27, fontWeight: "900", color: "#FFFFFF", textAlign: "center", lineHeight: 34 },
+  title: { marginTop: 8, fontSize: 27, fontWeight: "800", color: Colors.white, textAlign: "center", lineHeight: 34 },
 
-  subtitle: { marginTop: 7, fontSize: 16, lineHeight: 24, color: "#FFFFFF", textAlign: "center" },
+  subtitle: { marginTop: 7, fontSize: 16, lineHeight: 24, color: Colors.white, textAlign: "center" },
 
   /* Progress */
 
-  progressRow: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 18,
-  },
+  progressRow: { width: "100%", flexDirection: "row", justifyContent: "space-between", marginTop: 18, alignItems: "center", gap: 8 },
 
-  progressLabel: { fontWeight: "900", color: "#FFFFFF" },
+  progressLabel: { fontWeight: "900", color: Colors.white, flexShrink: 1 },
 
-  percent: { fontWeight: "900", color: "#FFFFFF" },
+  percent: { fontWeight: "800", color: Colors.white },
 
   track: { width: "100%", height: 11, backgroundColor: "rgba(255,255,255,0.26)", borderRadius: 20, overflow: "hidden", marginTop: 8 },
 
@@ -385,15 +376,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
 
-  sectionTitle: { fontSize: 21, fontWeight: "800", color: "#23394A", textShadowColor: "rgba(0,0,0,.14)", textShadowRadius: 0 },
+  sectionTitle: { fontSize: 21, fontWeight: "800", color: Colors.text, textShadowColor: "rgba(0,0,0,.14)", textShadowRadius: 0, lineHeight: 28 },
 
   sectionEmoji: { fontSize: 28, display: "none" },
 
   /* Lesson Card */
 
-  lesson: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 16, marginBottom: 10, flexDirection: "row", alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#8CD3BF", borderLeftWidth: 4 },
+  lesson: { backgroundColor: Colors.white, borderRadius: 20, padding: 16, marginBottom: 10, flexDirection: "row", alignItems: "center", elevation: 2, borderWidth: 1, borderColor: Colors.mathBorder, borderLeftWidth: 4, shadowColor: Colors.text, shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: {"width":0,"height":3} },
 
-  locked: { opacity: 0.6 },
+  locked: { opacity: 0.65, backgroundColor: Colors.lockedSurface, borderColor: Colors.border, elevation: 0, shadowOpacity: 0 },
 
   lessonIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: "#FFF2BE", justifyContent: "center", alignItems: "center" },
 
@@ -401,12 +392,12 @@ const styles = StyleSheet.create({
 
   lessonBody: { flex: 1, marginLeft: 13, marginRight: 8, minWidth: 0 },
 
-  lessonTitle: { fontSize: 20, fontWeight: "800", color: "#007C70" },
+  lessonTitle: { fontSize: 20, fontWeight: "800", color: Colors.math, flexShrink: 1 },
 
   lessonDescription: {
     fontSize: 14,
     lineHeight: 19,
-    color: "#64748B",
+    color: Colors.textSecondary,
     marginTop: 2,
   },
 
@@ -414,11 +405,11 @@ const styles = StyleSheet.create({
 
   xpPill: { alignSelf: "flex-start", backgroundColor: "#FFE49B", borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, marginTop: 5 },
 
-  lessonMeta: { fontSize: 12, fontWeight: "900", color: "#6D4C07" },
+  lessonMeta: { fontSize: 13, fontWeight: "700", color: "#6D4C07", lineHeight: 19 },
 
   /* Status */
 
   status: { width: 42, height: 42, borderRadius: 21, justifyContent: "center", alignItems: "center" },
 
-  statusText: { fontSize: 21, fontWeight: "900", color: "#007C70", textAlign: "center", textAlignVertical: "center", includeFontPadding: false },
+  statusText: { fontSize: 21, fontWeight: "900", color: Colors.math, textAlign: "center", textAlignVertical: "center", includeFontPadding: false },
 });

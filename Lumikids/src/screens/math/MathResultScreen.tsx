@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 import CelebrationText from "../../components/common/CelebrationText";
 import FadeIn from "../../components/common/FadeIn";
 import TouchableOpacity from "../../components/common/MotionTouchable";
@@ -133,7 +134,7 @@ export default function MathResultScreen() {
 
   return (
     <LinearGradient
-      colors={["#EAF7FF", "#EAF7FF"]}
+      colors={[Colors.background, Colors.background]}
       style={styles.background}
     >
       <SafeAreaView style={styles.container}>
@@ -222,57 +223,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: { flexGrow: 1, justifyContent: "center", padding: 20, width: "100%", maxWidth: 620, alignSelf: "center" },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#8CD3BF" },
+  card: { backgroundColor: Colors.white, borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: Colors.mathBorder, borderBottomWidth: 4 },
   celebrate: { fontSize: 48 },
-  title: { marginTop: 8, fontSize: 28, fontWeight: "900", color: "#007C70", textAlign: "center", lineHeight: 36 },
+  title: { marginTop: 8, fontSize: 28, fontWeight: "800", color: Colors.math, textAlign: "center", lineHeight: 36 },
   subtitle: {
     marginTop: 7,
-    color: "#64748B",
+    color: Colors.textSecondary,
     fontSize: 17,
     fontWeight: "600",
     textAlign: "center",
   },
-  stars: {
-    minHeight: 64,
-    marginTop: 22,
-    fontSize: 48,
-  },
-  score: {
-    marginTop: 10,
-    fontSize: 34,
-    fontWeight: "900",
-    color: "#334155",
-  },
-  percentage: {
-    marginTop: 2,
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#4A90E2",
-  },
-  message: {
-    marginTop: 14,
-    textAlign: "center",
-    fontSize: 19,
-    lineHeight: 27,
-    color: "#475569",
-    fontWeight: "700",
-  },
-  rewardRow: {
-    flexDirection: "row",
-    gap: 14,
-    marginTop: 22,
-  },
-  rewardCard: { minWidth: 96, backgroundColor: "#D9F2E8", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: "center", borderWidth: 0, borderColor: "#E2F2FF" },
+  stars: { minHeight: 64, marginTop: 16, fontSize: 48, textAlign: "center" },
+  score: { marginTop: 10, fontSize: 32, fontWeight: "900", color: Colors.math, lineHeight: 42 },
+  percentage: { marginTop: 2, fontSize: 20, fontWeight: "800", color: Colors.textSecondary },
+  message: { marginTop: 14, textAlign: "center", fontSize: 18, lineHeight: 26, color: "#475569", fontWeight: "700" },
+  rewardRow: { flexDirection: "row", gap: 14, marginTop: 22, width: "100%", flexWrap: "wrap", justifyContent: "center" },
+  rewardCard: { minWidth: 96, backgroundColor: Colors.rewardSurface, borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: "center", borderWidth: 1, borderColor: Colors.rewardBorder, flexGrow: 1, flexBasis: "40%" },
   rewardEmoji: {
     fontSize: 28,
   },
-  rewardValue: { marginTop: 4, fontSize: 22, fontWeight: "900", color: "#23394A" },
+  rewardValue: { marginTop: 4, fontSize: 25, fontWeight: "900", color: Colors.rewardText, lineHeight: 33 },
   rewardLabel: {
     marginTop: 1,
-    color: "#64748B",
+    color: Colors.textSecondary,
     fontWeight: "800",
   },
-  unlock: { marginTop: 22, textAlign: "center", color: "#007C70", fontWeight: "800", fontSize: 17 },
-  button: { width: "100%", marginTop: 26, backgroundColor: "#007C70", borderRadius: 16, paddingVertical: 17, alignItems: "center", minHeight: 52 },
-  buttonText: { color: "#FFFFFF", fontSize: 19, fontWeight: "900" },
+  unlock: { marginTop: 22, textAlign: "center", color: Colors.math, fontWeight: "800", fontSize: 17, lineHeight: 25 },
+  button: { width: "100%", marginTop: 26, backgroundColor: Colors.math, borderRadius: 16, paddingVertical: 17, alignItems: "center", minHeight: 52, borderBottomWidth: 3, borderBottomColor: Colors.mathDark },
+  buttonText: { color: Colors.white, fontSize: 19, fontWeight: "900" },
 });
