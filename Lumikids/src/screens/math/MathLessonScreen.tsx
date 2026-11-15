@@ -58,7 +58,7 @@ export default function MathLessonScreen() {
   const lastPage = page === lesson.pages.length - 1;
 
   return (
-    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={styles.container}>
+    <LinearGradient colors={["#EAF7FF", "#EAF7FF"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
@@ -111,11 +111,11 @@ const styles = StyleSheet.create({
   backArrow: { fontSize: 26, fontWeight: "800", color: "#4A90E2" },
   progress: { fontSize: 18, fontWeight: "800", color: "#64748B" },
   headerSpacer: { width: 48 },
-  card: { width: "100%", maxWidth: 560, alignSelf: "center", minHeight: 390, marginTop: 18, backgroundColor: "#FFFFFF", borderRadius: 20, justifyContent: "center", alignItems: "center", padding: 24, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
+  card: { width: "100%", maxWidth: 560, alignSelf: "center", minHeight: 390, marginTop: 18, backgroundColor: "#FFFFFF", borderRadius: 20, justifyContent: "center", alignItems: "center", padding: 24, elevation: 1, borderWidth: 1, borderColor: "#8CD3BF" },
   emoji: { fontSize: 64, textAlign: "center" },
-  number: { fontSize: 70, fontWeight: "900", color: "#237B67", marginTop: 16 },
-  title: { width: "100%", maxWidth: 500, fontSize: 28, lineHeight: 34, fontWeight: "900", marginTop: 16, color: "#23394A", textAlign: "center" },
+  number: { fontSize: 70, fontWeight: "900", color: "#007C70", marginTop: 16 },
+  title: { width: "100%", maxWidth: 500, fontSize: 28, lineHeight: 34, fontWeight: "900", marginTop: 16, color: "#007C70", textAlign: "center" },
   description: { width: "100%", maxWidth: 500, marginTop: 12, fontSize: 19, color: "#64748B", textAlign: "center", lineHeight: 29 },
-  button: { marginTop: 18, backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 17, alignItems: "center", width: "100%", minHeight: 52 },
+  button: { marginTop: 18, backgroundColor: "#007C70", borderRadius: 16, paddingVertical: 17, alignItems: "center", width: "100%", minHeight: 52 },
   buttonText: { color: "#FFF", fontSize: 21, fontWeight: "900" },
 });

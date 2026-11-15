@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
 
   message:{ fontSize: 17, textAlign:"center", marginVertical:20, color: "#5D7080", lineHeight: 25 },
 
-  button:{ backgroundColor: "#2867AD", paddingHorizontal:35, paddingVertical:14, borderRadius: 16, minHeight: 52 },
+  button:{ backgroundColor: "#176BC1", paddingHorizontal:35, paddingVertical:14, borderRadius: 16, minHeight: 52 },
 
   buttonText:{
     color:"white",

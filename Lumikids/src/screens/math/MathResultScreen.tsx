@@ -133,7 +133,7 @@ export default function MathResultScreen() {
 
   return (
     <LinearGradient
-      colors={["#FAF8F2", "#FAF8F2"]}
+      colors={["#EAF7FF", "#EAF7FF"]}
       style={styles.background}
     >
       <SafeAreaView style={styles.container}>
@@ -222,9 +222,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: { flexGrow: 1, justifyContent: "center", padding: 20, width: "100%", maxWidth: 620, alignSelf: "center" },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#8CD3BF" },
   celebrate: { fontSize: 48 },
-  title: { marginTop: 8, fontSize: 28, fontWeight: "900", color: "#23394A", textAlign: "center", lineHeight: 36 },
+  title: { marginTop: 8, fontSize: 28, fontWeight: "900", color: "#007C70", textAlign: "center", lineHeight: 36 },
   subtitle: {
     marginTop: 7,
     color: "#64748B",
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     gap: 14,
     marginTop: 22,
   },
-  rewardCard: { minWidth: 96, backgroundColor: "#F5F7F4", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: "center", borderWidth: 0, borderColor: "#E2F2FF" },
+  rewardCard: { minWidth: 96, backgroundColor: "#D9F2E8", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: "center", borderWidth: 0, borderColor: "#E2F2FF" },
   rewardEmoji: {
     fontSize: 28,
   },
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     color: "#64748B",
     fontWeight: "800",
   },
-  unlock: { marginTop: 22, textAlign: "center", color: "#237B67", fontWeight: "800", fontSize: 17 },
-  button: { width: "100%", marginTop: 26, backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 17, alignItems: "center", minHeight: 52 },
+  unlock: { marginTop: 22, textAlign: "center", color: "#007C70", fontWeight: "800", fontSize: 17 },
+  button: { width: "100%", marginTop: 26, backgroundColor: "#007C70", borderRadius: 16, paddingVertical: 17, alignItems: "center", minHeight: 52 },
   buttonText: { color: "#FFFFFF", fontSize: 19, fontWeight: "900" },
 });

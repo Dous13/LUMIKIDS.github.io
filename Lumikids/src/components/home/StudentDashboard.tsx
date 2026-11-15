@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     gap: 8,
   },
-  stat: { flex: 1, alignItems: "center", backgroundColor: "#F6F7F3", borderRadius: 12, paddingVertical: 11 },
+  stat: { flex: 1, alignItems: "center", backgroundColor: "#FFF0C7", borderRadius: 12, paddingVertical: 11 },
   statEmoji: {
     fontSize: 22,
   },
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 10,
   },
-  subject: { flex: 1, alignItems: "center", backgroundColor: "#F2F6F7", borderRadius: 12, paddingVertical: 9 },
+  subject: { flex: 1, alignItems: "center", backgroundColor: "#E0F2FF", borderRadius: 12, paddingVertical: 9 },
   subjectEmoji: {
     fontSize: 20,
   },

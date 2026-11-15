@@ -115,7 +115,7 @@ export default function RemedialQuizScreen() {
 
   return (
     <LinearGradient
-      colors={["#FAF8F2", "#FAF8F2"]}
+      colors={["#EAF7FF", "#EAF7FF"]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -141,7 +141,7 @@ export default function RemedialQuizScreen() {
                 Question {currentIndex + 1} of {questions.length}
               </Text>
 
-              <AnimatedProgress value={((currentIndex + 1) / questions.length) * 100} color="#2867AD" style={styles.progressTrack} />
+              <AnimatedProgress value={((currentIndex + 1) / questions.length) * 100} color="#176BC1" style={styles.progressTrack} />
 
               {message ? (
                 <View
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 18,
   },
-  progressFill: { height: "100%", backgroundColor: "#2867AD" },
+  progressFill: { height: "100%", backgroundColor: "#176BC1" },
   card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
   question: {
     fontSize: 23,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 21,
   },
-  button: { width: "100%", marginTop: 20, backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52 },
+  button: { width: "100%", marginTop: 20, backgroundColor: "#176BC1", borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52 },
   buttonText: {
     color: "#FFF",
     fontSize: 17,
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 25,
     fontWeight: "900",
-    color: "#2867AD",
+    color: "#176BC1",
   },
   score: {
     marginTop: 12,

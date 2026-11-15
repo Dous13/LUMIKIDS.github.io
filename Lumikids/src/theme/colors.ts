@@ -2,11 +2,11 @@
 
 export const Colors = {
   // Brand
-  primary: "#2867AD",
-  secondary: "#237B67",
+  primary: "#176BC1",
+  secondary: "#007C70",
 
   // Backgrounds
-  background: "#FAF8F2",
+  background: "#EAF7FF",
   surface: "#FFFFFF",
 
   // Text
@@ -14,7 +14,7 @@ export const Colors = {
   textSecondary: "#5D7080",
 
   // Status
-  success: "#237B67",
+  success: "#007C70",
   warning: "#F59E0B",
   error: "#EF4444",
 
@@ -22,9 +22,9 @@ export const Colors = {
   border: "#E2E8F0",
 
   // Subjects
-  reading: "#B65D24",
-  writing: "#7152A3",
-  math: "#237B67",
+  reading: "#C9462C",
+  writing: "#7840BE",
+  math: "#007C70",
 
   white: "#FFFFFF",
   black: "#000000",

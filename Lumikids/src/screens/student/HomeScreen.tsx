@@ -1,6 +1,8 @@
+import FadeIn from "../../components/common/FadeIn";
 import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Animated, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useAmbientFloat } from "../../hooks/useAmbientFloat";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   getSession,
@@ -34,6 +36,7 @@ export default function HomeScreen() {
 
   const [studentId, setStudentId] = useState("");
   const [logoutPrompt, setLogoutPrompt] = useState(false);
+  const backgroundDrift = useAmbientFloat();
 
   useEffect(() => {
     async function loadSession() {
@@ -78,7 +81,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator
           size="large"
-          color="#2867AD"
+          color="#176BC1"
         />
       </SafeAreaView>
     );
@@ -100,13 +103,23 @@ export default function HomeScreen() {
 
   return (
     <LinearGradient
-      colors={["#FAF8F2", "#FAF8F2"]}
+      colors={["#EAF7FF", "#EAF7FF"]}
       style={styles.container}
     >
-      <View style={styles.circle1} />
-      <View style={styles.circle2} />
-      <View style={styles.circle3} />
-      <View style={styles.circle4} />
+      <Animated.View pointerEvents="none" accessible={false} style={[styles.circle1, { transform: [
+        { translateY: backgroundDrift.interpolate({ inputRange: [0, 1], outputRange: [0, 12] }) },
+        { translateX: backgroundDrift.interpolate({ inputRange: [0, 1], outputRange: [0, -8] }) },
+      ] }]} />
+      <Animated.View pointerEvents="none" accessible={false} style={[styles.circle2, { transform: [
+        { translateY: backgroundDrift.interpolate({ inputRange: [0, 1], outputRange: [-8, 8] }) },
+      ] }]} />
+      <Animated.View pointerEvents="none" accessible={false} style={[styles.circle3, { transform: [
+        { translateY: backgroundDrift.interpolate({ inputRange: [0, 1], outputRange: [0, -14] }) },
+        { translateX: backgroundDrift.interpolate({ inputRange: [0, 1], outputRange: [0, 8] }) },
+      ] }]} />
+      <Animated.View pointerEvents="none" accessible={false} style={[styles.circle4, { transform: [
+        { translateY: backgroundDrift.interpolate({ inputRange: [0, 1], outputRange: [0, 10] }) },
+      ] }]} />
 
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView
@@ -117,17 +130,18 @@ export default function HomeScreen() {
 
           <MascotCard avatar={student.avatar} />
 
+          <FadeIn delay={40}>
           <SubjectButton
             emoji="📖"
             title="Reading"
-            color="#FFF1E6"
+            color="#FFDDC5"
             onPress={() => navigation.navigate("Reading")}
           />
 
           <SubjectButton
             emoji="✏️"
             title="Writing"
-            color="#F1EDFB"
+            color="#E4D4FF"
             onPress={() =>
               navigation.navigate("Writing")
             }
@@ -136,11 +150,12 @@ export default function HomeScreen() {
           <SubjectButton
             emoji="🔢"
             title="Math"
-            color="#E8F4F0"
+            color="#BDEDE1"
             onPress={() => navigation.navigate("Math")
             }
           />
 
+          </FadeIn>
         </ScrollView>
         <BottomMenu
           xp={student.xp}
@@ -176,7 +191,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24, width: "100%", maxWidth: 720, alignSelf: "center" },
+  content: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16, width: "100%", maxWidth: 720, alignSelf: "center" },
 
   logoutPrompt: { position: "absolute", left: 20, right: 20, bottom: 180, backgroundColor: "#FFFFFF", borderRadius: 20, padding: 18, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5", maxWidth: 680, alignSelf: "center" },
 
@@ -214,7 +229,7 @@ const styles = StyleSheet.create({
 
   confirmText: { color: "#B91C1C", fontWeight: "800" },
 
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FAF8F2" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#EAF7FF" },
 
   errorText: {
     fontSize: 18,
@@ -222,13 +237,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  circle1: { position: "absolute", width: 300, height: 300, borderRadius: 150, backgroundColor: "rgb(116, 204, 153)", top: -110, right: -90, display: "none" },
+  circle1: { position: "absolute", width: 300, height: 300, borderRadius: 150, backgroundColor: "#39A9EC", opacity: 0.12, top: -110, right: -90 },
 
-  circle2: { position: "absolute", width: 220, height: 220, borderRadius: 110, backgroundColor: "rgb(206, 184, 136)", left: -80, top: 340, display: "none" },
+  circle2: { position: "absolute", width: 220, height: 220, borderRadius: 110, backgroundColor: "#FFC84A", opacity: 0.14, left: -80, top: 340 },
 
-  circle3: { position: "absolute", width: 120, height: 120, borderRadius: 60, backgroundColor: "rgb(161, 228, 240)", right: 40, bottom: 210, display: "none" },
+  circle3: { position: "absolute", width: 120, height: 120, borderRadius: 60, backgroundColor: "#19BCA2", opacity: 0.1, right: 40, bottom: 210 },
 
-  circle4: { position: "absolute", width: 90, height: 90, borderRadius: 45, backgroundColor: "rgb(173, 134, 206)", left: 60, bottom: 120, display: "none" },
+  circle4: { position: "absolute", width: 90, height: 90, borderRadius: 45, backgroundColor: "#9B75DE", opacity: 0.1, left: 60, bottom: 120 },
 
   phygitalButton: {
     flexDirection: "row",

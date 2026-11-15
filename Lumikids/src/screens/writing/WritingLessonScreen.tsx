@@ -19,11 +19,11 @@ export default function WritingLessonScreen() {
   if (!lesson) return <SafeAreaView style={styles.center}><Text style={styles.error}>Lesson not found.</Text></SafeAreaView>;
 
   return (
-    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={styles.container}>
+    <LinearGradient colors={["#EAF7FF", "#EAF7FF"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <TouchableOpacity style={styles.backButton} onPress={exitGuard.requestExit}>
-            <Ionicons name="arrow-back" size={25} color="#2867AD" /><Text style={styles.backText}>Writing</Text>
+            <Ionicons name="arrow-back" size={25} color="#176BC1" /><Text style={styles.backText}>Writing</Text>
           </TouchableOpacity>
           <FadeIn style={styles.card}>
             <Text style={styles.step}>Letter practice</Text>
@@ -53,6 +53,6 @@ export default function WritingLessonScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 }, safeArea: { flex: 1 }, content: { flexGrow: 1, padding: 20, paddingBottom: 40, width: "100%", maxWidth: 720, alignSelf: "center" },
-  backButton: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", paddingVertical: 8 }, backText: { marginLeft: 8, fontWeight: "700", fontSize: 18, color: "#2867AD" },
-  card: { width: "100%", maxWidth: 560, minHeight: 520, alignSelf: "center", marginTop: 14, backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", justifyContent: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" }, step: { fontSize: 17, color: "#64748B", fontWeight: "800" }, emoji: { fontSize: 72, marginTop: 18 }, letter: { fontSize: 125, fontWeight: "900", color: "#7152A3", lineHeight: 140 }, word: { fontSize: 34, fontWeight: "800", color: "#23394A" }, description: { width: "100%", maxWidth: 470, marginTop: 25, textAlign: "center", fontSize: 19, lineHeight: 28, color: "#5D7080" }, button: { width: "100%", marginTop: 30, backgroundColor: "#2867AD", paddingVertical: 17, borderRadius: 16, alignItems: "center", minHeight: 52 }, buttonText: { color: "#FFF", fontWeight: "900", fontSize: 20 }, center: { flex: 1, justifyContent: "center", alignItems: "center" }, error: { fontSize: 20, fontWeight: "800", color: "#64748B" },
+  backButton: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", paddingVertical: 8 }, backText: { marginLeft: 8, fontWeight: "700", fontSize: 18, color: "#176BC1" },
+  card: { width: "100%", maxWidth: 560, minHeight: 520, alignSelf: "center", marginTop: 14, backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", justifyContent: "center", elevation: 1, borderWidth: 1, borderColor: "#CAB0EC" }, step: { fontSize: 17, color: "#64748B", fontWeight: "800" }, emoji: { fontSize: 72, marginTop: 18 }, letter: { fontSize: 125, fontWeight: "900", color: "#7840BE", lineHeight: 140 }, word: { fontSize: 34, fontWeight: "800", color: "#23394A" }, description: { width: "100%", maxWidth: 470, marginTop: 25, textAlign: "center", fontSize: 19, lineHeight: 28, color: "#5D7080" }, button: { width: "100%", marginTop: 30, backgroundColor: "#7840BE", paddingVertical: 17, borderRadius: 16, alignItems: "center", minHeight: 52 }, buttonText: { color: "#FFF", fontWeight: "900", fontSize: 20 }, center: { flex: 1, justifyContent: "center", alignItems: "center" }, error: { fontSize: 20, fontWeight: "800", color: "#64748B" },
 });

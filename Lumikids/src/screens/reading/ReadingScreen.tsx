@@ -34,7 +34,7 @@ export default function ReadingScreen() {
   const percent = readingLessons.length ? (completed / readingLessons.length) * 100 : 0;
 
   return (
-    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={styles.container}>
+    <LinearGradient colors={["#EAF7FF", "#EAF7FF"]} style={styles.container}>
       <View style={styles.bubbleOne} /><View style={styles.bubbleTwo} /><View style={styles.starOne} /><View style={styles.starTwo} />
       <SafeAreaView style={styles.safeArea}>
         <FlatList
@@ -45,7 +45,7 @@ export default function ReadingScreen() {
           ListHeaderComponent={
             <View>
               <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Ionicons name="arrow-back" size={22} color="#2867AD" />
+                <Ionicons name="arrow-back" size={22} color="#176BC1" />
                 <Text style={styles.backText}>Home</Text>
               </TouchableOpacity>
 
@@ -60,7 +60,7 @@ export default function ReadingScreen() {
                   <Text style={styles.progressLabel}>🌟 {completed}/{readingLessons.length} lessons</Text>
                   <Text style={styles.percent}>{Math.round(percent)}%</Text>
                 </View>
-                <AnimatedProgress value={percent} color="#B65D24" style={styles.track} />
+                <AnimatedProgress value={percent} color="#FFCD54" style={styles.track} />
               </FadeIn>
 
               <View style={styles.sectionRow}>
@@ -105,17 +105,17 @@ const styles = StyleSheet.create({
   bubbleTwo:{ position:"absolute", width:110, height:110, borderRadius:55, backgroundColor:"rgba(255,255,255,.16)", bottom:80, left:-45, display: "none" },
   starOne:{ position:"absolute", top:135, left:18, display: "none" }, starTwo:{ position:"absolute", top:285, right:20, display: "none" },
   backButton:{ flexDirection:"row", alignItems:"center", alignSelf:"flex-start", backgroundColor: "transparent", borderRadius:22, paddingHorizontal: 0, paddingVertical:9, elevation: 0, marginTop:6, minHeight: 44 },
-  backText:{marginLeft:7,color:"#2867AD",fontSize:16,fontWeight:"900"},
-  hero:{ marginTop:14, borderRadius: 24, padding: 24, backgroundColor: "#FFF1E6", alignItems:"center", overflow:"hidden", elevation: 0 },
+  backText:{marginLeft:7,color:"#176BC1",fontSize:16,fontWeight:"900"},
+  hero:{ marginTop:14, borderRadius: 24, padding: 24, backgroundColor: "#C9462C", alignItems:"center", overflow:"hidden", elevation: 0 },
   heroDecorLeft:{ position:"absolute", left:12, top:18, display: "none" },heroDecorRight:{ position:"absolute", right:14, top:18, display: "none" },
-  heroEmoji:{ fontSize: 44, marginTop:3 }, kicker:{ marginTop: 8, fontSize: 11, fontWeight:"900", letterSpacing: 1.8, color: "#B65D24" },
-  title:{ marginTop: 8, fontSize: 27, fontWeight:"900", color: "#23394A", textAlign:"center", lineHeight: 34 },
-  subtitle:{ marginTop:7, fontSize: 16, lineHeight: 24, color: "#5D7080", textAlign:"center" },
-  progressRow:{width:"100%",flexDirection:"row",justifyContent:"space-between",marginTop:18},progressLabel:{fontWeight:"900",color:"#334155"},percent:{ fontWeight:"900", color: "#B65D24" },
-  track:{width:"100%",height:11,backgroundColor:"#DCECF8",borderRadius:20,overflow:"hidden",marginTop:8},fill:{height:"100%",backgroundColor:"#58C977",borderRadius:20},
+  heroEmoji:{ fontSize: 44, marginTop:3 }, kicker:{ marginTop: 8, fontSize: 11, fontWeight:"900", letterSpacing: 1.8, color: "#FFFFFF" },
+  title:{ marginTop: 8, fontSize: 27, fontWeight:"900", color: "#FFFFFF", textAlign:"center", lineHeight: 34 },
+  subtitle:{ marginTop:7, fontSize: 16, lineHeight: 24, color: "#FFFFFF", textAlign:"center" },
+  progressRow:{width:"100%",flexDirection:"row",justifyContent:"space-between",marginTop:18},progressLabel:{ fontWeight:"900", color: "#FFFFFF" },percent:{ fontWeight:"900", color: "#FFFFFF" },
+  track:{ width:"100%", height:11, backgroundColor: "rgba(255,255,255,0.26)", borderRadius:20, overflow:"hidden", marginTop:8 },fill:{height:"100%",backgroundColor:"#58C977",borderRadius:20},
   sectionRow:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginTop:22,marginBottom:10,paddingHorizontal:3},sectionTitle:{ fontSize: 21, fontWeight: "800", color: "#23394A", textShadowColor:"rgba(0,0,0,.12)", textShadowRadius: 0 },sectionEmoji:{ fontSize:28, display: "none" },
-  lesson:{ backgroundColor: "#FFFFFF", borderRadius: 20, padding: 16, marginBottom: 10, flexDirection:"row", alignItems:"center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },locked:{ opacity: 0.6 },
-  lessonIcon:{ width: 56, height: 56, borderRadius: 16, justifyContent:"center", alignItems:"center" },lessonEmoji:{fontSize:36},lessonBody:{ flex:1, marginLeft:13, minWidth: 0 },lessonTitle:{ fontSize:22, fontWeight: "800", color: "#23394A" },lessonWord:{fontSize:15,fontWeight:"700",color:"#64748B",marginTop:1},
-  xpPill:{alignSelf:"flex-start",backgroundColor:"#FFF4CC",borderRadius:12,paddingHorizontal:8,paddingVertical:3,marginTop:5},lessonMeta:{ fontSize:12, fontWeight:"900", color: "#805B15" },
-  status:{width:42,height:42,borderRadius:21,justifyContent:"center",alignItems:"center"},statusText:{ fontSize:21, fontWeight:"900", color: "#B65D24" },
+  lesson:{ backgroundColor: "#FFFFFF", borderRadius: 20, padding: 16, marginBottom: 10, flexDirection:"row", alignItems:"center", elevation: 1, borderWidth: 1, borderColor: "#F2B49D", borderLeftWidth: 4 },locked:{ opacity: 0.6 },
+  lessonIcon:{ width: 56, height: 56, borderRadius: 16, justifyContent: "center", alignItems: "center" },lessonEmoji:{ fontSize: 34, textAlign: "center", textAlignVertical: "center", includeFontPadding: false },lessonBody:{ flex:1, marginLeft:13, minWidth: 0 },lessonTitle:{ fontSize:22, fontWeight: "800", color: "#C9462C" },lessonWord:{fontSize:15,fontWeight:"700",color:"#64748B",marginTop:1},
+  xpPill:{ alignSelf:"flex-start", backgroundColor: "#FFE49B", borderRadius:12, paddingHorizontal:8, paddingVertical:3, marginTop:5 },lessonMeta:{ fontSize:12, fontWeight:"900", color: "#6D4C07" },
+  status:{ width:42, height:42, borderRadius:21, justifyContent: "center", alignItems: "center" },statusText:{ fontSize:21, fontWeight:"900", color: "#C9462C", textAlign: "center", textAlignVertical: "center", includeFontPadding: false },
 });

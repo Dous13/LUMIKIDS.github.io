@@ -29,7 +29,7 @@ export default function RewardScreen() {
   }, [continueToSubject]));
 
   return (
-    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#EAF7FF", "#EAF7FF"]} style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.title}>🎉 Lesson Complete!</Text>
@@ -56,8 +56,8 @@ const styles = StyleSheet.create({
   stars: { fontSize: 48, marginVertical: 26 },
   rewardRow: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
   reward: { marginLeft: 9, fontSize: 26, fontWeight: "800", color: "#23394A" },
-  unlock: { marginTop: 25, fontSize: 18, color: "#237B67", fontWeight: "700", textAlign: "center", lineHeight: 26 },
-  levelUp: { marginTop: 15, fontSize: 28, color: "#F59E0B", fontWeight: "900" },
-  button: { marginTop: 40, backgroundColor: "#2867AD", paddingHorizontal: 45, paddingVertical: 18, borderRadius: 16, minHeight: 52, width: "100%", maxWidth: 360 },
+  unlock: { marginTop: 25, fontSize: 18, color: "#007C70", fontWeight: "700", textAlign: "center", lineHeight: 26 },
+  levelUp: { marginTop: 15, fontSize: 28, color: "#986100", fontWeight: "900" },
+  button: { marginTop: 40, backgroundColor: "#176BC1", paddingHorizontal: 45, paddingVertical: 18, borderRadius: 16, minHeight: 52, width: "100%", maxWidth: 360 },
   buttonText: { color: "white", fontSize: 19, fontWeight: "800" },
 });

@@ -112,7 +112,7 @@ export default function MathScreen() {
 
   return (
     <LinearGradient
-      colors={["#FAF8F2", "#FAF8F2"]}
+      colors={["#EAF7FF", "#EAF7FF"]}
       style={styles.container}
     >
       {/* Decorative background */}
@@ -140,7 +140,7 @@ export default function MathScreen() {
                 <Ionicons
                   name="arrow-back"
                   size={22}
-                  color="#2867AD"
+                  color="#176BC1"
                 />
 
                 <Text style={styles.backText}>
@@ -188,7 +188,7 @@ export default function MathScreen() {
                 </View>
 
                 {/* Progress Bar */}
-                <AnimatedProgress value={progressPercent} color="#237B67" style={styles.track} />
+                <AnimatedProgress value={progressPercent} color="#FFCD54" style={styles.track} />
               </FadeIn>
 
               {/* Section Header */}
@@ -332,14 +332,14 @@ const styles = StyleSheet.create({
 
   backText: {
     marginLeft: 7,
-    color: "#2867AD",
+    color: "#176BC1",
     fontSize: 16,
     fontWeight: "900",
   },
 
   /* Hero */
 
-  hero: { marginTop: 14, borderRadius: 24, padding: 24, backgroundColor: "#E8F4F0", alignItems: "center", overflow: "hidden", elevation: 0 },
+  hero: { marginTop: 14, borderRadius: 24, padding: 24, backgroundColor: "#007C70", alignItems: "center", overflow: "hidden", elevation: 0 },
 
   decorLeft: { position: "absolute", left: 12, top: 18, display: "none" },
 
@@ -347,11 +347,11 @@ const styles = StyleSheet.create({
 
   heroEmoji: { fontSize: 44 },
 
-  kicker: { marginTop: 8, fontSize: 11, fontWeight: "900", letterSpacing: 1.8, color: "#237B67" },
+  kicker: { marginTop: 8, fontSize: 11, fontWeight: "900", letterSpacing: 1.8, color: "#FFFFFF" },
 
-  title: { marginTop: 8, fontSize: 27, fontWeight: "900", color: "#23394A", textAlign: "center", lineHeight: 34 },
+  title: { marginTop: 8, fontSize: 27, fontWeight: "900", color: "#FFFFFF", textAlign: "center", lineHeight: 34 },
 
-  subtitle: { marginTop: 7, fontSize: 16, lineHeight: 24, color: "#5D7080", textAlign: "center" },
+  subtitle: { marginTop: 7, fontSize: 16, lineHeight: 24, color: "#FFFFFF", textAlign: "center" },
 
   /* Progress */
 
@@ -362,21 +362,11 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
 
-  progressLabel: {
-    fontWeight: "900",
-    color: "#334155",
-  },
+  progressLabel: { fontWeight: "900", color: "#FFFFFF" },
 
-  percent: { fontWeight: "900", color: "#237B67" },
+  percent: { fontWeight: "900", color: "#FFFFFF" },
 
-  track: {
-    width: "100%",
-    height: 11,
-    backgroundColor: "#DCECF8",
-    borderRadius: 20,
-    overflow: "hidden",
-    marginTop: 8,
-  },
+  track: { width: "100%", height: 11, backgroundColor: "rgba(255,255,255,0.26)", borderRadius: 20, overflow: "hidden", marginTop: 8 },
 
   fill: {
     height: "100%",
@@ -401,19 +391,17 @@ const styles = StyleSheet.create({
 
   /* Lesson Card */
 
-  lesson: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 16, marginBottom: 10, flexDirection: "row", alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
+  lesson: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 16, marginBottom: 10, flexDirection: "row", alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#8CD3BF", borderLeftWidth: 4 },
 
   locked: { opacity: 0.6 },
 
   lessonIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: "#FFF2BE", justifyContent: "center", alignItems: "center" },
 
-  lessonEmoji: {
-    fontSize: 35,
-  },
+  lessonEmoji: { fontSize: 34, textAlign: "center", textAlignVertical: "center", includeFontPadding: false },
 
   lessonBody: { flex: 1, marginLeft: 13, marginRight: 8, minWidth: 0 },
 
-  lessonTitle: { fontSize: 20, fontWeight: "800", color: "#23394A" },
+  lessonTitle: { fontSize: 20, fontWeight: "800", color: "#007C70" },
 
   lessonDescription: {
     fontSize: 14,
@@ -424,26 +412,13 @@ const styles = StyleSheet.create({
 
   /* XP */
 
-  xpPill: {
-    alignSelf: "flex-start",
-    backgroundColor: "#FFF4CC",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginTop: 5,
-  },
+  xpPill: { alignSelf: "flex-start", backgroundColor: "#FFE49B", borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, marginTop: 5 },
 
-  lessonMeta: { fontSize: 12, fontWeight: "900", color: "#805B15" },
+  lessonMeta: { fontSize: 12, fontWeight: "900", color: "#6D4C07" },
 
   /* Status */
 
-  status: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  status: { width: 42, height: 42, borderRadius: 21, justifyContent: "center", alignItems: "center" },
 
-  statusText: { fontSize: 21, fontWeight: "900", color: "#237B67" },
+  statusText: { fontSize: 21, fontWeight: "900", color: "#007C70", textAlign: "center", textAlignVertical: "center", includeFontPadding: false },
 });

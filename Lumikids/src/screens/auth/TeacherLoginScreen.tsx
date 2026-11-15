@@ -49,7 +49,7 @@ export default function TeacherLoginScreen() {
   }
 
   return (
-    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={styles.container}>
+    <LinearGradient colors={["#EAF7FF", "#EAF7FF"]} style={styles.container}>
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1 
   }, safe: { flex: 1 }, content: { padding: 20, paddingBottom: 40, width: "100%", maxWidth: 560, alignSelf: "center" },
-  back: { alignSelf: "flex-start", backgroundColor: "transparent", borderRadius: 22, paddingHorizontal: 0, paddingVertical: 10, elevation: 0, minHeight: 44 }, backText: { color: "#2867AD", fontWeight: "900", fontSize: 16 },
-  hero: { alignItems: "flex-start", marginTop: 24, marginBottom: 24 }, heroEmoji: { fontSize: 68, display: "none" }, kicker: { marginTop: 5, color: "#2867AD", fontWeight: "900", letterSpacing: 1.5, fontSize: 11 }, title: { marginTop: 10, fontSize: 30, fontWeight: "900", color: "#23394A", textAlign: "left", lineHeight: 38 }, subtitle: { marginTop: 7, color: "#5D7080", textAlign: "left", lineHeight: 24, fontSize: 16 },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" }, tabs: { flexDirection: "row", backgroundColor: "#EEF2F3", borderRadius: 12, padding: 4, marginBottom: 18 }, tab: { flex: 1, paddingVertical: 11, borderRadius: 9, alignItems: "center", minHeight: 44 }, activeTab: { backgroundColor: "#FFF", elevation: 0 }, tabText: { color: "#64748B", fontWeight: "800", fontSize: 15 }, activeTabText: { color: "#2867AD" }, error: { marginTop: 14, backgroundColor: "#FFF1F1", borderRadius: 14, padding: 12 }, errorText: { color: "#B91C1C", fontWeight: "700", lineHeight: 20 },
+  back: { alignSelf: "flex-start", backgroundColor: "transparent", borderRadius: 22, paddingHorizontal: 0, paddingVertical: 10, elevation: 0, minHeight: 44 }, backText: { color: "#176BC1", fontWeight: "900", fontSize: 16 },
+  hero: { alignItems: "flex-start", marginTop: 24, marginBottom: 24 }, heroEmoji: { fontSize: 68, display: "none" }, kicker: { marginTop: 5, color: "#176BC1", fontWeight: "900", letterSpacing: 1.5, fontSize: 11 }, title: { marginTop: 10, fontSize: 30, fontWeight: "900", color: "#23394A", textAlign: "left", lineHeight: 38 }, subtitle: { marginTop: 7, color: "#5D7080", textAlign: "left", lineHeight: 24, fontSize: 16 },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" }, tabs: { flexDirection: "row", backgroundColor: "#EEF2F3", borderRadius: 12, padding: 4, marginBottom: 18 }, tab: { flex: 1, paddingVertical: 11, borderRadius: 9, alignItems: "center", minHeight: 44 }, activeTab: { backgroundColor: "#FFF", elevation: 0 }, tabText: { color: "#64748B", fontWeight: "800", fontSize: 15 }, activeTabText: { color: "#176BC1" }, error: { marginTop: 14, backgroundColor: "#FFF1F1", borderRadius: 14, padding: 12 }, errorText: { color: "#B91C1C", fontWeight: "700", lineHeight: 20 },
 });

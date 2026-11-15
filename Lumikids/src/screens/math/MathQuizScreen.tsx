@@ -238,7 +238,7 @@ export default function MathQuizScreen() {
 
   return (
     <LinearGradient
-      colors={["#FAF8F2", "#FAF8F2"]}
+      colors={["#EAF7FF", "#EAF7FF"]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -266,7 +266,7 @@ export default function MathQuizScreen() {
             <View style={styles.headerSpacer} />
           </View>
 
-          <AnimatedProgress value={percentage} color="#237B67" style={styles.progressTrack} />
+          <AnimatedProgress value={percentage} color="#007C70" style={styles.progressTrack} />
 
           {feedback && (
             <View
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerSpacer: { width: 48 },
-  title: { fontSize: 27, fontWeight: "900", color: "#23394A" },
+  title: { fontSize: 27, fontWeight: "900", color: "#007C70" },
   subtitle: {
     marginTop: 2,
     fontSize: 14,
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#62C77A",
     borderRadius: 20,
   },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#8CD3BF" },
   question: { fontSize: 25, lineHeight: 32, fontWeight: "900", textAlign: "center", color: "#23394A" },
   emoji: {
     fontSize: 62,
@@ -457,8 +457,8 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 12,
   },
-  option: { minHeight: 58, backgroundColor: "#FFFFFF", borderRadius: 16, paddingHorizontal: 18, paddingVertical: 14, borderWidth: 1, borderColor: "#E1E7E5", justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1 },
-  correctOption: { backgroundColor: "#E4F3EB", borderColor: "#237B67" },
+  option: { minHeight: 58, backgroundColor: "#FFFFFF", borderRadius: 16, paddingHorizontal: 18, paddingVertical: 14, borderWidth: 1, borderColor: "#8CD3BF", justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1 },
+  correctOption: { backgroundColor: "#E4F3EB", borderColor: "#007C70" },
   wrongOption: { backgroundColor: "#FFF0EC", borderColor: "#C96859" },
   optionText: {
     fontSize: 23,
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: "#64748B",
   },
-  primaryButton: { width: "100%", marginTop: 18, backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52 },
+  primaryButton: { width: "100%", marginTop: 18, backgroundColor: "#007C70", borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52 },
   primaryButtonText: {
     color: "#FFF",
     fontSize: 19,

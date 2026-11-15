@@ -55,7 +55,7 @@ export default function DashboardScreen() {
 
   return (
     <LinearGradient
-      colors={["#FAF8F2", "#FAF8F2"]}
+      colors={["#EAF7FF", "#EAF7FF"]}
       style={styles.container}
     >
       <View style={styles.circle1} />
@@ -81,7 +81,7 @@ export default function DashboardScreen() {
 
         {loading || !summary ? (
           <View style={styles.loading}>
-            <ActivityIndicator size="large" color="#2867AD" />
+            <ActivityIndicator size="large" color="#176BC1" />
             <Text style={styles.loadingText}>Loading your adventure...</Text>
           </View>
         ) : (
@@ -92,7 +92,7 @@ export default function DashboardScreen() {
             <StudentDashboard summary={summary} />
 
             <LinearGradient
-              colors={["#FAF8F2", "#FAF8F2"]}
+              colors={["#EAF7FF", "#EAF7FF"]}
               style={styles.tipCard}
             >
               <Text style={styles.tipEmoji}>🌟</Text>
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: 28,
     fontWeight: "900",
-    color: "#2867AD",
+    color: "#176BC1",
   },
   headerText: {
     flex: 1,

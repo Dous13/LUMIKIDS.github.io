@@ -23,16 +23,6 @@ export default function PrimaryInput(props: Props) {
 }
 
 const styles = StyleSheet.create({
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderColor: "#CBD6DA",
-    minHeight: 56,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    fontSize: Typography.body,
-    color: Colors.text,
-  },
-  focused: { borderColor: Colors.primary, backgroundColor: "#F5FAFF" },
+  input: { backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 2, borderColor: "#C3DAEB", minHeight: 56, paddingHorizontal: 18, paddingVertical: 14, fontSize: 17, color: Colors.text },
+  focused: { borderColor: Colors.primary, backgroundColor: "#F6FBFF" },
 });

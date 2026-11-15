@@ -28,30 +28,11 @@ export default function PrimaryButton({
 }
 
 const styles = StyleSheet.create({
-  button: {
-    backgroundColor: Colors.primary,
-    minHeight: 56,
-    paddingHorizontal: 20,
-    borderBottomWidth: 4,
-    borderBottomColor: "#1D4E8A",
-
-    paddingVertical: Spacing.md,
-
-    borderRadius: Radius.md,
-
-    alignItems: "center",
-
-    marginTop: 20,
-  },
+  button: { backgroundColor: Colors.primary, minHeight: 58, paddingHorizontal: 20, borderBottomWidth: 4, borderBottomColor: "#0B4F99", paddingVertical: Spacing.md, borderRadius: 18, alignItems: "center", marginTop: 20, justifyContent: "center", shadowColor: "#0B4F99", shadowOpacity: 0.14, shadowRadius: 5, shadowOffset: {"width":0,"height":3}, elevation: 2 },
 
   disabled: {
     opacity: 0.6,
   },
 
-  text: {
-    color: Colors.white,
-    fontWeight: "800",
-    textAlign: "center",
-    fontSize: Typography.button,
-  },
+  text: { color: Colors.white, fontWeight: "800", textAlign: "center", fontSize: Typography.button, lineHeight: 24 },
 });

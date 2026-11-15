@@ -178,7 +178,7 @@ console.log(
 
   return (
     <LinearGradient
-      colors={["#FAF8F2", "#FAF8F2"]}
+      colors={["#EAF7FF", "#EAF7FF"]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -193,7 +193,7 @@ console.log(
             <Ionicons
               name="arrow-back"
               size={24}
-              color="#2867AD"
+              color="#176BC1"
             />
             <Text style={styles.backText}>Lesson</Text>
           </TouchableOpacity>
@@ -204,7 +204,7 @@ console.log(
             Question {currentQuestion + 1} of {quiz.length}
           </Text>
 
-          <AnimatedProgress value={((currentQuestion + 1) / quiz.length) * 100} color="#B65D24" style={styles.progressBar} />
+          <AnimatedProgress value={((currentQuestion + 1) / quiz.length) * 100} color="#C9462C" style={styles.progressBar} />
 
           {message ? (
             <View
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#64748B",
   },
-  primaryButton: { backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 14, paddingHorizontal: 24, marginTop: 18, alignItems: "center", minHeight: 52 },
+  primaryButton: { backgroundColor: "#176BC1", borderRadius: 16, paddingVertical: 14, paddingHorizontal: 24, marginTop: 18, alignItems: "center", minHeight: 52 },
   primaryButtonText: {
     color: "#FFF",
     fontSize: 17,
@@ -316,9 +316,9 @@ const styles = StyleSheet.create({
     marginLeft: 7,
     fontSize: 17,
     fontWeight: "800",
-    color: "#2867AD",
+    color: "#176BC1",
   },
-  title: { marginTop: 8, fontSize: 28, fontWeight: "900", color: "#23394A", textAlign: "center" },
+  title: { marginTop: 8, fontSize: 28, fontWeight: "900", color: "#C9462C", textAlign: "center" },
   progress: {
     marginTop: 5,
     textAlign: "center",
@@ -353,14 +353,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 20,
   },
-  questionCard: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
+  questionCard: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#F2B49D" },
   question: { fontSize: 24, lineHeight: 31, fontWeight: "900", color: "#23394A", textAlign: "center" },
   image: {
     fontSize: 62,
     marginTop: 15,
   },
-  choice: { minHeight: 58, backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E1E7E5", marginTop: 12, padding: 15, justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1 },
-  correctChoice: { backgroundColor: "#E4F3EB", borderColor: "#237B67" },
+  choice: { minHeight: 58, backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#F2B49D", marginTop: 12, padding: 15, justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1 },
+  correctChoice: { backgroundColor: "#E4F3EB", borderColor: "#007C70" },
   wrongChoice: { backgroundColor: "#FFF0EC", borderColor: "#C96859" },
   choiceText: {
     fontSize: 22,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "900",
   },
-  nextButton: { backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 16, marginTop: 18, alignItems: "center", minHeight: 52 },
+  nextButton: { backgroundColor: "#C9462C", borderRadius: 16, paddingVertical: 16, marginTop: 18, alignItems: "center", minHeight: 52 },
   nextText: {
     color: "#FFF",
     fontSize: 19,

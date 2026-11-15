@@ -156,7 +156,7 @@ function purchaseMascot(item: any) {
         <Ionicons
           name="arrow-back"
           size={28}
-          color="#2867AD"
+          color="#176BC1"
         />
 
         <Text style={styles.backText}>
@@ -208,8 +208,8 @@ function purchaseMascot(item: any) {
             disabled={equipped}
             style={[
               styles.button,
-              owned && !equipped && { backgroundColor: "#7152A3" }, // purple = Equip
-              equipped && { backgroundColor: "#237B67" },           // green = Equipped
+              owned && !equipped && { backgroundColor: "#7840BE" }, // purple = Equip
+              equipped && { backgroundColor: "#007C70" },           // green = Equipped
             ]}
             onPress={() => {
               if (!owned) {
@@ -249,19 +249,19 @@ function purchaseMascot(item: any) {
 
 const styles = StyleSheet.create({
 
-  container:{ flex:1, backgroundColor: "#FAF8F2", padding:20 },
+  container:{ flex:1, backgroundColor: "#EAF7FF", padding:20 },
 
   title:{ fontSize: 28, fontWeight:"900", marginBottom: 16, color: "#23394A", lineHeight: 36 },
 
-  card:{ flexDirection:"row", alignItems:"center", backgroundColor: "#FFFFFF", borderRadius: 20, padding: 14, borderWidth: 1, borderColor: "#E1E7E5", marginBottom: 12, elevation: 1, width: "100%", maxWidth: 680, alignSelf: "center" },
+  card:{ flexDirection:"row", alignItems:"center", backgroundColor: "#FFFFFF", borderRadius: 20, padding: 14, borderWidth: 1, borderColor: "#BEDDF3", marginBottom: 12, elevation: 1, width: "100%", maxWidth: 680, alignSelf: "center" },
 
-  image:{ width: 64, height: 76, marginRight: 12, resizeMode: "contain" },
+  image:{ width: 64, height: 76, marginRight: 12, resizeMode: "contain", alignSelf: "center" },
 
   name:{ fontSize: 20, fontWeight:"900", color: "#23394A", flexShrink: 1 },
 
   price:{ fontSize: 15, marginTop: 5, color: "#805B15", fontWeight:"800" },
 
-  button:{ backgroundColor: "#2867AD", paddingHorizontal: 12, paddingVertical: 14, borderRadius: 16, minHeight: 52, marginLeft: 8 },
+  button:{ backgroundColor: "#176BC1", paddingHorizontal: 12, paddingVertical: 14, borderRadius: 16, minHeight: 52, marginLeft: 8, justifyContent: "center" },
 
   buttonText:{ color: "#FFFFFF", fontWeight:"900", fontSize: 15 },
 
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
       marginBottom:15,
   },
 
-  backText:{ fontSize: 16, fontWeight:"700", marginLeft:8, color:"#2867AD" },
+  backText:{ fontSize: 16, fontWeight:"700", marginLeft:8, color:"#176BC1" },
 
   circle1:{ position:"absolute", width:180, height:180, borderRadius:90, backgroundColor:"#9fe7ff", top:-60, right:-50, display: "none" },
 
@@ -281,9 +281,9 @@ const styles = StyleSheet.create({
 
   circle3:{ position:"absolute", width:90, height:90, borderRadius:45, backgroundColor:"#a6ffc1", right:20, bottom:200, display: "none" },
 
-  coinCard:{ alignSelf: "flex-start", backgroundColor:"#FFF6CF", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, marginBottom: 10 },
+  coinCard:{ alignSelf: "flex-start", backgroundColor: "#FFD66B", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, marginBottom: 10 },
 
   coinRow:{flexDirection:"row",alignItems:"center"},
-  coinText:{ fontSize: 18, fontWeight:"900", color: "#805B15" },
+  coinText:{ fontSize: 18, fontWeight:"900", color: "#65480A" },
 
 });

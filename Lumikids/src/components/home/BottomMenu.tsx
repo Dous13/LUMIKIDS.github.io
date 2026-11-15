@@ -65,7 +65,7 @@ return (
         style={styles.dashboardButton}
         onPress={onDashboardPress}
       >
-        <Ionicons name="bar-chart-outline" size={22} color="#2867AD" />
+        <Ionicons name="bar-chart-outline" size={22} color="#176BC1" />
 
         <Text style={styles.buttonText}>
           Dashboard
@@ -76,7 +76,7 @@ return (
         style={styles.shopButton}
         onPress={onShopPress}
       >
-        <Ionicons name="bag-handle-outline" size={22} color="#2867AD" />
+        <Ionicons name="bag-handle-outline" size={22} color="#176BC1" />
 
         <Text style={styles.buttonText}>
           Shop
@@ -101,18 +101,15 @@ return (
 }
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 24, paddingBottom: 8, paddingTop: 8, width: "100%", maxWidth: 720, alignSelf: "center", backgroundColor: "#FAF8F2" },
+  container: { paddingHorizontal: 24, paddingBottom: 8, paddingTop: 10, width: "100%", maxWidth: 720, alignSelf: "center", backgroundColor: "#EAF7FF", borderTopWidth: 1, borderColor: "#C5E0F2", borderTopLeftRadius: 22, borderTopRightRadius: 22 },
 
-  statsCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 12, elevation: 0, shadowColor: "#000", shadowOpacity: 0, shadowRadius: 6, shadowOffset: {
-      width: 0,
-      height: 3,
-    }, borderWidth: 1, borderColor: "#E1E7E5" },
+  statsCard: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 12, elevation: 2, shadowColor: "#276891", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: {"width":0,"height":2}, borderWidth: 1, borderColor: "#C8E2F5", borderBottomWidth: 3 },
 
-  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
+  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8, alignItems: "center" },
 
-  statWithIcon: { flexDirection: "row", alignItems: "center" },
+  statWithIcon: { flexDirection: "row", alignItems: "center", minHeight: 24, backgroundColor: "#FFF0BA", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
 
-  stat: { fontSize: 15, fontWeight: "700", color: "#23394A" },
+  stat: { fontSize: 16, fontWeight: "700", color: "#23394A", lineHeight: 22 },
 
   progressBackground: {
     height: 14,
@@ -127,17 +124,17 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  xpText: { marginTop: 6, textAlign: "center", fontWeight: "700", fontSize: 12, color: "#5D7080" },
+  xpText: { marginTop: 5, textAlign: "center", fontWeight: "700", fontSize: 13, color: "#5D7080", lineHeight: 18 },
 
-  buttons: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
+  buttons: { flexDirection: "row", justifyContent: "space-between", marginTop: 8, alignItems: "stretch" },
 
-  dashboardButton: { flex: 1, marginRight: 6, backgroundColor: "transparent", borderRadius: 12, paddingVertical: 10, alignItems: "center" },
+  dashboardButton: { flex: 1, marginRight: 6, backgroundColor: "#FFFFFF", borderRadius: 12, paddingVertical: 10, alignItems: "center", justifyContent: "center", minHeight: 60, borderWidth: 1, borderColor: "#CEE3F2", borderBottomWidth: 2 },
 
-  shopButton: { flex: 1, marginHorizontal: 3, backgroundColor: "transparent", borderRadius: 12, paddingVertical: 10, alignItems: "center" },
+  shopButton: { flex: 1, marginHorizontal: 3, backgroundColor: "#FFFFFF", borderRadius: 12, paddingVertical: 10, alignItems: "center", justifyContent: "center", minHeight: 60, borderWidth: 1, borderColor: "#CEE3F2", borderBottomWidth: 2 },
 
-  logoutButton: { flex: 1, marginLeft: 6, backgroundColor: "transparent", borderRadius: 12, paddingVertical: 10, alignItems: "center" },
+  logoutButton: { flex: 1, marginLeft: 6, backgroundColor: "#FFFFFF", borderRadius: 12, paddingVertical: 10, alignItems: "center", justifyContent: "center", minHeight: 60, borderWidth: 1, borderColor: "#CEE3F2", borderBottomWidth: 2 },
 
   buttonEmoji: { fontSize: 21 },
 
-  buttonText: { marginTop: 4, fontWeight: "700", fontSize: 12, color: "#5D7080" },
+  buttonText: { marginTop: 4, fontWeight: "700", fontSize: 13, color: "#5D7080", lineHeight: 18 },
 });

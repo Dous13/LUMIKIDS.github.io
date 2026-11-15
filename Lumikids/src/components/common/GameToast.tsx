@@ -5,6 +5,9 @@ import {
   Text,
 } from "react-native";
 
+import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { Motion } from "../../theme/motion";
+
 type Props = {
   visible: boolean;
   message: string;
@@ -15,47 +18,36 @@ export default function GameToast({
   message,
 }: Props) {
 
+  const reduceMotion = useReducedMotion();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
-    if (visible) {
-
-      Animated.parallel([
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-    } else {
-
-      Animated.parallel([
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-
-        Animated.timing(translateY, {
-          toValue: 20,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-    }
-  }, [visible]);
+    // Keep feedback readable without movement when the OS requests less motion.
+    if (reduceMotion !== false) translateY.setValue(0);
+    const animation = Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: visible ? 1 : 0,
+        duration: reduceMotion !== false ? Motion.press : Motion.entrance,
+        easing: Motion.easeOut,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: reduceMotion !== false || visible ? 0 : 12,
+        duration: Motion.entrance,
+        easing: Motion.easeOut,
+        useNativeDriver: true,
+      }),
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [visible, reduceMotion, opacity, translateY]);
 
   return (
     <Animated.View
+      pointerEvents="none"
+      accessibilityLiveRegion="polite"
+      accessibilityElementsHidden={!visible}
       style={[
         styles.container,
         {
@@ -90,7 +82,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 14,
 
-    borderRadius: 30,
+    borderRadius: 16,
+    maxWidth: "88%",
 
     elevation: 10,
   },
@@ -99,7 +92,9 @@ const styles = StyleSheet.create({
 
     color: "white",
 
-    fontSize: 18,
+    fontSize: 16,
+    lineHeight: 23,
+    textAlign: "center",
 
     fontWeight: "700",
 

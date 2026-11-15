@@ -6,7 +6,7 @@ import { Motion } from "../../theme/motion";
 type Props = { value: number; color?: string; style?: StyleProp<ViewStyle> };
 
 /** Animate only the displayed fill. Progress calculations stay with the caller. */
-export default function AnimatedProgress({ value, color = "#237B67", style }: Props) {
+export default function AnimatedProgress({ value, color = "#176BC1", style }: Props) {
   const reduce = useReducedMotion();
   const fraction = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0)) / 100;
   const fill = useRef(new Animated.Value(fraction)).current;
@@ -31,6 +31,6 @@ export default function AnimatedProgress({ value, color = "#237B67", style }: Pr
 }
 
 const styles = StyleSheet.create({
-  track: { height: 9, width: "100%", borderRadius: 8, overflow: "hidden", backgroundColor: "#E7ECE9" },
+  track: { height: 9, width: "100%", borderRadius: 8, overflow: "hidden", backgroundColor: "#D4EAF8" },
   fill: { width: "100%", height: "100%", borderRadius: 8, transformOrigin: "left center" },
 });
