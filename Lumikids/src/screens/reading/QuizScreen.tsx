@@ -1,11 +1,8 @@
+import AnimatedProgress from "../../components/common/AnimatedProgress";
+import FadeIn from "../../components/common/FadeIn";
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useState } from "react";
-import {
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { ScrollView, View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   RouteProp,
@@ -181,7 +178,7 @@ console.log(
 
   return (
     <LinearGradient
-      colors={["#C8F2FF", "#EAFBFF", "#FFF9E6"]}
+      colors={["#FAF8F2", "#FAF8F2"]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -196,7 +193,7 @@ console.log(
             <Ionicons
               name="arrow-back"
               size={24}
-              color="#2563EB"
+              color="#2867AD"
             />
             <Text style={styles.backText}>Lesson</Text>
           </TouchableOpacity>
@@ -207,18 +204,7 @@ console.log(
             Question {currentQuestion + 1} of {quiz.length}
           </Text>
 
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${
-                    ((currentQuestion + 1) / quiz.length) * 100
-                  }%`,
-                },
-              ]}
-            />
-          </View>
+          <AnimatedProgress value={((currentQuestion + 1) / quiz.length) * 100} color="#B65D24" style={styles.progressBar} />
 
           {message ? (
             <View
@@ -233,7 +219,7 @@ console.log(
             </View>
           ) : null}
 
-          <View style={styles.questionCard}>
+          <FadeIn style={styles.questionCard}>
             <Text style={styles.question}>
               {question.question}
             </Text>
@@ -241,7 +227,7 @@ console.log(
             {question.image ? (
               <Text style={styles.image}>{question.image}</Text>
             ) : null}
-          </View>
+          </FadeIn>
 
           {question.choices.map((choice) => {
             const selectedChoice = selected === choice;
@@ -303,10 +289,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  content: { padding: 20, paddingBottom: 40, width: "100%", maxWidth: 720, alignSelf: "center" },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -317,14 +300,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#64748B",
   },
-  primaryButton: {
-    backgroundColor: "#4DA8FF",
-    borderRadius: 20,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    marginTop: 18,
-    alignItems: "center",
-  },
+  primaryButton: { backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 14, paddingHorizontal: 24, marginTop: 18, alignItems: "center", minHeight: 52 },
   primaryButtonText: {
     color: "#FFF",
     fontSize: 17,
@@ -340,15 +316,9 @@ const styles = StyleSheet.create({
     marginLeft: 7,
     fontSize: 17,
     fontWeight: "800",
-    color: "#2563EB",
+    color: "#2867AD",
   },
-  title: {
-    marginTop: 8,
-    fontSize: 29,
-    fontWeight: "900",
-    color: "#2563EB",
-    textAlign: "center",
-  },
+  title: { marginTop: 8, fontSize: 28, fontWeight: "900", color: "#23394A", textAlign: "center" },
   progress: {
     marginTop: 5,
     textAlign: "center",
@@ -383,44 +353,15 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 20,
   },
-  questionCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 26,
-    padding: 22,
-    alignItems: "center",
-    elevation: 4,
-  },
-  question: {
-    fontSize: 24,
-    lineHeight: 31,
-    fontWeight: "900",
-    color: "#334155",
-    textAlign: "center",
-  },
+  questionCard: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
+  question: { fontSize: 24, lineHeight: 31, fontWeight: "900", color: "#23394A", textAlign: "center" },
   image: {
     fontSize: 62,
     marginTop: 15,
   },
-  choice: {
-    minHeight: 58,
-    backgroundColor: "#EAF8FF",
-    borderRadius: 19,
-    borderWidth: 2,
-    borderColor: "#CFEAFF",
-    marginTop: 12,
-    padding: 15,
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-  },
-  correctChoice: {
-    backgroundColor: "#DDF8E4",
-    borderColor: "#65C97A",
-  },
-  wrongChoice: {
-    backgroundColor: "#FFE4E4",
-    borderColor: "#F28B8B",
-  },
+  choice: { minHeight: 58, backgroundColor: "#FFFFFF", borderRadius: 16, borderWidth: 1, borderColor: "#E1E7E5", marginTop: 12, padding: 15, justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1 },
+  correctChoice: { backgroundColor: "#E4F3EB", borderColor: "#237B67" },
+  wrongChoice: { backgroundColor: "#FFF0EC", borderColor: "#C96859" },
   choiceText: {
     fontSize: 22,
     fontWeight: "900",
@@ -432,13 +373,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "900",
   },
-  nextButton: {
-    backgroundColor: "#4DA8FF",
-    borderRadius: 20,
-    paddingVertical: 16,
-    marginTop: 18,
-    alignItems: "center",
-  },
+  nextButton: { backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 16, marginTop: 18, alignItems: "center", minHeight: 52 },
   nextText: {
     color: "#FFF",
     fontSize: 19,

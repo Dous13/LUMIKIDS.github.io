@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
+import MotionTouchable from "../common/MotionTouchable";
 import { Colors, Radius, Spacing, Typography } from "../../theme";
 
 type PrimaryButtonProps = {
@@ -13,7 +14,7 @@ export default function PrimaryButton({
   disabled = false,
 }: PrimaryButtonProps) {
   return (
-    <Pressable
+    <MotionTouchable
       style={[
         styles.button,
         disabled && styles.disabled,
@@ -22,17 +23,21 @@ export default function PrimaryButton({
       disabled={disabled}
     >
       <Text style={styles.text}>{title}</Text>
-    </Pressable>
+    </MotionTouchable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
     backgroundColor: Colors.primary,
+    minHeight: 56,
+    paddingHorizontal: 20,
+    borderBottomWidth: 4,
+    borderBottomColor: "#1D4E8A",
 
     paddingVertical: Spacing.md,
 
-    borderRadius: Radius.lg,
+    borderRadius: Radius.md,
 
     alignItems: "center",
 
@@ -45,7 +50,8 @@ const styles = StyleSheet.create({
 
   text: {
     color: Colors.white,
-    fontWeight: "600",
+    fontWeight: "800",
+    textAlign: "center",
     fontSize: Typography.button,
   },
 });

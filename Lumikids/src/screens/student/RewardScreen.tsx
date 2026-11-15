@@ -1,5 +1,7 @@
+import CelebrationText from "../../components/common/CelebrationText";
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React from "react";
-import { BackHandler, Text, StyleSheet, ScrollView, TouchableOpacity, View } from "react-native";
+import { BackHandler, Text, StyleSheet, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -27,14 +29,14 @@ export default function RewardScreen() {
   }, [continueToSubject]));
 
   return (
-    <LinearGradient colors={["#FFFDE7", "#E8F8FF"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.title}>🎉 Lesson Complete!</Text>
           <Text style={styles.lesson}>Lesson {lessonId}</Text>
-          <Text style={styles.stars}>{"⭐".repeat(stars)}</Text>
-          <Text style={styles.reward}>✨ +{xp} XP</Text>
-          <View style={styles.rewardRow}><CoinIcon size={28} /><Text style={styles.reward}>+{coins} Coins</Text></View>
+          <CelebrationText style={styles.stars}>{"⭐".repeat(stars)}</CelebrationText>
+          <CelebrationText style={styles.reward}>✨ +{xp} XP</CelebrationText>
+          <View style={styles.rewardRow}><CoinIcon size={28} /><CelebrationText style={styles.reward}>+{coins} Coins</CelebrationText></View>
           <Text style={styles.unlock}>{unlocked ? "🔓 New Lesson Unlocked!" : "🎉 Great Job!"}</Text>
           {levelUp && <Text style={styles.levelUp}>⬆ LEVEL UP!</Text>}
           <TouchableOpacity style={styles.button} onPress={continueToSubject}>
@@ -48,14 +50,14 @@ export default function RewardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { flexGrow: 1, justifyContent: "center", alignItems: "center", padding: 30 },
-  title: { fontSize: 34, fontWeight: "900", color: "#2563EB", textAlign: "center" },
-  lesson: { marginTop: 10, fontSize: 24, fontWeight: "700", color: "#475569" },
-  stars: { fontSize: 60, marginVertical: 30 },
+  scrollContent: { flexGrow: 1, justifyContent: "center", alignItems: "center", padding: 24, width: "100%", maxWidth: 620, alignSelf: "center" },
+  title: { fontSize: 30, fontWeight: "900", color: "#23394A", textAlign: "center", lineHeight: 38 },
+  lesson: { marginTop: 10, fontSize: 18, fontWeight: "700", color: "#5D7080" },
+  stars: { fontSize: 48, marginVertical: 26 },
   rewardRow: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
-  reward: { marginLeft: 9, fontSize: 28, fontWeight: "700" },
-  unlock: { marginTop: 25, fontSize: 22, color: "#16A34A", fontWeight: "700", textAlign: "center" },
+  reward: { marginLeft: 9, fontSize: 26, fontWeight: "800", color: "#23394A" },
+  unlock: { marginTop: 25, fontSize: 18, color: "#237B67", fontWeight: "700", textAlign: "center", lineHeight: 26 },
   levelUp: { marginTop: 15, fontSize: 28, color: "#F59E0B", fontWeight: "900" },
-  button: { marginTop: 40, backgroundColor: "#4DA8FF", paddingHorizontal: 45, paddingVertical: 18, borderRadius: 20 },
-  buttonText: { color: "white", fontSize: 22, fontWeight: "800" },
+  button: { marginTop: 40, backgroundColor: "#2867AD", paddingHorizontal: 45, paddingVertical: 18, borderRadius: 16, minHeight: 52, width: "100%", maxWidth: 360 },
+  buttonText: { color: "white", fontSize: 19, fontWeight: "800" },
 });

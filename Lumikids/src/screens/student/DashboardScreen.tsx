@@ -1,12 +1,6 @@
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -61,7 +55,7 @@ export default function DashboardScreen() {
 
   return (
     <LinearGradient
-      colors={["#62B8FF", "#A9DDFF", "#FFF3C4"]}
+      colors={["#FAF8F2", "#FAF8F2"]}
       style={styles.container}
     >
       <View style={styles.circle1} />
@@ -87,7 +81,7 @@ export default function DashboardScreen() {
 
         {loading || !summary ? (
           <View style={styles.loading}>
-            <ActivityIndicator size="large" color="#2563EB" />
+            <ActivityIndicator size="large" color="#2867AD" />
             <Text style={styles.loadingText}>Loading your adventure...</Text>
           </View>
         ) : (
@@ -98,7 +92,7 @@ export default function DashboardScreen() {
             <StudentDashboard summary={summary} />
 
             <LinearGradient
-              colors={["#FFFFFF", "#F1FAFF"]}
+              colors={["#FAF8F2", "#FAF8F2"]}
               style={styles.tipCard}
             >
               <Text style={styles.tipEmoji}>🌟</Text>
@@ -119,13 +113,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 8,
-  },
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 10, paddingBottom: 8, width: "100%", maxWidth: 720, alignSelf: "center" },
   backButton: {
     width: 48,
     height: 48,
@@ -138,29 +126,15 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: 28,
     fontWeight: "900",
-    color: "#2563EB",
+    color: "#2867AD",
   },
   headerText: {
     flex: 1,
     marginLeft: 14,
   },
-  title: {
-    fontSize: 27,
-    fontWeight: "900",
-    color: "#334155",
-  },
-  subtitle: {
-    marginTop: 3,
-    fontSize: 13,
-    lineHeight: 18,
-    color: "#475569",
-    fontWeight: "700",
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 30,
-  },
+  title: { fontSize: 26, fontWeight: "900", color: "#23394A" },
+  subtitle: { marginTop: 3, fontSize: 13, lineHeight: 18, color: "#5D7080", fontWeight: "700" },
+  content: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 30, width: "100%", maxWidth: 720, alignSelf: "center" },
   loading: {
     flex: 1,
     justifyContent: "center",
@@ -171,16 +145,7 @@ const styles = StyleSheet.create({
     color: "#475569",
     fontWeight: "800",
   },
-  tipCard: {
-    marginTop: 2,
-    borderRadius: 26,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.85)",
-    elevation: 4,
-  },
+  tipCard: { marginTop: 2, borderRadius: 16, padding: 18, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#E1E7E5", elevation: 1, backgroundColor: "#FFFFFF" },
   tipEmoji: { fontSize: 38, marginRight: 14 },
   tipContent: { flex: 1 },
   tipTitle: {
@@ -195,12 +160,6 @@ const styles = StyleSheet.create({
     color: "#64748B",
     fontWeight: "600",
   },
-  circle1: {
-    position: "absolute", width: 260, height: 260, borderRadius: 130,
-    backgroundColor: "rgba(116, 204, 153, 0.35)", top: -100, right: -80,
-  },
-  circle2: {
-    position: "absolute", width: 180, height: 180, borderRadius: 90,
-    backgroundColor: "rgba(173, 134, 206, 0.25)", bottom: 40, left: -80,
-  },
+  circle1: { position: "absolute", width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(116, 204, 153, 0.35)", top: -100, right: -80, display: "none" },
+  circle2: { position: "absolute", width: 180, height: 180, borderRadius: 90, backgroundColor: "rgba(173, 134, 206, 0.25)", bottom: 40, left: -80, display: "none" },
 });

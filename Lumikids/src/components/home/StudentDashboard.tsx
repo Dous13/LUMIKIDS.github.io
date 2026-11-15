@@ -14,7 +14,7 @@ export default function StudentDashboard({ summary }: Props) {
 
   return (
     <LinearGradient
-      colors={["#FFF9DE", "#FFFFFF", "#E9F8FF"]}
+      colors={["#FFFFFF", "#FFFFFF"]}
       style={styles.card}
     >
       <View style={styles.titleRow}>
@@ -95,101 +95,44 @@ function SubjectProgress({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 30,
-    padding: 20,
-    marginBottom: 22,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.85)",
-    elevation: 5,
-  },
+  card: { borderRadius: 20, padding: 20, marginBottom: 22, borderWidth: 1, borderColor: "#E1E7E5", elevation: 1, backgroundColor: "#FFFFFF" },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  title: {
-    fontSize: 21,
-    fontWeight: "900",
-    color: "#334155",
-  },
-  sparkle: {
-    fontSize: 24,
-  },
-  subtitle: {
-    marginTop: 4,
-    color: "#64748B",
-    fontWeight: "700",
-  },
+  title: { fontSize: 20, fontWeight: "900", color: "#23394A", flex: 1, lineHeight: 28 },
+  sparkle: { fontSize: 24, display: "none" },
+  subtitle: { marginTop: 4, color: "#64748B", fontWeight: "500", lineHeight: 23 },
   statsRow: {
     flexDirection: "row",
     marginTop: 16,
     gap: 8,
   },
-  stat: {
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.75)",
-    borderRadius: 18,
-    paddingVertical: 11,
-  },
+  stat: { flex: 1, alignItems: "center", backgroundColor: "#F6F7F3", borderRadius: 12, paddingVertical: 11 },
   statEmoji: {
     fontSize: 22,
   },
-  statValue: {
-    marginTop: 2,
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#2563EB",
-  },
-  statLabel: {
-    marginTop: 1,
-    fontSize: 11,
-    color: "#64748B",
-    fontWeight: "700",
-    textAlign: "center",
-  },
+  statValue: { marginTop: 2, fontSize: 22, fontWeight: "900", color: "#23394A" },
+  statLabel: { marginTop: 1, fontSize: 11, color: "#5D7080", fontWeight: "700", textAlign: "center" },
   subjectRow: {
     flexDirection: "row",
     gap: 8,
     marginTop: 10,
   },
-  subject: {
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.65)",
-    borderRadius: 16,
-    paddingVertical: 9,
-  },
+  subject: { flex: 1, alignItems: "center", backgroundColor: "#F2F6F7", borderRadius: 12, paddingVertical: 9 },
   subjectEmoji: {
     fontSize: 20,
   },
-  subjectLabel: {
-    marginTop: 2,
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#334155",
-  },
-  subjectValue: {
-    marginTop: 1,
-    fontSize: 10,
-    color: "#64748B",
-    fontWeight: "700",
-  },
+  subjectLabel: { marginTop: 2, fontSize: 12, fontWeight: "900", color: "#5D7080" },
+  subjectValue: { marginTop: 1, fontSize: 12, color: "#5D7080", fontWeight: "700" },
   bottomRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 7,
     marginTop: 12,
   },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
+  pill: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
   practicePill: {
     backgroundColor: "#FFF1E6",
   },

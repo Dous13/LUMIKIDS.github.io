@@ -1,12 +1,6 @@
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-} from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   getSession,
@@ -84,7 +78,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator
           size="large"
-          color="#4DA8FF"
+          color="#2867AD"
         />
       </SafeAreaView>
     );
@@ -106,7 +100,7 @@ export default function HomeScreen() {
 
   return (
     <LinearGradient
-      colors={["#62B8FF", "#A9DDFF", "#FFF3C4"]}
+      colors={["#FAF8F2", "#FAF8F2"]}
       style={styles.container}
     >
       <View style={styles.circle1} />
@@ -126,14 +120,14 @@ export default function HomeScreen() {
           <SubjectButton
             emoji="📖"
             title="Reading"
-            color="#EAF9F0"
+            color="#FFF1E6"
             onPress={() => navigation.navigate("Reading")}
           />
 
           <SubjectButton
             emoji="✏️"
             title="Writing"
-            color="#FFF6E8"
+            color="#F1EDFB"
             onPress={() =>
               navigation.navigate("Writing")
             }
@@ -142,7 +136,7 @@ export default function HomeScreen() {
           <SubjectButton
             emoji="🔢"
             title="Math"
-            color="#EDF6FF"
+            color="#E8F4F0"
             onPress={() => navigation.navigate("Math")
             }
           />
@@ -182,28 +176,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 60,
-  },
+  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24, width: "100%", maxWidth: 720, alignSelf: "center" },
 
-  logoutPrompt: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    bottom: 105,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 18,
-    elevation: 10,
-  },
+  logoutPrompt: { position: "absolute", left: 20, right: 20, bottom: 180, backgroundColor: "#FFFFFF", borderRadius: 20, padding: 18, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5", maxWidth: 680, alignSelf: "center" },
 
-  logoutTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: "#334155",
-  },
+  logoutTitle: { fontSize: 20, fontWeight: "900", color: "#23394A" },
 
   logoutText: {
     marginTop: 6,
@@ -237,12 +214,7 @@ const styles = StyleSheet.create({
 
   confirmText: { color: "#B91C1C", fontWeight: "800" },
 
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F8FCFF",
-  },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FAF8F2" },
 
   errorText: {
     fontSize: 18,
@@ -250,45 +222,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  circle1: {
-    position: "absolute",
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: "rgb(116, 204, 153)",
-    top: -110,
-    right: -90,
-  },
+  circle1: { position: "absolute", width: 300, height: 300, borderRadius: 150, backgroundColor: "rgb(116, 204, 153)", top: -110, right: -90, display: "none" },
 
-  circle2: {
-    position: "absolute",
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: "rgb(206, 184, 136)",
-    left: -80,
-    top: 340,
-  },
+  circle2: { position: "absolute", width: 220, height: 220, borderRadius: 110, backgroundColor: "rgb(206, 184, 136)", left: -80, top: 340, display: "none" },
 
-  circle3: {
-    position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgb(161, 228, 240)",
-    right: 40,
-    bottom: 210,
-  },
+  circle3: { position: "absolute", width: 120, height: 120, borderRadius: 60, backgroundColor: "rgb(161, 228, 240)", right: 40, bottom: 210, display: "none" },
 
-  circle4: {
-    position: "absolute",
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "rgb(173, 134, 206)",
-    left: 60,
-    bottom: 120,
-  },
+  circle4: { position: "absolute", width: 90, height: 90, borderRadius: 45, backgroundColor: "rgb(173, 134, 206)", left: 60, bottom: 120, display: "none" },
 
   phygitalButton: {
     flexDirection: "row",

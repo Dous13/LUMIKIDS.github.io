@@ -1,10 +1,6 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-} from "react-native";
+import TouchableOpacity from "../../components/common/MotionTouchable";
+import FadeIn from "../../components/common/FadeIn";
+import { View, Text, StyleSheet, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
@@ -30,17 +26,17 @@ const SUBJECTS = [
   {
     emoji: "📖",
     title: "Reading",
-    color: "#E8F5E9",
+    color: "#FFF1E6",
   },
   {
     emoji: "✏️",
     title: "Writing",
-    color: "#FFF3E0",
+    color: "#F1EDFB",
   },
   {
     emoji: "🔢",
     title: "Math",
-    color: "#E3F2FD",
+    color: "#E8F4F0",
   },
 ];
 
@@ -49,17 +45,18 @@ export default function WelcomeScreen() {
 
   return (
     <LinearGradient
-      colors={["#EAF8FF", "#D7F1FF", "#C6E8FF"]}
+      colors={["#FAF8F2", "#FAF8F2"]}
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Decorations */}
         <View style={styles.circle1} />
         <View style={styles.circle2} />
         <View style={styles.circle3} />
 
         {/* HEADER */}
-        <View style={styles.header}>
+        <FadeIn style={styles.header}>
           <View style={styles.logoContainer}>
             <Image
               source={require("../../../assets/images/welcomeicon.png")}
@@ -75,7 +72,7 @@ export default function WelcomeScreen() {
           <Text style={styles.subtitle}>
             Learn, play and discover through fun adventures!
           </Text>
-        </View>
+        </FadeIn>
 
         {/* SUBJECTS */}
         <View style={styles.subjectContainer}>
@@ -102,7 +99,7 @@ export default function WelcomeScreen() {
         {/* FOOTER */}
         <View style={styles.footer}>
           <PrimaryButton
-            title="🚀 Let's Start!"
+            title="Let's Start! →"
             onPress={() =>
               navigation.navigate("StudentLogin")
             }
@@ -114,143 +111,49 @@ export default function WelcomeScreen() {
             }
           >
             <Text style={styles.teacher}>
-              👩‍🏫 Teacher Portal
+              Teacher Portal
             </Text>
           </TouchableOpacity>
         </View>
+      </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContent: { flexGrow: 1, width: "100%", maxWidth: 620, alignSelf: "center", paddingBottom: 24 },
   container: {
     flex: 1,
   },
 
-  header: {
-    alignItems: "center",
-    marginTop: 20,
-  },
+  header: { alignItems: "center", marginTop: 24, paddingHorizontal: 8 },
 
-  logoContainer: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "#FFFFFF",
+  logoContainer: { width: 128, height: 128, borderRadius: 32, backgroundColor: "transparent", justifyContent: "center", alignItems: "center", marginBottom: 16, ...Shadows.card, shadowColor: "#7CCBFF", shadowOpacity: 0, shadowRadius: 18, elevation: 0 },
 
-    justifyContent: "center",
-    alignItems: "center",
+  logo: { width: 120, height: 120 },
 
-    marginBottom: 20,
+  welcome: { fontSize: 18, color: "#5D7080", fontWeight: "600" },
 
-    ...Shadows.card,
+  title: { fontSize: 40, fontWeight: "900", color: "#2867AD", letterSpacing: 2, lineHeight: 52 },
 
-    shadowColor: "#7CCBFF",
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    elevation: 12,
-  },
+  subtitle: { marginTop: 10, fontSize: 17, textAlign: "center", color: "#5D7080", lineHeight: 26, paddingHorizontal: 30 },
 
-  logo: {
-    width: 90,
-    height: 90,
-  },
+  subjectContainer: { flexDirection: "row", justifyContent: "space-evenly", marginTop: 28, paddingHorizontal: 24, gap: 10 },
 
-  welcome: {
-    fontSize: 22,
-    color: "#4B5563",
-    fontWeight: "600",
-  },
+  subjectCard: { width: "auto", height: "auto", borderRadius: 18, justifyContent: "center", alignItems: "center", ...Shadows.card, flex: 1, minHeight: 100, paddingVertical: 16, elevation: 0, shadowOpacity: 0 },
 
-  title: {
-    fontSize: 42,
-    fontWeight: "900",
-    color: "#2E7DFF",
-    letterSpacing: 1,
-  },
+  subjectEmoji: { fontSize: 30 },
 
-  subtitle: {
-    marginTop: 10,
-    fontSize: 17,
-    textAlign: "center",
-    color: "#64748B",
-    lineHeight: 26,
-    paddingHorizontal: 30,
-  },
+  subjectTitle: { marginTop: 10, fontSize: 13, fontWeight: "700", color: "#23394A" },
 
-  subjectContainer: {
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    marginTop: 45,
-    paddingHorizontal: 18,
-  },
+  footer: { flex: 0, justifyContent: "flex-end", paddingHorizontal: 24, paddingBottom: 8, paddingTop: 14 },
 
-  subjectCard: {
-    width: 95,
-    height: 120,
+  teacher: { marginTop: 10, textAlign: "center", color: "#2867AD", fontWeight: "700", fontSize: 16, paddingVertical: 12 },
 
-    borderRadius: 28,
+  circle1: { position: "absolute", width: 260, height: 260, borderRadius: 130, backgroundColor: "rgba(255,255,255,0.25)", top: -90, right: -80, display: "none" },
 
-    justifyContent: "center",
-    alignItems: "center",
+  circle2: { position: "absolute", width: 180, height: 180, borderRadius: 90, backgroundColor: "rgba(255,255,255,0.18)", bottom: 160, left: -70, display: "none" },
 
-    ...Shadows.card,
-  },
-
-  subjectEmoji: {
-    fontSize: 42,
-  },
-
-  subjectTitle: {
-    marginTop: 10,
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#374151",
-  },
-
-  footer: {
-    flex: 1,
-    justifyContent: "flex-end",
-    paddingHorizontal: 24,
-    paddingBottom: 30,
-  },
-
-  teacher: {
-    marginTop: 18,
-    textAlign: "center",
-    color: "#2563EB",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-
-  circle1: {
-    position: "absolute",
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    top: -90,
-    right: -80,
-  },
-
-  circle2: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "rgba(255,255,255,0.18)",
-    bottom: 160,
-    left: -70,
-  },
-
-  circle3: {
-    position: "absolute",
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    top: 250,
-    right: 40,
-  },
+  circle3: { position: "absolute", width: 90, height: 90, borderRadius: 45, backgroundColor: "rgba(255,255,255,0.2)", top: 250, right: 40, display: "none" },
 });

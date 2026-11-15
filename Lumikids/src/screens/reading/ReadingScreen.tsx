@@ -1,5 +1,8 @@
+import AnimatedProgress from "../../components/common/AnimatedProgress";
+import FadeIn from "../../components/common/FadeIn";
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useCallback, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import { View, Text, StyleSheet, FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -31,7 +34,7 @@ export default function ReadingScreen() {
   const percent = readingLessons.length ? (completed / readingLessons.length) * 100 : 0;
 
   return (
-    <LinearGradient colors={["#62B8FF", "#A9DDFF", "#FFF3C4"]} style={styles.container}>
+    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={styles.container}>
       <View style={styles.bubbleOne} /><View style={styles.bubbleTwo} /><View style={styles.starOne} /><View style={styles.starTwo} />
       <SafeAreaView style={styles.safeArea}>
         <FlatList
@@ -42,11 +45,11 @@ export default function ReadingScreen() {
           ListHeaderComponent={
             <View>
               <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Ionicons name="arrow-back" size={22} color="#2563EB" />
+                <Ionicons name="arrow-back" size={22} color="#2867AD" />
                 <Text style={styles.backText}>Home</Text>
               </TouchableOpacity>
 
-              <View style={styles.hero}>
+              <FadeIn style={styles.hero}>
                 <View style={styles.heroDecorLeft}><Text>☁️</Text></View>
                 <View style={styles.heroDecorRight}><Text>⭐</Text></View>
                 <Text style={styles.heroEmoji}>📖</Text>
@@ -57,8 +60,8 @@ export default function ReadingScreen() {
                   <Text style={styles.progressLabel}>🌟 {completed}/{readingLessons.length} lessons</Text>
                   <Text style={styles.percent}>{Math.round(percent)}%</Text>
                 </View>
-                <View style={styles.track}><View style={[styles.fill, { width: `${percent}%` }]} /></View>
-              </View>
+                <AnimatedProgress value={percent} color="#B65D24" style={styles.track} />
+              </FadeIn>
 
               <View style={styles.sectionRow}>
                 <Text style={styles.sectionTitle}>Pick a lesson</Text>
@@ -97,22 +100,22 @@ export default function ReadingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:{flex:1}, safeArea:{flex:1}, content:{paddingHorizontal:20,paddingBottom:38},
-  bubbleOne:{position:"absolute",width:180,height:180,borderRadius:90,backgroundColor:"rgba(255,255,255,.18)",top:-65,right:-50},
-  bubbleTwo:{position:"absolute",width:110,height:110,borderRadius:55,backgroundColor:"rgba(255,255,255,.16)",bottom:80,left:-45},
-  starOne:{position:"absolute",top:135,left:18}, starTwo:{position:"absolute",top:285,right:20},
-  backButton:{flexDirection:"row",alignItems:"center",alignSelf:"flex-start",backgroundColor:"rgba(255,255,255,.92)",borderRadius:22,paddingHorizontal:14,paddingVertical:9,elevation:3,marginTop:6},
-  backText:{marginLeft:7,color:"#2563EB",fontSize:16,fontWeight:"900"},
-  hero:{marginTop:14,borderRadius:32,padding:22,backgroundColor:"rgba(255,255,255,.94)",alignItems:"center",overflow:"hidden",elevation:7},
-  heroDecorLeft:{position:"absolute",left:12,top:18},heroDecorRight:{position:"absolute",right:14,top:18},
-  heroEmoji:{fontSize:55,marginTop:3}, kicker:{marginTop:5,fontSize:12,fontWeight:"900",letterSpacing:1.4,color:"#3B82F6"},
-  title:{marginTop:3,fontSize:28,fontWeight:"900",color:"#2563EB",textAlign:"center"},
-  subtitle:{marginTop:7,fontSize:15,lineHeight:21,color:"#64748B",textAlign:"center"},
-  progressRow:{width:"100%",flexDirection:"row",justifyContent:"space-between",marginTop:18},progressLabel:{fontWeight:"900",color:"#334155"},percent:{fontWeight:"900",color:"#16A34A"},
+  container:{flex:1}, safeArea:{flex:1}, content:{ paddingHorizontal:20, paddingBottom:38, width: "100%", maxWidth: 720, alignSelf: "center", paddingTop: 10 },
+  bubbleOne:{ position:"absolute", width:180, height:180, borderRadius:90, backgroundColor:"rgba(255,255,255,.18)", top:-65, right:-50, display: "none" },
+  bubbleTwo:{ position:"absolute", width:110, height:110, borderRadius:55, backgroundColor:"rgba(255,255,255,.16)", bottom:80, left:-45, display: "none" },
+  starOne:{ position:"absolute", top:135, left:18, display: "none" }, starTwo:{ position:"absolute", top:285, right:20, display: "none" },
+  backButton:{ flexDirection:"row", alignItems:"center", alignSelf:"flex-start", backgroundColor: "transparent", borderRadius:22, paddingHorizontal: 0, paddingVertical:9, elevation: 0, marginTop:6, minHeight: 44 },
+  backText:{marginLeft:7,color:"#2867AD",fontSize:16,fontWeight:"900"},
+  hero:{ marginTop:14, borderRadius: 24, padding: 24, backgroundColor: "#FFF1E6", alignItems:"center", overflow:"hidden", elevation: 0 },
+  heroDecorLeft:{ position:"absolute", left:12, top:18, display: "none" },heroDecorRight:{ position:"absolute", right:14, top:18, display: "none" },
+  heroEmoji:{ fontSize: 44, marginTop:3 }, kicker:{ marginTop: 8, fontSize: 11, fontWeight:"900", letterSpacing: 1.8, color: "#B65D24" },
+  title:{ marginTop: 8, fontSize: 27, fontWeight:"900", color: "#23394A", textAlign:"center", lineHeight: 34 },
+  subtitle:{ marginTop:7, fontSize: 16, lineHeight: 24, color: "#5D7080", textAlign:"center" },
+  progressRow:{width:"100%",flexDirection:"row",justifyContent:"space-between",marginTop:18},progressLabel:{fontWeight:"900",color:"#334155"},percent:{ fontWeight:"900", color: "#B65D24" },
   track:{width:"100%",height:11,backgroundColor:"#DCECF8",borderRadius:20,overflow:"hidden",marginTop:8},fill:{height:"100%",backgroundColor:"#58C977",borderRadius:20},
-  sectionRow:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginTop:22,marginBottom:10,paddingHorizontal:3},sectionTitle:{fontSize:22,fontWeight:"900",color:"#FFFFFF",textShadowColor:"rgba(0,0,0,.12)",textShadowRadius:3},sectionEmoji:{fontSize:28},
-  lesson:{backgroundColor:"rgba(255,255,255,.96)",borderRadius:24,padding:13,marginBottom:12,flexDirection:"row",alignItems:"center",elevation:4},locked:{opacity:.52},
-  lessonIcon:{width:62,height:62,borderRadius:21,justifyContent:"center",alignItems:"center"},lessonEmoji:{fontSize:36},lessonBody:{flex:1,marginLeft:13},lessonTitle:{fontSize:22,fontWeight:"900",color:"#1E293B"},lessonWord:{fontSize:15,fontWeight:"700",color:"#64748B",marginTop:1},
-  xpPill:{alignSelf:"flex-start",backgroundColor:"#FFF4CC",borderRadius:12,paddingHorizontal:8,paddingVertical:3,marginTop:5},lessonMeta:{fontSize:12,fontWeight:"900",color:"#9A6700"},
-  status:{width:42,height:42,borderRadius:21,justifyContent:"center",alignItems:"center"},statusText:{fontSize:21,fontWeight:"900",color:"#2563EB"},
+  sectionRow:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginTop:22,marginBottom:10,paddingHorizontal:3},sectionTitle:{ fontSize: 21, fontWeight: "800", color: "#23394A", textShadowColor:"rgba(0,0,0,.12)", textShadowRadius: 0 },sectionEmoji:{ fontSize:28, display: "none" },
+  lesson:{ backgroundColor: "#FFFFFF", borderRadius: 20, padding: 16, marginBottom: 10, flexDirection:"row", alignItems:"center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },locked:{ opacity: 0.6 },
+  lessonIcon:{ width: 56, height: 56, borderRadius: 16, justifyContent:"center", alignItems:"center" },lessonEmoji:{fontSize:36},lessonBody:{ flex:1, marginLeft:13, minWidth: 0 },lessonTitle:{ fontSize:22, fontWeight: "800", color: "#23394A" },lessonWord:{fontSize:15,fontWeight:"700",color:"#64748B",marginTop:1},
+  xpPill:{alignSelf:"flex-start",backgroundColor:"#FFF4CC",borderRadius:12,paddingHorizontal:8,paddingVertical:3,marginTop:5},lessonMeta:{ fontSize:12, fontWeight:"900", color: "#805B15" },
+  status:{width:42,height:42,borderRadius:21,justifyContent:"center",alignItems:"center"},statusText:{ fontSize:21, fontWeight:"900", color: "#B65D24" },
 });

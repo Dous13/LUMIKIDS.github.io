@@ -1,12 +1,9 @@
+import CelebrationText from "../../components/common/CelebrationText";
+import FadeIn from "../../components/common/FadeIn";
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React from "react";
 import { BackHandler } from "react-native";
-import {
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-  ScrollView,
-} from "react-native";
+import { Text, StyleSheet, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -136,7 +133,7 @@ export default function MathResultScreen() {
 
   return (
     <LinearGradient
-      colors={["#FFFDE7", "#E8F8FF", "#DFF7E8"]}
+      colors={["#FAF8F2", "#FAF8F2"]}
       style={styles.background}
     >
       <SafeAreaView style={styles.container}>
@@ -144,7 +141,7 @@ export default function MathResultScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.card}>
+          <FadeIn style={styles.card}>
             <Text style={styles.celebrate}>🎉</Text>
 
             <Text style={styles.title}>
@@ -155,9 +152,9 @@ export default function MathResultScreen() {
               You finished lesson {lessonId}
             </Text>
 
-            <Text style={styles.stars}>
+            <CelebrationText style={styles.stars}>
               {"⭐".repeat(Math.max(0, Math.min(3, stars)))}
-            </Text>
+            </CelebrationText>
 
             <Text style={styles.score}>
               {score} / {total}
@@ -174,9 +171,9 @@ export default function MathResultScreen() {
             <View style={styles.rewardRow}>
               <View style={styles.rewardCard}>
                 <Text style={styles.rewardEmoji}>✨</Text>
-                <Text style={styles.rewardValue}>
+                <CelebrationText style={styles.rewardValue}>
                   +{xp}
-                </Text>
+                </CelebrationText>
                 <Text style={styles.rewardLabel}>
                   XP
                 </Text>
@@ -184,9 +181,9 @@ export default function MathResultScreen() {
 
               <View style={styles.rewardCard}>
                 <CoinIcon size={28} />
-                <Text style={styles.rewardValue}>
+                <CelebrationText style={styles.rewardValue}>
                   +{coins}
-                </Text>
+                </CelebrationText>
                 <Text style={styles.rewardLabel}>
                   Coins
                 </Text>
@@ -210,7 +207,7 @@ export default function MathResultScreen() {
                 Continue →
               </Text>
             </TouchableOpacity>
-          </View>
+          </FadeIn>
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
@@ -224,28 +221,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 34,
-    padding: 28,
-    alignItems: "center",
-    elevation: 7,
-  },
-  celebrate: {
-    fontSize: 65,
-  },
-  title: {
-    marginTop: 8,
-    fontSize: 30,
-    fontWeight: "900",
-    color: "#2563EB",
-    textAlign: "center",
-  },
+  scrollContent: { flexGrow: 1, justifyContent: "center", padding: 20, width: "100%", maxWidth: 620, alignSelf: "center" },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
+  celebrate: { fontSize: 48 },
+  title: { marginTop: 8, fontSize: 28, fontWeight: "900", color: "#23394A", textAlign: "center", lineHeight: 36 },
   subtitle: {
     marginTop: 7,
     color: "#64748B",
@@ -283,48 +262,17 @@ const styles = StyleSheet.create({
     gap: 14,
     marginTop: 22,
   },
-  rewardCard: {
-    minWidth: 105,
-    backgroundColor: "#F8FCFF",
-    borderRadius: 22,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#E2F2FF",
-  },
+  rewardCard: { minWidth: 96, backgroundColor: "#F5F7F4", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 18, alignItems: "center", borderWidth: 0, borderColor: "#E2F2FF" },
   rewardEmoji: {
     fontSize: 28,
   },
-  rewardValue: {
-    marginTop: 4,
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#334155",
-  },
+  rewardValue: { marginTop: 4, fontSize: 22, fontWeight: "900", color: "#23394A" },
   rewardLabel: {
     marginTop: 1,
     color: "#64748B",
     fontWeight: "800",
   },
-  unlock: {
-    marginTop: 22,
-    textAlign: "center",
-    color: "#16A34A",
-    fontWeight: "800",
-    fontSize: 17,
-  },
-  button: {
-    width: "100%",
-    marginTop: 26,
-    backgroundColor: "#4DA8FF",
-    borderRadius: 23,
-    paddingVertical: 17,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 21,
-    fontWeight: "900",
-  },
+  unlock: { marginTop: 22, textAlign: "center", color: "#237B67", fontWeight: "800", fontSize: 17 },
+  button: { width: "100%", marginTop: 26, backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 17, alignItems: "center", minHeight: 52 },
+  buttonText: { color: "#FFFFFF", fontSize: 19, fontWeight: "900" },
 });

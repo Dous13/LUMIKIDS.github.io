@@ -1,11 +1,10 @@
+import TouchableOpacity from "../common/MotionTouchable";
 import React from "react";
 import CoinIcon from "../common/CoinIcon";
-import {
-  View,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import AnimatedProgress from "../common/AnimatedProgress";
+import CelebrationText from "../common/CelebrationText";
+import { View, Text, StyleSheet } from "react-native";
 
 type Props = {
   xp: number;
@@ -43,7 +42,7 @@ return (
 
         <View style={styles.statWithIcon}>
           <CoinIcon size={20} />
-          <Text style={styles.stat}> {coins}</Text>
+          <CelebrationText key={coins} style={styles.stat}> {coins}</CelebrationText>
         </View>
 
         <Text style={styles.stat}>
@@ -52,16 +51,7 @@ return (
 
       </View>
 
-      <View style={styles.progressBackground}>
-        <View
-          style={[
-            styles.progressFill,
-            {
-              width: `${progress}%`,
-            },
-          ]}
-        />
-      </View>
+      <AnimatedProgress value={progress} />
 
       <Text style={styles.xpText}>
         {xp} XP
@@ -75,9 +65,7 @@ return (
         style={styles.dashboardButton}
         onPress={onDashboardPress}
       >
-        <Text style={styles.buttonEmoji}>
-          🖥️
-        </Text>
+        <Ionicons name="bar-chart-outline" size={22} color="#2867AD" />
 
         <Text style={styles.buttonText}>
           Dashboard
@@ -88,9 +76,7 @@ return (
         style={styles.shopButton}
         onPress={onShopPress}
       >
-        <Text style={styles.buttonEmoji}>
-          🛒
-        </Text>
+        <Ionicons name="bag-handle-outline" size={22} color="#2867AD" />
 
         <Text style={styles.buttonText}>
           Shop
@@ -101,9 +87,7 @@ return (
         style={styles.logoutButton}
         onPress={onParentPress}
       >
-        <Text style={styles.buttonEmoji}>
-          🚪
-        </Text>
+        <Ionicons name="log-out-outline" size={22} color="#5D7080" />
 
         <Text style={styles.buttonText}>
           Logout
@@ -117,39 +101,18 @@ return (
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 18,
-    paddingBottom: 20,
-    paddingTop: 10,
-  },
+  container: { paddingHorizontal: 24, paddingBottom: 8, paddingTop: 8, width: "100%", maxWidth: 720, alignSelf: "center", backgroundColor: "#FAF8F2" },
 
-  statsCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 16,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: {
+  statsCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 12, elevation: 0, shadowColor: "#000", shadowOpacity: 0, shadowRadius: 6, shadowOffset: {
       width: 0,
       height: 3,
-    },
-  },
+    }, borderWidth: 1, borderColor: "#E1E7E5" },
 
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
+  row: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
 
   statWithIcon: { flexDirection: "row", alignItems: "center" },
 
-  stat: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#334155",
-  },
+  stat: { fontSize: 15, fontWeight: "700", color: "#23394A" },
 
   progressBackground: {
     height: 14,
@@ -164,55 +127,17 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  xpText: {
-    marginTop: 10,
-    textAlign: "center",
-    fontWeight: "700",
-    fontSize: 16,
-    color: "#475569",
-  },
+  xpText: { marginTop: 6, textAlign: "center", fontWeight: "700", fontSize: 12, color: "#5D7080" },
 
-  buttons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 16,
-  },
+  buttons: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
 
-  dashboardButton: {
-    flex: 1,
-    marginRight: 6,
-    backgroundColor: "#EEF4FF",
-    borderRadius: 18,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
+  dashboardButton: { flex: 1, marginRight: 6, backgroundColor: "transparent", borderRadius: 12, paddingVertical: 10, alignItems: "center" },
 
-  shopButton: {
-    flex: 1,
-    marginHorizontal: 3,
-    backgroundColor: "#EEF4FF",
-    borderRadius: 18,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
+  shopButton: { flex: 1, marginHorizontal: 3, backgroundColor: "transparent", borderRadius: 12, paddingVertical: 10, alignItems: "center" },
 
-  logoutButton: {
-    flex: 1,
-    marginLeft: 6,
-    backgroundColor: "#EAF7FF",
-    borderRadius: 18,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
+  logoutButton: { flex: 1, marginLeft: 6, backgroundColor: "transparent", borderRadius: 12, paddingVertical: 10, alignItems: "center" },
 
-  buttonEmoji: {
-    fontSize: 24,
-  },
+  buttonEmoji: { fontSize: 21 },
 
-  buttonText: {
-    marginTop: 4,
-    fontWeight: "700",
-    fontSize: 15,
-    color: "#334155",
-  },
+  buttonText: { marginTop: 4, fontWeight: "700", fontSize: 12, color: "#5D7080" },
 });

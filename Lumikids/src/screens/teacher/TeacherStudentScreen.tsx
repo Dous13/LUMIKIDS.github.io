@@ -1,5 +1,8 @@
+import AnimatedProgress from "../../components/common/AnimatedProgress";
+import FadeIn from "../../components/common/FadeIn";
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { doc, getDoc } from "firebase/firestore";
@@ -20,7 +23,7 @@ export default function TeacherStudentScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  if (loading) return <SafeAreaView style={styles.loading}><ActivityIndicator size="large" color="#2563EB" /></SafeAreaView>;
+  if (loading) return <SafeAreaView style={styles.loading}><ActivityIndicator size="large" color="#2867AD" /></SafeAreaView>;
   if (!student) return <SafeAreaView style={styles.loading}><Text style={styles.error}>Student not found.</Text></SafeAreaView>;
 
   const reading = Number(student.readingXP || 0);
@@ -33,11 +36,11 @@ export default function TeacherStudentScreen() {
   const mistakeCount = mistakes.reduce((total, item) => total + Number(item.count || 0), 0);
 
   return (
-    <LinearGradient colors={["#62B8FF", "#BFE8FF", "#FFF3C4"]} style={styles.container}>
+    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={styles.container}>
       <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}><Text style={styles.backText}>← Class</Text></TouchableOpacity>
-          <View style={styles.hero}><Text style={styles.avatar}>🧸</Text><Text style={styles.name}>{student.preferredName || student.name}</Text><Text style={styles.fullName}>{student.fullName || student.name}</Text><Text style={styles.classCode}>Class {student.classCode}</Text></View>
+          <FadeIn style={styles.hero}><Text style={styles.avatar}>🧸</Text><Text style={styles.name}>{student.preferredName || student.name}</Text><Text style={styles.fullName}>{student.fullName || student.name}</Text><Text style={styles.classCode}>Class {student.classCode}</Text></FadeIn>
 
           <View style={styles.statGrid}>
             <View style={styles.statCard}><Text style={styles.statEmoji}>⚡</Text><Text style={styles.statValue}>{student.xp || 0}</Text><Text style={styles.statLabel}>Total XP</Text></View>
@@ -62,9 +65,9 @@ export default function TeacherStudentScreen() {
 }
 
 function ProgressCard({ emoji, title, value }: { emoji: string; title: string; value: number }) {
-  return <View style={styles.progressCard}><View style={styles.progressHeader}><Text style={styles.progressTitle}>{emoji} {title}</Text><Text style={styles.progressValue}>{value} XP</Text></View><View style={styles.track}><View style={[styles.fill, { width: `${Math.min(value / 100, 1) * 100}%` }]} /></View></View>;
+  return <View style={styles.progressCard}><View style={styles.progressHeader}><Text style={styles.progressTitle}>{emoji} {title}</Text><Text style={styles.progressValue}>{value} XP</Text></View><AnimatedProgress value={Math.min(value / 100, 1) * 100} color="#2867AD" style={styles.track} /></View>;
 }
 
 const styles = StyleSheet.create({
-  container:{flex:1},safe:{flex:1},loading:{flex:1,justifyContent:"center",alignItems:"center",backgroundColor:"#F8FCFF"},content:{padding:20,paddingBottom:40},back:{alignSelf:"flex-start",backgroundColor:"rgba(255,255,255,.92)",borderRadius:22,paddingHorizontal:15,paddingVertical:10,elevation:3},backText:{color:"#2563EB",fontWeight:"900",fontSize:16},hero:{marginTop:18,backgroundColor:"rgba(255,255,255,.95)",borderRadius:28,padding:22,alignItems:"center",elevation:6},avatar:{fontSize:64},name:{fontSize:29,fontWeight:"900",color:"#1E3A8A",marginTop:3},fullName:{fontSize:15,color:"#64748B",marginTop:2},classCode:{marginTop:7,color:"#2563EB",fontWeight:"900"},statGrid:{flexDirection:"row",flexWrap:"wrap",gap:10,marginTop:14},statCard:{width:"48%",backgroundColor:"rgba(255,255,255,.95)",borderRadius:20,padding:15,alignItems:"center",elevation:3},statEmoji:{fontSize:25},statValue:{fontSize:22,fontWeight:"900",color:"#334155",marginTop:2},statLabel:{fontSize:12,fontWeight:"800",color:"#64748B"},sectionTitle:{fontSize:22,fontWeight:"900",color:"#FFF",marginTop:24,marginBottom:10,textShadowColor:"rgba(0,0,0,.12)",textShadowRadius:3},progressCard:{backgroundColor:"rgba(255,255,255,.95)",borderRadius:20,padding:15,marginBottom:10,elevation:3},progressHeader:{flexDirection:"row",justifyContent:"space-between"},progressTitle:{fontSize:17,fontWeight:"900",color:"#334155"},progressValue:{fontWeight:"900",color:"#2563EB"},track:{height:11,backgroundColor:"#DCECF8",borderRadius:20,overflow:"hidden",marginTop:9},fill:{height:"100%",backgroundColor:"#58C977",borderRadius:20},mistake:{backgroundColor:"rgba(255,255,255,.95)",borderRadius:18,padding:14,marginBottom:9},mistakeSubject:{fontSize:10,fontWeight:"900",letterSpacing:1,color:"#2563EB"},mistakeQuestion:{marginTop:3,fontSize:15,fontWeight:"800",color:"#334155"},mistakeAnswer:{marginTop:4,fontSize:12,color:"#64748B"},empty:{backgroundColor:"rgba(255,255,255,.95)",borderRadius:20,padding:22,alignItems:"center"},emptyEmoji:{fontSize:35},emptyText:{color:"#64748B",fontWeight:"800",marginTop:5},note:{marginTop:16,backgroundColor:"#FFF8D9",borderRadius:20,padding:15,flexDirection:"row",alignItems:"center"},noteEmoji:{fontSize:26,marginRight:10},noteText:{flex:1,color:"#7C5D00",fontWeight:"700",lineHeight:19},error:{color:"#B91C1C",fontWeight:"800"}
+  container:{flex:1},safe:{flex:1},loading:{ flex:1, justifyContent:"center", alignItems:"center", backgroundColor: "#FAF8F2" },content:{ padding: 24, paddingBottom: 40, width: "100%", maxWidth: 880, alignSelf: "center" },back:{ alignSelf:"flex-start", backgroundColor: "transparent", borderRadius:22, paddingHorizontal: 0, paddingVertical:10, elevation: 0, minHeight: 44 },backText:{color:"#2867AD",fontWeight:"900",fontSize:16},hero:{ marginTop:18, backgroundColor: "transparent", borderRadius: 0, padding: 0, alignItems: "flex-start", elevation: 0 },avatar:{ fontSize:64, display: "none" },name:{ fontSize: 30, fontWeight: "800", color: "#23394A", marginTop:3, lineHeight: 38 },fullName:{ fontSize: 16, color: "#5D7080", marginTop:2 },classCode:{ marginTop:7, color:"#2867AD", fontWeight: "600" },statGrid:{flexDirection:"row",flexWrap:"wrap",gap:10,marginTop:14},statCard:{ width: "auto", backgroundColor: "#FFFFFF", borderRadius: 14, padding: 18, alignItems: "flex-start", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5", flexBasis: "46%", flexGrow: 1 },statEmoji:{ fontSize: 20 },statValue:{ fontSize: 28, fontWeight: "800", color: "#23394A", marginTop:2, lineHeight: 36 },statLabel:{ fontSize: 13, fontWeight: "600", color: "#5D7080" },sectionTitle:{ fontSize: 20, fontWeight: "800", color: "#23394A", marginTop:24, marginBottom:10, textShadowColor:"rgba(0,0,0,.12)", textShadowRadius: 0 },progressCard:{ backgroundColor: "#FFFFFF", borderRadius: 14, padding: 18, marginBottom:10, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },progressHeader:{flexDirection:"row",justifyContent:"space-between"},progressTitle:{ fontSize: 16, fontWeight: "700", color: "#23394A" },progressValue:{ fontWeight: "700", color: "#2867AD" },track:{height:11,backgroundColor:"#DCECF8",borderRadius:20,overflow:"hidden",marginTop:9},fill:{height:"100%",backgroundColor:"#58C977",borderRadius:20},mistake:{ backgroundColor: "#FFFFFF", borderRadius: 14, padding: 18, marginBottom:9, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },mistakeSubject:{fontSize:10,fontWeight:"900",letterSpacing:1,color:"#2867AD"},mistakeQuestion:{ marginTop:3, fontSize: 16, fontWeight: "700", color: "#23394A", lineHeight: 23 },mistakeAnswer:{ marginTop:4, fontSize: 13, color: "#5D7080", lineHeight: 21 },empty:{ backgroundColor: "#FFFFFF", borderRadius: 14, padding:22, alignItems:"center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },emptyEmoji:{fontSize:35},emptyText:{color:"#64748B",fontWeight:"800",marginTop:5},note:{ marginTop:16, backgroundColor: "#F1F3EB", borderRadius: 12, padding:15, flexDirection:"row", alignItems:"center" },noteEmoji:{fontSize:26,marginRight:10},noteText:{ flex:1, color: "#566345", fontWeight: "500", lineHeight:19 },error:{color:"#B91C1C",fontWeight:"800"}
 });

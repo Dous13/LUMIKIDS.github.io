@@ -1,14 +1,10 @@
+import TouchableOpacity from "../common/MotionTouchable";
 import React, { useEffect, useRef } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-} from "react-native";
+import { Modal, View, Text, StyleSheet, Animated } from "react-native";
 
 import ConfettiCannon from "react-native-confetti-cannon";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { Motion } from "../../theme/motion";
 
 type Props = {
   visible: boolean;
@@ -23,20 +19,24 @@ export default function RewardModal({
   mascotName,
   onClose,
 }: Props) {
-  const scale = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.96)).current;
+  const reduce = useReducedMotion();
 
   useEffect(() => {
-    if (visible) {
-      Animated.spring(scale, {
+    if (visible && reduce === false) {
+      scale.setValue(0.96);
+      const animation = Animated.timing(scale, {
         toValue: 1,
-        friction: 4,
-        tension: 80,
+        duration: Motion.entrance,
+        easing: Motion.easeOut,
         useNativeDriver: true,
-      }).start();
+      });
+      animation.start();
+      return () => animation.stop();
     } else {
-      scale.setValue(0);
+      scale.setValue(1);
     }
-  }, [visible]);
+  }, [visible, reduce, scale]);
 
   return (
     <Modal
@@ -46,11 +46,13 @@ export default function RewardModal({
     >
       <View style={styles.overlay}>
 
+        {visible && reduce === false ? <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         <ConfettiCannon
-          count={150}
+          count={60}
           origin={{ x: -20, y: 0 }}
           fadeOut
         />
+        </View> : null}
 
         <Animated.Image
           source={mascotImage}
@@ -91,7 +93,7 @@ export default function RewardModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(23,44,60,0.92)",
     justifyContent: "center",
     alignItems: "center",
     padding: 30,
@@ -105,12 +107,14 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 36,
+    fontSize: 30,
+    textAlign: "center",
     fontWeight: "900",
     color: "white",
   },
 
   name: {
+    textAlign: "center",
     fontSize: 28,
     color: "#FFD54F",
     fontWeight: "900",
@@ -118,6 +122,8 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
+    textAlign: "center",
+    lineHeight: 26,
     fontSize: 18,
     color: "white",
     marginTop: 15,
@@ -125,7 +131,7 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    backgroundColor: "#4DA8FF",
+    backgroundColor: "#2867AD",
     paddingHorizontal: 35,
     paddingVertical: 15,
     borderRadius: 20,

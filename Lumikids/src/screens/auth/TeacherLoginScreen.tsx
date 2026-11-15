@@ -1,5 +1,6 @@
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
@@ -48,7 +49,7 @@ export default function TeacherLoginScreen() {
   }
 
   return (
-    <LinearGradient colors={["#62B8FF", "#BFE8FF", "#FFF3C4"]} style={styles.container}>
+    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={styles.container}>
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -60,7 +61,7 @@ export default function TeacherLoginScreen() {
               <Text style={styles.heroEmoji}>👩‍🏫</Text>
               <Text style={styles.kicker}>LUMIKIDS TEACHER PORTAL</Text>
               <Text style={styles.title}>{mode === "login" ? "Welcome back!" : "Create your teacher account"}</Text>
-              <Text style={styles.subtitle}>Manage your classes and help your learners grow. 🌟</Text>
+              <Text style={styles.subtitle}>Manage your classes and help your learners grow.</Text>
             </View>
 
             <View style={styles.card}>
@@ -93,8 +94,8 @@ export default function TeacherLoginScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1 
-  }, safe: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
-  back: { alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,.92)", borderRadius: 22, paddingHorizontal: 15, paddingVertical: 10, elevation: 3 }, backText: { color: "#2563EB", fontWeight: "900", fontSize: 16 },
-  hero: { alignItems: "center", marginTop: 24, marginBottom: 18 }, heroEmoji: { fontSize: 68 }, kicker: { marginTop: 5, color: "#2563EB", fontWeight: "900", letterSpacing: 1.2, fontSize: 12 }, title: { marginTop: 4, fontSize: 29, fontWeight: "900", color: "#1E3A8A", textAlign: "center" }, subtitle: { marginTop: 7, color: "#475569", textAlign: "center", lineHeight: 21, fontSize: 15 },
-  card: { backgroundColor: "rgba(255,255,255,.96)", borderRadius: 30, padding: 22, elevation: 7 }, tabs: { flexDirection: "row", backgroundColor: "#EEF5FB", borderRadius: 16, padding: 4, marginBottom: 18 }, tab: { flex: 1, paddingVertical: 11, borderRadius: 13, alignItems: "center" }, activeTab: { backgroundColor: "#FFF", elevation: 2 }, tabText: { color: "#64748B", fontWeight: "800" }, activeTabText: { color: "#2563EB" }, error: { marginTop: 14, backgroundColor: "#FFF1F1", borderRadius: 14, padding: 12 }, errorText: { color: "#B91C1C", fontWeight: "700", lineHeight: 20 },
+  }, safe: { flex: 1 }, content: { padding: 20, paddingBottom: 40, width: "100%", maxWidth: 560, alignSelf: "center" },
+  back: { alignSelf: "flex-start", backgroundColor: "transparent", borderRadius: 22, paddingHorizontal: 0, paddingVertical: 10, elevation: 0, minHeight: 44 }, backText: { color: "#2867AD", fontWeight: "900", fontSize: 16 },
+  hero: { alignItems: "flex-start", marginTop: 24, marginBottom: 24 }, heroEmoji: { fontSize: 68, display: "none" }, kicker: { marginTop: 5, color: "#2867AD", fontWeight: "900", letterSpacing: 1.5, fontSize: 11 }, title: { marginTop: 10, fontSize: 30, fontWeight: "900", color: "#23394A", textAlign: "left", lineHeight: 38 }, subtitle: { marginTop: 7, color: "#5D7080", textAlign: "left", lineHeight: 24, fontSize: 16 },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" }, tabs: { flexDirection: "row", backgroundColor: "#EEF2F3", borderRadius: 12, padding: 4, marginBottom: 18 }, tab: { flex: 1, paddingVertical: 11, borderRadius: 9, alignItems: "center", minHeight: 44 }, activeTab: { backgroundColor: "#FFF", elevation: 0 }, tabText: { color: "#64748B", fontWeight: "800", fontSize: 15 }, activeTabText: { color: "#2867AD" }, error: { marginTop: 14, backgroundColor: "#FFF1F1", borderRadius: 14, padding: 12 }, errorText: { color: "#B91C1C", fontWeight: "700", lineHeight: 20 },
 });

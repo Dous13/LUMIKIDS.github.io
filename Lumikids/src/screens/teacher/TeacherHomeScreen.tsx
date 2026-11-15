@@ -1,5 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
+import FadeIn from "../../components/common/FadeIn";
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -54,32 +57,32 @@ export default function TeacherHomeScreen() {
     navigation.reset({ index: 0, routes: [{ name: "Welcome" }] });
   }
 
-  if (loading || !session) return <SafeAreaView style={styles.loading}><ActivityIndicator size="large" color="#2563EB" /></SafeAreaView>;
+  if (loading || !session) return <SafeAreaView style={styles.loading}><ActivityIndicator size="large" color="#2867AD" /></SafeAreaView>;
 
   return (
-    <LinearGradient colors={["#62B8FF", "#BFE8FF", "#FFF3C4"]} style={styles.container}>
+    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={styles.container}>
       <View style={styles.bubbleA} /><View style={styles.bubbleB} />
       <SafeAreaView style={styles.safe}>
         <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />} contentContainerStyle={styles.content}>
-          <View style={styles.headerRow}>
+          <FadeIn style={styles.headerRow}>
             <View style={styles.headerText}>
-              <Text style={styles.kicker}>TEACHER HOME 👩‍🏫</Text>
-              <Text style={styles.title}>Hi, {session.name}! 🌟</Text>
+              <Text style={styles.kicker}>LUMIKIDS / TEACHER</Text>
+              <Text style={styles.title}>Hi, {session.name}!</Text>
               <Text style={styles.subtitle}>Your learners are ready to grow.</Text>
             </View>
-            <TouchableOpacity style={styles.logout} onPress={logout}><Text>🚪</Text></TouchableOpacity>
-          </View>
+            <TouchableOpacity style={styles.logout} onPress={logout}><Ionicons name="log-out-outline" size={22} color="#36566F" /></TouchableOpacity>
+          </FadeIn>
 
-          <View style={styles.heroCard}>
-            <Text style={styles.heroEmoji}>🏫</Text>
+          <FadeIn delay={40} style={styles.heroCard}>
+            <View style={{ marginRight: 16 }}><Ionicons name="school-outline" size={30} color="#2867AD" /></View>
             <View style={{ flex: 1 }}>
               <Text style={styles.heroTitle}>Your classroom hub</Text>
               <Text style={styles.heroText}>Create a class, register your learners, then monitor their progress.</Text>
             </View>
-          </View>
+          </FadeIn>
 
           <TouchableOpacity style={styles.createButton} onPress={handleCreateClass} disabled={creating}>
-            <Text style={styles.createEmoji}>➕</Text>
+            <View style={{ marginRight: 12 }}><Ionicons name="add" size={24} color="#FFFFFF" /></View>
             <View style={{ flex: 1 }}><Text style={styles.createTitle}>{creating ? "Creating class..." : "Create a New Class"}</Text><Text style={styles.createText}>Get a unique code for your learners.</Text></View>
           </TouchableOpacity>
 
@@ -91,7 +94,7 @@ export default function TeacherHomeScreen() {
             <View style={styles.empty}><Text style={styles.emptyEmoji}>📚</Text><Text style={styles.emptyTitle}>No classes yet</Text><Text style={styles.emptyText}>Create your first class to start registering students.</Text></View>
           ) : classes.map(item => (
             <TouchableOpacity key={item.id} style={styles.classCard} activeOpacity={0.88} onPress={() => navigation.navigate("TeacherClass", { classCode: item.code })}>
-              <View style={styles.classIcon}><Text>🏫</Text></View>
+              <View style={styles.classIcon}><Ionicons name="school-outline" size={24} color="#36566F" /></View>
               <View style={{ flex: 1 }}><Text style={styles.className}>{item.name || "My Class"}</Text><Text style={styles.classCode}>Code: {item.code}</Text></View>
               <Text style={styles.arrow}>›</Text>
             </TouchableOpacity>
@@ -103,5 +106,5 @@ export default function TeacherHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:{flex:1},safe:{flex:1},loading:{flex:1,justifyContent:"center",alignItems:"center",backgroundColor:"#F8FCFF"},content:{padding:20,paddingBottom:40},bubbleA:{position:"absolute",width:260,height:260,borderRadius:130,backgroundColor:"rgba(255,255,255,.18)",top:-90,right:-80},bubbleB:{position:"absolute",width:180,height:180,borderRadius:90,backgroundColor:"rgba(255,255,255,.15)",bottom:100,left:-90},headerRow:{flexDirection:"row",alignItems:"center",width:"100%",paddingHorizontal:2},headerText:{flex:1,minWidth:0,paddingRight:12},kicker:{fontSize:12,fontWeight:"900",letterSpacing:1.2,color:"#2563EB"},title:{marginTop:2,fontSize:29,fontWeight:"900",color:"#1E3A8A"},subtitle:{marginTop:4,color:"#475569",fontSize:15,lineHeight:21,flexShrink:1},logout:{width:46,height:46,marginLeft:8,borderRadius:23,backgroundColor:"rgba(255,255,255,.9)",justifyContent:"center",alignItems:"center",elevation:3,},heroCard:{marginTop:18,backgroundColor:"rgba(255,255,255,.94)",borderRadius:28,padding:20,flexDirection:"row",alignItems:"center",elevation:6},heroEmoji:{fontSize:48,marginRight:15},heroTitle:{fontSize:21,fontWeight:"900",color:"#334155"},heroText:{marginTop:4,color:"#64748B",lineHeight:21,flexShrink:1},createButton:{marginTop:14,backgroundColor:"#2563EB",borderRadius:22,padding:17,flexDirection:"row",alignItems:"center",elevation:5},createEmoji:{fontSize:27,marginRight:12},createTitle:{color:"#FFF",fontSize:18,fontWeight:"900"},createText:{color:"#EAF3FF",marginTop:2,fontSize:13,lineHeight:18,flexShrink:1},codeCard:{marginTop:14,backgroundColor:"#FFF8D9",borderRadius:24,padding:18,alignItems:"center",borderWidth:2,borderColor:"#F4D76A"},codeLabel:{fontSize:11,fontWeight:"900",letterSpacing:1,color:"#9A6700"},code:{fontSize:36,fontWeight:"900",letterSpacing:5,color:"#7C5D00",marginTop:3},codeHint:{marginTop:4,color:"#7C5D00",fontWeight:"700",textAlign:"center",lineHeight:19},sectionRow:{flexDirection:"row",alignItems:"center",marginTop:24,marginBottom:10},sectionTitle:{fontSize:23,fontWeight:"900",color:"#FFF",textShadowColor:"rgba(0,0,0,.12)",textShadowRadius:3},count:{marginLeft:9,minWidth:28,textAlign:"center",backgroundColor:"#FFF",borderRadius:14,paddingVertical:4,color:"#2563EB",fontWeight:"900"},classCard:{backgroundColor:"rgba(255,255,255,.96)",borderRadius:24,padding:14,marginBottom:11,flexDirection:"row",alignItems:"center",elevation:4},classIcon:{width:58,height:58,borderRadius:20,backgroundColor:"#EAF8FF",justifyContent:"center",alignItems:"center",marginRight:13},className:{fontSize:19,lineHeight:24,fontWeight:"900",color:"#334155",flexShrink:1},classCode:{marginTop:3,color:"#64748B",fontWeight:"700",lineHeight:18},arrow:{fontSize:34,color:"#2563EB"},empty:{backgroundColor:"rgba(255,255,255,.94)",borderRadius:26,padding:30,alignItems:"center"},emptyEmoji:{fontSize:48},emptyTitle:{fontSize:20,fontWeight:"900",color:"#334155",marginTop:8},emptyText:{textAlign:"center",color:"#64748B",lineHeight:20,marginTop:4},
+  container:{flex:1},safe:{flex:1},loading:{ flex:1, justifyContent:"center", alignItems:"center", backgroundColor: "#FAF8F2" },content:{ padding: 24, paddingBottom: 40, width: "100%", maxWidth: 880, alignSelf: "center" },bubbleA:{ position:"absolute", width:260, height:260, borderRadius:130, backgroundColor:"rgba(255,255,255,.18)", top:-90, right:-80, display: "none" },bubbleB:{ position:"absolute", width:180, height:180, borderRadius:90, backgroundColor:"rgba(255,255,255,.15)", bottom:100, left:-90, display: "none" },headerRow:{flexDirection:"row",alignItems:"center",width:"100%",paddingHorizontal:2},headerText:{flex:1,minWidth:0,paddingRight:12},kicker:{ fontSize: 11, fontWeight: "700", letterSpacing: 1.6, color: "#2867AD" },title:{ marginTop: 6, fontSize: 29, fontWeight: "800", color: "#23394A", lineHeight: 38 },subtitle:{ marginTop:4, color: "#5D7080", fontSize:15, lineHeight: 23, flexShrink:1 },logout:{ width:46, height:46, marginLeft:8, borderRadius: 14, backgroundColor: "#E9EFF2", justifyContent:"center", alignItems:"center", elevation: 0 },heroCard:{ marginTop:18, backgroundColor: "#EAF1F5", borderRadius: 16, padding: 20, flexDirection:"row", alignItems:"center", elevation: 0 },heroEmoji:{ fontSize: 30, marginRight: 16 },heroTitle:{ fontSize: 19, fontWeight: "800", color: "#23394A" },heroText:{ marginTop:4, color: "#5D7080", lineHeight: 23, flexShrink:1, fontSize: 15 },createButton:{ marginTop:14, backgroundColor: "#2867AD", borderRadius: 16, padding: 18, flexDirection:"row", alignItems:"center", elevation: 0, minHeight: 52 },createEmoji:{ fontSize: 24, marginRight:12 },createTitle:{ color:"#FFF", fontSize: 17, fontWeight: "700" },createText:{color:"#EAF3FF",marginTop:2,fontSize:13,lineHeight:18,flexShrink:1},codeCard:{ marginTop:14, backgroundColor: "#EDF5F1", borderRadius: 16, padding:18, alignItems:"center", borderWidth: 1, borderColor: "#CDDFD3" },codeLabel:{ fontSize:11, fontWeight:"900", letterSpacing:1, color: "#356750" },code:{ fontSize:36, fontWeight:"900", letterSpacing:5, color: "#245E46", marginTop:3 },codeHint:{ marginTop:4, color: "#356750", fontWeight: "500", textAlign:"center", lineHeight:19 },sectionRow:{flexDirection:"row",alignItems:"center",marginTop:24,marginBottom:10},sectionTitle:{ fontSize: 20, fontWeight: "800", color: "#23394A", textShadowColor:"rgba(0,0,0,.12)", textShadowRadius: 0 },count:{marginLeft:9,minWidth:28,textAlign:"center",backgroundColor:"#FFF",borderRadius:14,paddingVertical:4,color:"#2867AD",fontWeight:"900"},classCard:{ backgroundColor: "#FFFFFF", borderRadius: 16, padding: 18, marginBottom:11, flexDirection:"row", alignItems:"center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },classIcon:{ width: 46, height: 46, borderRadius: 12, backgroundColor: "#EEF3F5", justifyContent:"center", alignItems:"center", marginRight:13 },className:{ fontSize: 18, lineHeight:24, fontWeight: "700", color: "#23394A", flexShrink:1 },classCode:{ marginTop:3, color: "#5D7080", fontWeight: "500", lineHeight:18, fontSize: 14 },arrow:{fontSize:34,color:"#2867AD"},empty:{ backgroundColor: "#FFFFFF", borderRadius: 16, padding:30, alignItems:"center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },emptyEmoji:{fontSize:48},emptyTitle:{fontSize:20,fontWeight:"900",color:"#334155",marginTop:8},emptyText:{textAlign:"center",color:"#64748B",lineHeight:20,marginTop:4},
 });

@@ -1,11 +1,7 @@
+import TouchableOpacity from "../../components/common/MotionTouchable";
 
 import React from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -91,23 +87,13 @@ export default function LessonActivityChoiceScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F3F8FF",
-    padding: 24,
-    justifyContent: "center",
-  },
+  container: { flex: 1, backgroundColor: "#FAF8F2", padding: 24, justifyContent: "center" },
   emoji: {
     fontSize: 54,
     textAlign: "center",
     marginBottom: 12,
   },
-  title: {
-    fontSize: 25,
-    fontWeight: "800",
-    color: "#1E3A8A",
-    textAlign: "center",
-  },
+  title: { fontSize: 25, fontWeight: "800", color: "#23394A", textAlign: "center" },
   subtitle: {
     fontSize: 15,
     color: "#64748B",
@@ -115,17 +101,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 28,
   },
-  digitalCard: {
-    backgroundColor: "#DBEAFE",
-    borderRadius: 20,
-    padding: 22,
-    marginBottom: 16,
-  },
-  physicalCard: {
-    backgroundColor: "#DCFCE7",
-    borderRadius: 20,
-    padding: 22,
-  },
+  digitalCard: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, marginBottom: 16, elevation: 1, borderWidth: 1, borderColor: "#BDD4E8" },
+  physicalCard: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, elevation: 1, borderWidth: 1, borderColor: "#D4DECC" },
   cardEmoji: {
     fontSize: 35,
     marginBottom: 8,
@@ -147,7 +124,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   backText: {
-    color: "#2563EB",
+    color: "#2867AD",
     fontWeight: "700",
   },
 });

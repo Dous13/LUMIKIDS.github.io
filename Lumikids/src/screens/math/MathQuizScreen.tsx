@@ -1,11 +1,8 @@
+import AnimatedProgress from "../../components/common/AnimatedProgress";
+import FadeIn from "../../components/common/FadeIn";
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useMemo, useRef, useState } from "react";
-import {
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { ScrollView, View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import ExitLessonModal from "../../components/common/ExitLessonModal";
@@ -241,7 +238,7 @@ export default function MathQuizScreen() {
 
   return (
     <LinearGradient
-      colors={["#F8FCFF", "#EAF8FF", "#FFF9E6"]}
+      colors={["#FAF8F2", "#FAF8F2"]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -269,14 +266,7 @@ export default function MathQuizScreen() {
             <View style={styles.headerSpacer} />
           </View>
 
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${percentage}%` },
-              ]}
-            />
-          </View>
+          <AnimatedProgress value={percentage} color="#237B67" style={styles.progressTrack} />
 
           {feedback && (
             <View
@@ -303,7 +293,7 @@ export default function MathQuizScreen() {
             </View>
           )}
 
-          <View style={styles.card}>
+          <FadeIn style={styles.card}>
             <Text style={styles.question}>{question.question}</Text>
 
             <Text style={styles.emoji}>{question.emoji}</Text>
@@ -385,7 +375,7 @@ export default function MathQuizScreen() {
                 </Text>
               </TouchableOpacity>
             )}
-          </View>
+          </FadeIn>
         </ScrollView>
 
         <ExitLessonModal
@@ -401,11 +391,7 @@ export default function MathQuizScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 36,
-  },
+  content: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 36, width: "100%", maxWidth: 720, alignSelf: "center" },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -441,11 +427,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerSpacer: { width: 48 },
-  title: {
-    fontSize: 27,
-    fontWeight: "900",
-    color: "#2563EB",
-  },
+  title: { fontSize: 27, fontWeight: "900", color: "#23394A" },
   subtitle: {
     marginTop: 2,
     fontSize: 14,
@@ -465,20 +447,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#62C77A",
     borderRadius: 20,
   },
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 30,
-    padding: 22,
-    alignItems: "center",
-    elevation: 5,
-  },
-  question: {
-    fontSize: 25,
-    lineHeight: 32,
-    fontWeight: "900",
-    textAlign: "center",
-    color: "#334155",
-  },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 24, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
+  question: { fontSize: 25, lineHeight: 32, fontWeight: "900", textAlign: "center", color: "#23394A" },
   emoji: {
     fontSize: 62,
     marginVertical: 18,
@@ -487,26 +457,9 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 12,
   },
-  option: {
-    minHeight: 58,
-    backgroundColor: "#EAF8FF",
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderWidth: 2,
-    borderColor: "#CFEAFF",
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-  },
-  correctOption: {
-    backgroundColor: "#DDF8E4",
-    borderColor: "#65C97A",
-  },
-  wrongOption: {
-    backgroundColor: "#FFE4E4",
-    borderColor: "#F28B8B",
-  },
+  option: { minHeight: 58, backgroundColor: "#FFFFFF", borderRadius: 16, paddingHorizontal: 18, paddingVertical: 14, borderWidth: 1, borderColor: "#E1E7E5", justifyContent: "center", alignItems: "center", flexDirection: "row", elevation: 1 },
+  correctOption: { backgroundColor: "#E4F3EB", borderColor: "#237B67" },
+  wrongOption: { backgroundColor: "#FFF0EC", borderColor: "#C96859" },
   optionText: {
     fontSize: 23,
     fontWeight: "900",
@@ -554,14 +507,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: "#64748B",
   },
-  primaryButton: {
-    width: "100%",
-    marginTop: 18,
-    backgroundColor: "#4DA8FF",
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
+  primaryButton: { width: "100%", marginTop: 18, backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52 },
   primaryButtonText: {
     color: "#FFF",
     fontSize: 19,

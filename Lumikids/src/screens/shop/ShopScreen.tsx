@@ -1,13 +1,7 @@
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useEffect, useState } from "react";
 import CoinIcon from "../../components/common/CoinIcon";
-import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { FlatList, Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { mascotShop } from "../../data/mascotShop";
 import { Ionicons } from "@expo/vector-icons";
@@ -162,7 +156,7 @@ function purchaseMascot(item: any) {
         <Ionicons
           name="arrow-back"
           size={28}
-          color="#2563EB"
+          color="#2867AD"
         />
 
         <Text style={styles.backText}>
@@ -214,8 +208,8 @@ function purchaseMascot(item: any) {
             disabled={equipped}
             style={[
               styles.button,
-              owned && !equipped && { backgroundColor: "#b08fff" }, // purple = Equip
-              equipped && { backgroundColor: "#61ff9b" },           // green = Equipped
+              owned && !equipped && { backgroundColor: "#7152A3" }, // purple = Equip
+              equipped && { backgroundColor: "#237B67" },           // green = Equipped
             ]}
             onPress={() => {
               if (!owned) {
@@ -255,64 +249,23 @@ function purchaseMascot(item: any) {
 
 const styles = StyleSheet.create({
 
-  container:{
-    flex:1,
-    backgroundColor:"#F8FBFF",
-    padding:20,
-  },
+  container:{ flex:1, backgroundColor: "#FAF8F2", padding:20 },
 
-  title:{
-    fontSize:30,
-    fontWeight:"900",
-    marginBottom:20,
-  },
+  title:{ fontSize: 28, fontWeight:"900", marginBottom: 16, color: "#23394A", lineHeight: 36 },
 
-  card:{
-    flexDirection:"row",
-    alignItems:"center",
-    backgroundColor:"white",
-    borderRadius:20,
-    padding:20,
-    borderWidth:3,
-    borderColor:"#E5F4FF",
-    marginBottom:15,
-    elevation:3,
-  },
+  card:{ flexDirection:"row", alignItems:"center", backgroundColor: "#FFFFFF", borderRadius: 20, padding: 14, borderWidth: 1, borderColor: "#E1E7E5", marginBottom: 12, elevation: 1, width: "100%", maxWidth: 680, alignSelf: "center" },
 
-  image:{
-    width:95,
-    height:95,
-    marginRight:15,
-  },
+  image:{ width: 64, height: 76, marginRight: 12, resizeMode: "contain" },
 
-  name:{
-    fontSize:24,
-    fontWeight:"900",
-  },
+  name:{ fontSize: 20, fontWeight:"900", color: "#23394A", flexShrink: 1 },
 
-  price:{
-      fontSize:20,
-      marginTop:8,
-      color:"#F59E0B",
-      fontWeight:"800",
-  },
+  price:{ fontSize: 15, marginTop: 5, color: "#805B15", fontWeight:"800" },
 
-  button:{
-    backgroundColor:"#4DA8FF",
-    paddingHorizontal:24,
-    paddingVertical:14,
-    borderRadius:18,
-  },
+  button:{ backgroundColor: "#2867AD", paddingHorizontal: 12, paddingVertical: 14, borderRadius: 16, minHeight: 52, marginLeft: 8 },
 
-  buttonText:{
-      color:"white",
-      fontWeight:"900",
-      fontSize:18,
-  },
+  buttonText:{ color: "#FFFFFF", fontWeight:"900", fontSize: 15 },
 
-  header:{
-      marginBottom:25,
-  },
+  header:{ marginBottom: 12, width: "100%", maxWidth: 680, alignSelf: "center" },
 
   backButton:{
       flexDirection:"row",
@@ -320,56 +273,17 @@ const styles = StyleSheet.create({
       marginBottom:15,
   },
 
-  backText:{
-      fontSize:20,
-      fontWeight:"700",
-      marginLeft:8,
-      color:"#2563EB",
-  },
+  backText:{ fontSize: 16, fontWeight:"700", marginLeft:8, color:"#2867AD" },
 
-  circle1:{
-      position:"absolute",
-      width:180,
-      height:180,
-      borderRadius:90,
-      backgroundColor:"#9fe7ff",
-      top:-60,
-      right:-50,
-  },
+  circle1:{ position:"absolute", width:180, height:180, borderRadius:90, backgroundColor:"#9fe7ff", top:-60, right:-50, display: "none" },
 
-  circle2:{
-      position:"absolute",
-      width:120,
-      height:120,
-      borderRadius:60,
-      backgroundColor:"#bb96c2",
-      bottom:80,
-      left:-30,
-  },
+  circle2:{ position:"absolute", width:120, height:120, borderRadius:60, backgroundColor:"#bb96c2", bottom:80, left:-30, display: "none" },
 
-  circle3:{
-      position:"absolute",
-      width:90,
-      height:90,
-      borderRadius:45,
-      backgroundColor:"#a6ffc1",
-      right:20,
-      bottom:200,
-  },
+  circle3:{ position:"absolute", width:90, height:90, borderRadius:45, backgroundColor:"#a6ffc1", right:20, bottom:200, display: "none" },
 
-  coinCard:{
-      alignSelf:"center",
-      backgroundColor:"#FFF6CF",
-      paddingHorizontal:25,
-      paddingVertical:10,
-      borderRadius:25,
-      marginBottom:25,
-  },
+  coinCard:{ alignSelf: "flex-start", backgroundColor:"#FFF6CF", paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, marginBottom: 10 },
 
   coinRow:{flexDirection:"row",alignItems:"center"},
-  coinText:{
-      fontSize:22,
-      fontWeight:"900",
-  },
+  coinText:{ fontSize: 18, fontWeight:"900", color: "#805B15" },
 
 });

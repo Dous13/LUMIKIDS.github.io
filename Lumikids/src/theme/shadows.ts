@@ -1,13 +1,13 @@
 export const Shadows = {
   card: {
-    shadowColor: "#000",
+    shadowColor: "#23394A",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
 
-    elevation: 4,
+    elevation: 2,
   },
 };

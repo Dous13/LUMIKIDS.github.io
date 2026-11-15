@@ -1,5 +1,7 @@
+import FadeIn from "../../components/common/FadeIn";
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useEffect, useState } from "react";
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { ScrollView, View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import ExitLessonModal from "../../components/common/ExitLessonModal";
@@ -56,7 +58,7 @@ export default function MathLessonScreen() {
   const lastPage = page === lesson.pages.length - 1;
 
   return (
-    <LinearGradient colors={["#F8FCFF", "#EAF8FF", "#D6F1FF"]} style={styles.container}>
+    <LinearGradient colors={["#FAF8F2", "#FAF8F2"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
@@ -67,12 +69,12 @@ export default function MathLessonScreen() {
             <View style={styles.headerSpacer} />
           </View>
 
-          <View style={styles.card}>
+          <FadeIn style={styles.card}>
             <Text style={styles.emoji}>{current.emoji}</Text>
             <Text style={styles.number}>{current.value}</Text>
             <Text style={styles.title}>{current.title}</Text>
             <Text style={styles.description}>{current.description}</Text>
-          </View>
+          </FadeIn>
 
           <TouchableOpacity
             style={styles.button}
@@ -100,7 +102,7 @@ export default function MathLessonScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  content: { flexGrow: 1, padding: 20, paddingBottom: 34 },
+  content: { flexGrow: 1, padding: 20, paddingBottom: 34, width: "100%", maxWidth: 720, alignSelf: "center" },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
   error: { fontSize: 21, fontWeight: "800", color: "#64748B", textAlign: "center" },
   lockEmoji: { fontSize: 58, marginBottom: 12 },
@@ -109,11 +111,11 @@ const styles = StyleSheet.create({
   backArrow: { fontSize: 26, fontWeight: "800", color: "#4A90E2" },
   progress: { fontSize: 18, fontWeight: "800", color: "#64748B" },
   headerSpacer: { width: 48 },
-  card: { width: "100%", maxWidth: 560, alignSelf: "center", minHeight: 390, marginTop: 18, backgroundColor: "#FFF", borderRadius: 30, justifyContent: "center", alignItems: "center", padding: 28, elevation: 5 },
+  card: { width: "100%", maxWidth: 560, alignSelf: "center", minHeight: 390, marginTop: 18, backgroundColor: "#FFFFFF", borderRadius: 20, justifyContent: "center", alignItems: "center", padding: 24, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
   emoji: { fontSize: 64, textAlign: "center" },
-  number: { fontSize: 70, fontWeight: "900", color: "#4A90E2", marginTop: 16 },
-  title: { width: "100%", maxWidth: 500, fontSize: 28, lineHeight: 34, fontWeight: "900", marginTop: 16, color: "#334155", textAlign: "center" },
+  number: { fontSize: 70, fontWeight: "900", color: "#237B67", marginTop: 16 },
+  title: { width: "100%", maxWidth: 500, fontSize: 28, lineHeight: 34, fontWeight: "900", marginTop: 16, color: "#23394A", textAlign: "center" },
   description: { width: "100%", maxWidth: 500, marginTop: 12, fontSize: 19, color: "#64748B", textAlign: "center", lineHeight: 29 },
-  button: { marginTop: 18, backgroundColor: "#4A90E2", borderRadius: 20, paddingVertical: 17, alignItems: "center", width: "100%" },
+  button: { marginTop: 18, backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 17, alignItems: "center", width: "100%", minHeight: 52 },
   buttonText: { color: "#FFF", fontSize: 21, fontWeight: "900" },
 });

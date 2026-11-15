@@ -16,7 +16,7 @@ export default function HomeHeader({
     <View style={styles.container}>
 
       <Text style={styles.greeting}>
-        ☀️ Good Morning
+        LUMIKIDS · LET’S LEARN
       </Text>
 
       <Text style={styles.name}>
@@ -33,28 +33,12 @@ export default function HomeHeader({
 
 const styles = StyleSheet.create({
 
-  container: {
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 20,
-  },
+  container: { alignItems: "flex-start", marginTop: 8, marginBottom: 8 },
 
-  greeting: {
-    fontSize: 18,
-    color: "#ffffff",
-  },
+  greeting: { fontSize: 12, color: "#2867AD", fontWeight: "800", letterSpacing: 2 },
 
-  name: {
-    marginTop: 6,
-    fontSize: 34,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
+  name: { marginTop: 6, fontSize: 32, fontWeight: "800", color: "#23394A", lineHeight: 40 },
 
-  subtitle: {
-    marginTop: 6,
-    fontSize: 17,
-    color: "#ffffff",
-  },
+  subtitle: { marginTop: 6, fontSize: 16, color: "#5D7080", lineHeight: 24 },
 
 });

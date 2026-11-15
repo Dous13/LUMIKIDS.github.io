@@ -1,11 +1,7 @@
+import AnimatedProgress from "../../components/common/AnimatedProgress";
+import TouchableOpacity from "../../components/common/MotionTouchable";
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -119,7 +115,7 @@ export default function RemedialQuizScreen() {
 
   return (
     <LinearGradient
-      colors={["#C8F2FF", "#EAFBFF", "#FFF9E6"]}
+      colors={["#FAF8F2", "#FAF8F2"]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -145,18 +141,7 @@ export default function RemedialQuizScreen() {
                 Question {currentIndex + 1} of {questions.length}
               </Text>
 
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${
-                        ((currentIndex + 1) / questions.length) * 100
-                      }%`,
-                    },
-                  ]}
-                />
-              </View>
+              <AnimatedProgress value={((currentIndex + 1) / questions.length) * 100} color="#2867AD" style={styles.progressTrack} />
 
               {message ? (
                 <View
@@ -258,10 +243,7 @@ export default function RemedialQuizScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  content: { padding: 20, paddingBottom: 40, width: "100%", maxWidth: 720, alignSelf: "center" },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -279,13 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginTop: 12,
   },
-  title: {
-    fontSize: 29,
-    fontWeight: "900",
-    color: "#2563EB",
-    textAlign: "center",
-    marginTop: 14,
-  },
+  title: { fontSize: 29, fontWeight: "900", color: "#23394A", textAlign: "center", marginTop: 14 },
   subtitle: {
     textAlign: "center",
     color: "#64748B",
@@ -306,17 +282,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 18,
   },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#62C77A",
-  },
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 26,
-    padding: 22,
-    alignItems: "center",
-    elevation: 4,
-  },
+  progressFill: { height: "100%", backgroundColor: "#2867AD" },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 22, alignItems: "center", elevation: 1, borderWidth: 1, borderColor: "#E1E7E5" },
   question: {
     fontSize: 23,
     fontWeight: "900",
@@ -332,16 +299,7 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: 12,
   },
-  option: {
-    minHeight: 56,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: "#CFEAFF",
-    backgroundColor: "#EAF8FF",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 14,
-  },
+  option: { minHeight: 56, borderRadius: 16, borderWidth: 1, borderColor: "#E1E7E5", backgroundColor: "#FFFFFF", justifyContent: "center", alignItems: "center", padding: 14, elevation: 1 },
   optionText: {
     fontSize: 21,
     fontWeight: "900",
@@ -371,14 +329,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 21,
   },
-  button: {
-    width: "100%",
-    marginTop: 20,
-    backgroundColor: "#4DA8FF",
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
+  button: { width: "100%", marginTop: 20, backgroundColor: "#2867AD", borderRadius: 16, paddingVertical: 16, alignItems: "center", minHeight: 52 },
   buttonText: {
     color: "#FFF",
     fontSize: 17,
@@ -391,7 +342,7 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 25,
     fontWeight: "900",
-    color: "#2563EB",
+    color: "#2867AD",
   },
   score: {
     marginTop: 12,
