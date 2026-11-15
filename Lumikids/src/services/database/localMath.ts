@@ -2,6 +2,16 @@ import { db } from "./database";
 import { mathLessons } from "../../data/mathLessons";
 import { addToSyncQueue } from "../sync/localQueue";
 import { evaluateQuiz } from "../../utils/ruleEngine";
+import { awardLocalCoins, awardLocalMathXP } from "./localStudent";
+
+// lessonId has TEXT affinity. Native numeric bindings can produce "2.0",
+// while cloud keys use "2". Read aliases as one lesson without deleting any
+// saved rows, and use canonical text IDs for all new inserts.
+const progressColumns = `studentId, CAST(lessonId AS NUMERIC) AS lessonId,
+  MAX(unlocked) AS unlocked, MAX(completed) AS completed,
+  MAX(stars) AS stars, MAX(quizScore) AS quizScore,
+  MAX(quizTotal) AS quizTotal, MAX(xpEarned) AS xpEarned,
+  MIN(synced) AS synced`;
 
 export interface MathProgress {
   studentId: string;
@@ -33,7 +43,7 @@ export function initializeMathProgress(studentId: string) {
       )
       VALUES (?, ?, ?, 0, 0, 0, 0, 0, 0)
       `,
-      [studentId, lesson.id, index === 0 ? 1 : 0]
+      [studentId, String(lesson.id), index === 0 ? 1 : 0]
     );
   });
 
@@ -43,7 +53,7 @@ export function initializeMathProgress(studentId: string) {
       `
       UPDATE math_progress
       SET unlocked = 1
-      WHERE studentId = ? AND lessonId = ?
+      WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?
       `,
       [studentId, mathLessons[0].id]
     );
@@ -56,9 +66,10 @@ export function getMathProgress(
 ): MathProgress | null {
   return db.getFirstSync(
     `
-    SELECT *
+    SELECT ${progressColumns}
     FROM math_progress
-    WHERE studentId = ? AND lessonId = ?
+    WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?
+    GROUP BY studentId, CAST(lessonId AS NUMERIC)
     `,
     [studentId, lessonId]
   ) as MathProgress | null;
@@ -69,9 +80,10 @@ export function getAllMathProgress(
 ): MathProgress[] {
   return db.getAllSync(
     `
-    SELECT *
+    SELECT ${progressColumns}
     FROM math_progress
     WHERE studentId = ?
+    GROUP BY studentId, CAST(lessonId AS NUMERIC)
     ORDER BY lessonId ASC
     `,
     [studentId]
@@ -84,9 +96,9 @@ export function isMathLessonUnlocked(
 ): boolean {
   const result = db.getFirstSync(
     `
-    SELECT unlocked
+    SELECT MAX(unlocked) AS unlocked
     FROM math_progress
-    WHERE studentId = ? AND lessonId = ?
+    WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?
     `,
     [studentId, lessonId]
   ) as { unlocked: number } | null;
@@ -100,9 +112,9 @@ export function isMathLessonCompleted(
 ): boolean {
   const result = db.getFirstSync(
     `
-    SELECT completed
+    SELECT MAX(completed) AS completed
     FROM math_progress
-    WHERE studentId = ? AND lessonId = ?
+    WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?
     `,
     [studentId, lessonId]
   ) as { completed: number } | null;
@@ -116,7 +128,8 @@ export function completeMathLesson(
   quizScore: number,
   quizTotal: number,
   stars: number,
-  xpEarned: number
+  xpEarned: number,
+  withinTransaction = false
 ): boolean {
   if (
     !Number.isFinite(quizScore) ||
@@ -159,10 +172,13 @@ export function completeMathLesson(
 
   initializeMathProgress(studentId);
 
+  if (!isMathLessonUnlocked(studentId, lessonId)) return false;
+
   const nextLesson = mathLessons[lessonIndex + 1];
 
   // Update completion and unlock the next lesson atomically.
-  db.withTransactionSync(() => {
+  const commit = () => {
+    const alreadyCompleted = isMathLessonCompleted(studentId, lessonId);
     const completionResult = db.runSync(
       `
       UPDATE math_progress
@@ -173,7 +189,7 @@ export function completeMathLesson(
         quizTotal = ?,
         xpEarned = MAX(xpEarned, ?),
         synced = 0
-      WHERE studentId = ? AND lessonId = ?
+      WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?
       `,
       [
         stars,
@@ -208,19 +224,28 @@ export function completeMathLesson(
         )
         VALUES (?, ?, 1, 0, 0, 0, 0, 0, 0)
         `,
-        [studentId, nextLesson.id]
+        [studentId, String(nextLesson.id)]
       );
 
       db.runSync(
         `
         UPDATE math_progress
         SET unlocked = 1, synced = 0
-        WHERE studentId = ? AND lessonId = ?
+        WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?
         `,
         [studentId, nextLesson.id]
       );
     }
-  });
+
+    // Commit rewards with completion so a failed save can be retried safely.
+    if (!alreadyCompleted) {
+      awardLocalMathXP(studentId, xpEarned);
+      awardLocalCoins(studentId, ruleResult.stars * 5);
+    }
+    addToSyncQueue("SYNC_STUDENT", { studentId });
+  };
+  if (withinTransaction) commit();
+  else db.withTransactionSync(commit);
 
   console.log(
     `[MathProgress] Completed lesson ${lessonId}.`
@@ -235,9 +260,6 @@ export function completeMathLesson(
       `[MathProgress] Final math lesson completed.`
     );
   }
-
-  // Queue synchronization only after the database transaction succeeds.
-  addToSyncQueue("SYNC_STUDENT", { studentId });
 
   return true;
 }
@@ -273,7 +295,7 @@ export function saveMathQuizProgress(
     `
     UPDATE math_progress
     SET quizScore = ?, quizTotal = ?, synced = 0
-    WHERE studentId = ? AND lessonId = ?
+    WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?
     `,
     [quizScore, quizTotal, studentId, lessonId]
   );

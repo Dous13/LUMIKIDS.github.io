@@ -24,10 +24,6 @@ import {
   isMathLessonCompleted,
   saveMathQuizProgress,
 } from "../../services/database/localMath";
-import {
-  awardLocalCoins,
-  awardLocalMathXP,
-} from "../../services/database/localStudent";
 import { recordMistake } from "../../services/database/localMistakes";
 
 type Route = RouteProp<RootStackParamList, "MathQuiz">;
@@ -144,11 +140,6 @@ export default function MathQuizScreen() {
         setFeedback("failed");
         setMessage("Let's practice some more before moving on!");
         return;
-      }
-
-      if (!alreadyCompleted) {
-        await awardLocalMathXP(session.studentId, xpEarned);
-        await awardLocalCoins(session.studentId, coinsEarned);
       }
 
       const lessonIndex = mathLessons.findIndex(

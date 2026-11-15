@@ -144,10 +144,10 @@ export default function TracingCanvas({
     () =>
       template
         ? template.map((stroke) => {
-            const path = Skia.Path.Make();
+            const path = Skia.PathBuilder.Make();
             path.moveTo(stroke[0].x * size.width, stroke[0].y * size.height);
             stroke.slice(1).forEach(point => path.lineTo(point.x * size.width, point.y * size.height));
-            return path;
+            return path.detach();
           })
         : [],
     [template, size.width, size.height]
@@ -190,7 +190,7 @@ export default function TracingCanvas({
             if (pointIndex === 0) result.moveTo(point.x, point.y);
             else result.lineTo(point.x, point.y);
             return result;
-          }, Skia.Path.Make());
+          }, Skia.PathBuilder.Make()).detach();
           return (
             <Path
               key={`user-${index}`}

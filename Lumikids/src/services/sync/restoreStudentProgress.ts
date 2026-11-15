@@ -1,6 +1,7 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db as firestore } from "../firebase/firebase";
 import { db as localDb } from "../database/database";
+import { getMathProgress } from "../database/localMath";
 
 type CloudProgress = {
   unlocked?: boolean | number;
@@ -39,10 +40,12 @@ function mergeProgress(
       continue;
     }
 
-    const local = localDb.getFirstSync(
-      `SELECT * FROM ${table} WHERE studentId = ? AND lessonId = ?`,
-      [studentId, String(lessonId)]
-    ) as any;
+    const local = table === "math_progress"
+      ? getMathProgress(studentId, Number(lessonId))
+      : localDb.getFirstSync(
+          `SELECT * FROM ${table} WHERE studentId = ? AND lessonId = ?`,
+          [studentId, String(lessonId)]
+        ) as any;
 
     const cloudUnlocked = toFlag(cloud.unlocked);
     const cloudCompleted = toFlag(cloud.completed);
@@ -148,7 +151,7 @@ function mergeProgress(
         `,
         [
           studentId,
-          String(lessonId),
+          String(Number(lessonId)),
           unlocked,
           completed,
           stars,
