@@ -1,7 +1,8 @@
 import { Colors } from "../../theme";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  AppState,
   ActivityIndicator,
   Image,
   ScrollView,
@@ -14,7 +15,6 @@ import {
 import {
   CameraView,
   useCameraPermissions,
-  type CameraViewRef,
 } from "expo-camera";
 
 import {
@@ -25,12 +25,18 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import {
+  useIsFocused,
   useNavigation,
   useRoute,
   type RouteProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../types/navigation";
+
+import { File, Paths } from "expo-file-system";
+import { getSession } from "../../services/session/session";
+import { getWorksheetRecord, saveWorksheetCapture } from "../../services/phygital/worksheetStore";
+import type { GeneratedWorksheet } from "../../services/phygital/worksheetTypes";
 
 export default function WorksheetCaptureScreen() {
   const navigation =
@@ -41,7 +47,11 @@ export default function WorksheetCaptureScreen() {
     const route =
       useRoute<RouteProp<RootStackParamList, "WorksheetCapture">>();
 
-    const { subject, lessonId } = route.params;
+    const { subject, lessonId, instanceId } = route.params;
+  const isFocused = useIsFocused();
+  const [foreground, setForeground] = useState(AppState.currentState === "active");
+  const [worksheet, setWorksheet] = useState<GeneratedWorksheet | null>(null);
+  const captureLock = useRef(false);
 
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
@@ -52,19 +62,49 @@ export default function WorksheetCaptureScreen() {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const [pictureSize, setPictureSize] = useState<string>();
+
+  useEffect(() => {
+    let active = true;
+    getSession().then(session => {
+      if (!active) return;
+      if (!session?.studentId) throw new Error("Open your student account before scanning.");
+      const record = getWorksheetRecord(session.studentId, instanceId);
+      if (record.worksheet.subject !== subject || record.worksheet.lessonId !== String(lessonId)) throw new Error("The selected worksheet does not match this activity.");
+      setWorksheet(record.worksheet);
+    }).catch(error => { if (active) setError(error.message); });
+    const subscription = AppState.addEventListener("change", state => { setForeground(state === "active"); setCameraReady(false); });
+    return () => { active = false; subscription.remove(); };
+  }, [instanceId, subject, lessonId]);
+
+  useEffect(() => { if (!isFocused) setCameraReady(false); }, [isFocused]);
+
+  async function prepareCamera() {
+    try {
+      const sizes = await cameraRef.current!.getAvailablePictureSizesAsync();
+      const suitable = sizes.map(value => ({ value, sides: value.split("x").map(Number) }))
+        .filter(s => Math.min(...s.sides) >= 1000 && s.sides[0] * s.sides[1] <= 6000000)
+        .sort((a, b) => Math.abs(a.sides[0] * a.sides[1] - 2000000) - Math.abs(b.sides[0] * b.sides[1] - 2000000));
+      setPictureSize(suitable[0]?.value);
+      setCameraReady(true);
+    } catch (e) { setError(e instanceof Error ? e.message : "Camera could not initialize. Reopen the scanner."); }
+  }
 
   async function captureAndAnalyze() {
-    if (!cameraRef.current || !cameraReady || processing) {
+    if (!cameraRef.current || !cameraReady || captureLock.current || !worksheet || !isFocused || !foreground) {
       return;
     }
 
+    captureLock.current = true;
     setProcessing(true);
     setError(null);
     setAnalysis(null);
 
     try {
-        const photo = await cameraRef.current?.takePictureAsync({
-        quality: 0.8,
+        const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.95,
+        skipProcessing: false,
+        imageType: "jpg",
         base64: true,
         });
 
@@ -75,7 +115,13 @@ export default function WorksheetCaptureScreen() {
       setPhotoUri(photo.uri);
 
       // All image analysis happens locally on this device.
-      const result = analyzeWorksheet(photo.base64);
+      const session = await getSession();
+      if (session?.studentId !== worksheet.studentId) throw new Error("The student account changed. Reopen the worksheet in the correct account.");
+      const result = analyzeWorksheet(photo.base64, worksheet);
+      const savedPhoto = new File(Paths.document, "worksheet-" + instanceId + "-" + Date.now() + ".jpg");
+      new File(photo.uri).copy(savedPhoto);
+      saveWorksheetCapture(session.studentId, instanceId, result, savedPhoto.uri);
+      setPhotoUri(savedPhoto.uri);
       setAnalysis(result);
     } catch (err) {
       setError(
@@ -84,11 +130,13 @@ export default function WorksheetCaptureScreen() {
           : "Could not analyze the worksheet."
       );
     } finally {
+      captureLock.current = false;
       setProcessing(false);
     }
   }
 
   function retakePhoto() {
+    setCameraReady(false);
     setPhotoUri(null);
     setAnalysis(null);
     setError(null);
@@ -138,7 +186,7 @@ export default function WorksheetCaptureScreen() {
         Lesson ID: {lessonId}
       </Text>
       <Text style={styles.description}>
-        Place the matching three-question worksheet in the frame.
+        Place the selected five-activity worksheet in the frame with all four black corner squares visible.
         Keep the page flat and well lit.
       </Text>
 
@@ -146,12 +194,14 @@ export default function WorksheetCaptureScreen() {
         <Image source={{ uri: photoUri }} style={styles.preview} />
       ) : (
         <View style={styles.cameraContainer}>
-          <CameraView
+          {isFocused && foreground && worksheet ? <CameraView
             ref={cameraRef}
             style={styles.camera}
             facing="back"
-            onCameraReady={() => setCameraReady(true)}
-          />
+            pictureSize={pictureSize}
+            onCameraReady={prepareCamera}
+            onMountError={event => { setError(event.message); setCameraReady(false); }}
+          /> : null}
         </View>
       )}
 
@@ -174,9 +224,12 @@ export default function WorksheetCaptureScreen() {
 
       {error && <Text style={styles.error}>{error}</Text>}
 
+      {photoUri && !analysis && <TouchableOpacity style={styles.button} onPress={retakePhoto} disabled={processing}>
+        <Text style={styles.buttonText}>Retake Worksheet</Text>
+      </TouchableOpacity>}
       {analysis && (
         <View style={styles.results}>
-          <Text style={styles.resultTitle}>Detected Answers</Text>
+          <Text style={styles.resultTitle}>{worksheet?.tracing ? "Writing photo saved for teacher review" : "Detected Answers"}</Text>
 
 
         {analysis.answers.map((answer, index) => {
@@ -186,7 +239,7 @@ export default function WorksheetCaptureScreen() {
 
           if (status === "blank") {
             message = "No answer detected";
-          } else if (status === "ambiguous") {
+          } else if ((status === "ambiguous" || status === "multiple-marks")) {
             message = "Please check or remark your answer";
           } else {
             message = `Detected answer: ${answer}`;
@@ -200,10 +253,13 @@ export default function WorksheetCaptureScreen() {
         })}
 
           <Text style={styles.note}>
-            Experimental detection only. Check the photo and answers
-            manually; this score is not a probability of correctness.
+            Saved locally. A teacher must confirm all five activities before
+            this worksheet affects progress. Recognition confidence is not a correctness score.
           </Text>
 
+          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("WorksheetReview", { studentId: worksheet!.studentId!, instanceId })}>
+            <Text style={styles.buttonText}>Open Teacher Review</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.button}
             onPress={retakePhoto}

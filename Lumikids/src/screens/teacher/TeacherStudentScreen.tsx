@@ -9,6 +9,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { doc, getDoc } from "firebase/firestore";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { db } from "../../services/firebase/firebase";
+import { getTeacherSession } from "../../services/teacher/teacherSession";
+import { cacheWorksheetReviewAccess } from "../../services/phygital/worksheetStore";
 
 export default function TeacherStudentScreen() {
   const navigation = useNavigation<any>();
@@ -18,6 +20,10 @@ export default function TeacherStudentScreen() {
 
   const load = useCallback(async () => {
     const snap = await getDoc(doc(db, "students", route.params.studentId));
+    const teacher = await getTeacherSession();
+    if (snap.exists() && teacher && snap.data().teacherId === teacher.teacherId) {
+      cacheWorksheetReviewAccess(teacher.teacherId, route.params.studentId, snap.data().classCode);
+    }
     setStudent(snap.exists() ? snap.data() : null);
     setLoading(false);
   }, [route.params.studentId]);
@@ -51,6 +57,9 @@ export default function TeacherStudentScreen() {
           </View>
 
           <Text style={styles.sectionTitle}>Subject Progress</Text>
+          <TouchableOpacity style={styles.progressCard} onPress={() => navigation.navigate("WorksheetReview", { studentId: route.params.studentId })}>
+            <Text style={styles.progressTitle}>Review Physical Worksheets →</Text>
+          </TouchableOpacity>
           <ProgressCard emoji="📖" title="Reading" value={reading} />
           <ProgressCard emoji="✏️" title="Writing" value={writing} />
           <ProgressCard emoji="🔢" title="Math" value={math} />

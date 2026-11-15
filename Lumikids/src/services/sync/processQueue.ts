@@ -1,5 +1,6 @@
 import { getPendingQueue, markQueueSynced } from "./localQueue";
 import { syncStudent } from "./syncStudent";
+import { syncWorksheet } from "./syncWorksheet";
 
 let isProcessing = false;
 
@@ -18,6 +19,9 @@ export async function processQueue() {
         const payload = JSON.parse(job.payload);
 
         switch (job.action) {
+          case "SYNC_WORKSHEET":
+            await syncWorksheet(payload.studentId, payload.instanceId);
+            break;
           case "SYNC_STUDENT":
             await syncStudent(payload.studentId);
             break;

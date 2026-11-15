@@ -4,6 +4,22 @@ export const db = SQLite.openDatabaseSync("lumikids.db");
 
 export function initializeDatabase() {
   db.execSync(`
+    CREATE TABLE IF NOT EXISTS worksheet_instances (
+      studentId TEXT NOT NULL,
+      instanceId TEXT NOT NULL,
+      worksheet TEXT NOT NULL,
+      capture TEXT,
+      photoUri TEXT,
+      review TEXT,
+      finalized TEXT,
+      PRIMARY KEY(studentId, instanceId)
+    );
+    CREATE TABLE IF NOT EXISTS worksheet_review_access (
+      teacherId TEXT NOT NULL,
+      studentId TEXT NOT NULL,
+      classCode TEXT NOT NULL,
+      PRIMARY KEY(teacherId, studentId)
+    );
     CREATE TABLE IF NOT EXISTS student (
       id TEXT PRIMARY KEY,
       name TEXT,

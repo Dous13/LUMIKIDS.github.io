@@ -28,6 +28,7 @@ export interface WorksheetTracing {
   lowercase: string;
   word: string;
   emoji: string;
+  activities: { id: string; prompt: string; target: string; trace: boolean }[];
 }
 
 export interface WorksheetBubblePosition {
@@ -44,6 +45,9 @@ export interface WorksheetBubbleLayout {
 }
 
 export interface GeneratedWorksheet {
+  templateVersion?: number;
+  instanceId?: string;
+  studentId?: string;
   id: string;
   title: string;
   subject: WorksheetSubject;

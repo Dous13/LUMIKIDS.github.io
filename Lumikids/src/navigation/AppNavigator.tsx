@@ -28,6 +28,7 @@ import TeacherStudentScreen from "../screens/teacher/TeacherStudentScreen";
 import PhygitalScanScreen from "../screens/phygital/PhygitalScanScreen";
 import WorksheetCaptureScreen from "../screens/phygital/WorksheetCaptureScreen";
 import WorksheetPreviewScreen from "../screens/phygital/WorksheetPreviewScreen";
+import WorksheetReviewScreen from "../screens/phygital/WorksheetReviewScreen";
 import LessonActivityChoiceScreen from "../screens/student/LessonActivityChoiceScreen";
 import RemedialQuizScreen from "../screens/student/RemedialQuizScreen";
 
@@ -64,6 +65,7 @@ export default function AppNavigator() {
         }}
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="WorksheetReview" component={WorksheetReviewScreen} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen
           name="PhygitalScan"

@@ -2,7 +2,7 @@
 import { mathQuizzes } from "./mathQuizzes";
 import { mathLessons } from "./mathLessons";
 import { readingLessons } from "./readingLessons";
-import { readingQuizzes } from "./readingQuizzes";
+import { createBubbleLayout } from "../services/phygital/worksheetLayout";
 import { writingLessons } from "./writingLessons";
 
 import type {
@@ -12,39 +12,7 @@ import type {
 } from "../services/phygital/worksheetTypes";
 
 const ANSWER_LABELS: WorksheetAnswer[] = ["A", "B", "C"];
-const QUESTIONS_PER_WORKSHEET = 3;
-
-const A4_WIDTH_MM = 210;
-const A4_HEIGHT_MM = 297;
-
-const QUESTION_TOP_MM = [77, 114, 151];
-const BUBBLE_TOP_OFFSET_MM = 27;
-
-const CHOICE_CENTER_X_MM = [
-  16 + (178 / 6),
-  16 + (178 / 2),
-  16 + (178 * 5 / 6),
-];
-
-function createBubbleLayout(
-  questions: WorksheetQuestion[]
-) {
-  return {
-    pageWidthMm: A4_WIDTH_MM,
-    pageHeightMm: A4_HEIGHT_MM,
-    positions: questions.flatMap((question, questionIndex) =>
-      question.choices.map((choice, choiceIndex) => ({
-        questionId: question.id,
-        answer: choice.id,
-        x: CHOICE_CENTER_X_MM[choiceIndex] / A4_WIDTH_MM,
-        y:
-          (QUESTION_TOP_MM[questionIndex] +
-            BUBBLE_TOP_OFFSET_MM) /
-          A4_HEIGHT_MM,
-      }))
-    ),
-  };
-}
+const QUESTIONS_PER_WORKSHEET = 5;
 
 function mapQuestions(
   items: {
@@ -58,7 +26,7 @@ function mapQuestions(
   subject: "reading" | "math",
   lessonId: string
 ): WorksheetQuestion[] {
-  const selected = items.slice(0, QUESTIONS_PER_WORKSHEET);
+  const selected = items;
 
   if (selected.length !== QUESTIONS_PER_WORKSHEET) {
     throw new Error(
@@ -66,6 +34,10 @@ function mapQuestions(
     );
   }
 
+  if (new Set(selected.map(item => item.id)).size !== 5 ||
+      new Set(selected.map(item => JSON.stringify([item.question, item.emoji, item.image, item.choices]))).size !== 5) {
+    throw new Error("A worksheet must contain five distinct questions.");
+  }
   return selected.map((item) => {
     if (item.choices.length !== 3) {
       throw new Error(
@@ -108,25 +80,19 @@ function createReadingWorksheet(
     throw new Error(`Reading lesson ${lessonId} was not found.`);
   }
 
-  const quiz = readingQuizzes[lessonId];
-
-  if (!quiz) {
-    throw new Error(
-      `Reading quiz for lesson ${lessonId} was not found.`
-    );
-  }
-
-  const questions = mapQuestions(
-    quiz.map((item) => ({
-      id: item.id,
-      question: item.question,
-      image: item.image,
-      choices: item.choices,
-      answer: item.answer,
-    })),
-    "reading",
-    lessonId
-  );
+  // Physical choices remain stable across restarts; digital quizzes are unchanged.
+  const others = readingLessons.filter(item => item.id !== lessonId);
+  const choices = (answer: string, values: string[]) =>
+    [answer, ...Array.from(new Set(values)).filter(value => value !== answer).slice(0, 2)];
+  const raw = [
+    { id: 1, question: "Which letter is shown?", image: lesson.letter, choices: choices(lesson.letter, others.map(l => l.letter)), answer: lesson.letter },
+    { id: 2, question: "Which word starts with " + lesson.letter + "?", choices: choices(lesson.word, others.map(l => l.word)), answer: lesson.word },
+    { id: 3, question: "Which picture starts with " + lesson.letter + "?", choices: choices(lesson.emoji, others.map(l => l.emoji)), answer: lesson.emoji },
+    { id: 4, question: "Which small letter matches " + lesson.letter + "?", choices: choices(lesson.letter.toLowerCase(), others.map(l => l.letter.toLowerCase())), answer: lesson.letter.toLowerCase() },
+    { id: 5, question: "Which word matches the picture?", image: lesson.emoji, choices: choices(lesson.word, others.map(l => l.word)), answer: lesson.word },
+  ];
+  const questions = mapQuestions(raw.map((item, i) => ({ ...item,
+    choices: [...item.choices.slice(i % 3), ...item.choices.slice(0, i % 3)] })), "reading", lessonId);
 
   return {
     id: `reading-worksheet-${lessonId}`,
@@ -163,6 +129,13 @@ function createWritingWorksheet(
       lowercase: lesson.letter.toLowerCase(),
       word: lesson.traceWord,
       emoji: lesson.emoji,
+      activities: [
+        { id: "uppercase", prompt: "Trace the uppercase letter", target: lesson.letter.toUpperCase(), trace: true },
+        { id: "lowercase", prompt: "Trace the lowercase letter", target: lesson.letter.toLowerCase(), trace: true },
+        { id: "word", prompt: "Trace the word", target: lesson.traceWord, trace: true },
+        { id: "write-letter", prompt: "Write the letter on your own", target: lesson.letter.toUpperCase(), trace: false },
+        { id: "write-word", prompt: "Write the word on your own", target: lesson.traceWord, trace: false },
+      ],
     },
     createdAt: new Date().toISOString(),
   };
@@ -197,7 +170,7 @@ export function createWorksheet(
   );
 
   const questions = mapQuestions(
-    quiz.map((item) => ({
+    quiz.slice(0, QUESTIONS_PER_WORKSHEET).map((item) => ({
       id: item.id,
       question: item.question,
       emoji: item.emoji,
@@ -215,6 +188,7 @@ export function createWorksheet(
     ageRange: { min: 3, max: 5 },
     lessonId: String(numericId),
     questions,
+    bubbleLayout: createBubbleLayout(questions),
     createdAt: new Date().toISOString(),
   };
 }
@@ -269,6 +243,7 @@ export function createMathWorksheet(
     ageRange: { min: 3, max: 5 },
     lessonId: String(lessonId),
     questions,
+    bubbleLayout: createBubbleLayout(questions),
     createdAt: new Date().toISOString(),
   };
 }

@@ -27,6 +27,11 @@ export type RootStackParamList = {
   WorksheetCapture: {
     subject: "reading" | "writing" | "math";
     lessonId: string | number;
+    instanceId: string;
+  };
+  WorksheetReview: {
+    studentId: string;
+    instanceId?: string;
   };
   MathQuiz: {
     lessonId: number;
