@@ -164,6 +164,22 @@ export function initializeDatabase() {
   if (!changeColumns.some(column => column.name === "syncRejection")) {
     db.execSync("ALTER TABLE student_profile_changes ADD COLUMN syncRejection TEXT");
   }
+  if (!changeColumns.some(column => column.name === "replacementId")) {
+    db.execSync("ALTER TABLE student_profile_changes ADD COLUMN replacementId INTEGER");
+  }
+  const worksheetColumns = db.getAllSync<{ name: string }>("PRAGMA table_info(worksheet_instances)");
+  if (!worksheetColumns.some(column => column.name === "captureRevision")) {
+    db.execSync("ALTER TABLE worksheet_instances ADD COLUMN captureRevision INTEGER NOT NULL DEFAULT 0");
+  }
+  if (!worksheetColumns.some(column => column.name === "syncConflict")) {
+    db.execSync("ALTER TABLE worksheet_instances ADD COLUMN syncConflict TEXT");
+  }
+  if (!worksheetColumns.some(column => column.name === "captureSynced")) {
+    db.execSync("ALTER TABLE worksheet_instances ADD COLUMN captureSynced INTEGER NOT NULL DEFAULT 0");
+  }
+  db.execSync(`CREATE TABLE IF NOT EXISTS worksheet_review_archive (
+    studentId TEXT NOT NULL, instanceId TEXT NOT NULL, snapshot TEXT NOT NULL
+  )`);
 
   const queueColumns = db.getAllSync<{ name: string }>("PRAGMA table_info(sync_queue)");
   if (!queueColumns.some(column => column.name === "revision")) {

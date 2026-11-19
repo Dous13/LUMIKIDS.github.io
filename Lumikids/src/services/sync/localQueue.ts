@@ -14,11 +14,12 @@ export function readQueuePayload(job: QueueJob): QueuePayload | null {
   }
 }
 
-export function getPendingQueue(): QueueJob[] {
-  return db.getAllSync<QueueJob>("SELECT id, action, payload, revision FROM sync_queue WHERE synced = 0 ORDER BY id");
+export function getPendingQueue(runnableOnly = false): QueueJob[] {
+  const filter = runnableOnly ? " AND blocked = 0" : "";
+  return db.getAllSync<QueueJob>("SELECT id, action, payload, revision FROM sync_queue WHERE synced = 0" + filter + " ORDER BY id");
 }
 
-export function addToSyncQueue(action: string, payload: QueuePayload) {
+export function addToSyncQueue(action: string, payload: QueuePayload, wakeBlocked = true) {
   const existing = getPendingQueue().find(job => {
     if (job.action !== action) return false;
     const current = readQueuePayload(job);
@@ -27,7 +28,8 @@ export function addToSyncQueue(action: string, payload: QueuePayload) {
   // A mutation during an upload advances the revision. Only the version that
   // the worker actually attempted can be acknowledged.
   if (existing) {
-    db.runSync("UPDATE sync_queue SET revision = revision + 1 WHERE id = ?", [existing.id]);
+    db.runSync("UPDATE sync_queue SET revision = revision + 1, blocked = CASE WHEN ? THEN 0 ELSE blocked END WHERE id = ?",
+      [wakeBlocked ? 1 : 0, existing.id]);
     return;
   }
   db.runSync(
@@ -38,4 +40,8 @@ export function addToSyncQueue(action: string, payload: QueuePayload) {
 
 export function markQueueSynced(job: QueueJob) {
   db.runSync("UPDATE sync_queue SET synced = 1 WHERE id = ? AND revision = ?", [job.id, job.revision]);
+}
+
+export function blockQueueJob(job: QueueJob) {
+  db.runSync("UPDATE sync_queue SET blocked = 1 WHERE id = ? AND revision = ?", [job.id, job.revision]);
 }

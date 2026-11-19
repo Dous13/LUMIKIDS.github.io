@@ -1,6 +1,6 @@
 import { httpsCallable } from "firebase/functions";
 import { Buffer } from "buffer";
-import { functions } from "../firebase/firebase";
+import { auth, functions } from "../firebase/firebase";
 import { db } from "../database/database";
 import { invalidateStudentCloudSession } from "../student/studentLogin";
 import { type LearningOperation, type LocalLearningOperation } from "./learningOperation";
@@ -12,13 +12,14 @@ const active = new Map<string, Promise<"blocked" | void>>();
 type Change = ReturnType<typeof readProfile>["changes"][number];
 type Upload = { studentId: string; operations: { id: string; operation: LearningOperation }[] };
 type Rejection = { id: string; reason: "invalid-operation" | "receipt-conflict" | "dependency" };
-type Acknowledgement = { accepted: string[]; rejected?: Rejection[]; profile: CloudStudent };
+type Acknowledgement = { accepted: string[]; supersededEquip?: string[]; rejected?: Rejection[]; profile: CloudStudent };
 
-export function syncStudent(studentId: string): Promise<"blocked" | void> {
+export function syncStudent(studentId: string, inScope = () => true): Promise<"blocked" | void> {
   const pending = active.get(studentId);
   if (pending) return pending;
-  const work = uploadStudent(studentId).catch(async error => {
-    await invalidateStudentCloudSession(studentId, error).catch(() => undefined);
+  const user = auth?.currentUser;
+  const work = uploadStudent(studentId, () => auth?.currentUser === user && inScope()).catch(async error => {
+    if (auth?.currentUser === user) await invalidateStudentCloudSession(studentId, error).catch(() => undefined);
     throw error;
   }).finally(() => active.delete(studentId));
   active.set(studentId, work);
@@ -41,6 +42,8 @@ export function settleStudentProgress(studentId: string, cloud: CloudStudent, ac
   db.withTransactionSync(() => {
     const current = readProfile(studentId);
     const confirmed = new Set(accepted);
+    const newestEquip = current.changes.reduce((newest, change) =>
+      accepted.has(change.id) && savedOperation(change)?.type === "equip" ? Math.max(newest, change.id) : newest, 0);
     if (current.state.legacyProfile && hasConfirmedWallet(cloud) &&
         (!current.confirmed || profileRevision(cloud) >= profileRevision(current.confirmed))) {
       const legacy = JSON.parse(current.state.legacyProfile) as CloudStudent;
@@ -53,6 +56,11 @@ export function settleStudentProgress(studentId: string, cloud: CloudStudent, ac
     }
     const progress = mergeProgress({}, cloud);
     for (const change of current.changes) {
+      // An acknowledged newer selection replaces only older, still-pending equipment choices.
+      if (!change.syncRejection && !rejected.has(change.id) && change.id < newestEquip && savedOperation(change)?.type === "equip") {
+        confirmed.add(change.id);
+        continue;
+      }
       const rejection = rejected.get(change.id);
       if (rejection) {
         db.runSync("UPDATE student_profile_changes SET syncRejection = ? WHERE studentId = ? AND id = ?", [rejection, studentId, change.id]);
@@ -79,14 +87,16 @@ export function settleStudentProgress(studentId: string, cloud: CloudStudent, ac
   });
 }
 
-async function uploadStudent(studentId: string) {
+async function uploadStudent(studentId: string, inScope: () => boolean) {
   const snapshot = readProfile(studentId);
   let operations: Upload["operations"] = [];
   const maxBytes = 1_400_000;
   let bytes = 2;
   let cloud: CloudStudent | undefined;
   let localRejections = new Map<number, string>();
+  const requireScope = () => { if (!inScope()) throw new Error("The active account changed during synchronization."); };
   const flush = async () => {
+    requireScope();
     const call = httpsCallable<Upload, Acknowledgement>(functions, "syncStudentLearning");
     const { data } = await call({ studentId, operations });
     const pending = new Map(operations.map(item => [item.id, Number(item.id.split("-")[1])]));
@@ -98,6 +108,12 @@ async function uploadStudent(studentId: string) {
     };
     if (!Array.isArray(data.accepted) || (data.rejected !== undefined && !Array.isArray(data.rejected))) {
       throw new Error("Invalid learning acknowledgement.");
+    }
+    if (data.supersededEquip !== undefined && (!Array.isArray(data.supersededEquip) ||
+        new Set(data.supersededEquip).size !== data.supersededEquip.length ||
+        !data.supersededEquip.every(id => data.accepted.includes(id) &&
+          operations.some(item => item.id === id && item.operation.type === "equip")))) {
+      throw new Error("Invalid superseded equipment acknowledgement.");
     }
     const accepted = new Set(data.accepted.map(take));
     for (const entry of data.rejected ?? []) {
@@ -136,6 +152,7 @@ async function uploadStudent(studentId: string) {
   }
   if (operations.length) await flush();
   if (!cloud) {
+    requireScope();
     const profile = await fetchStudentProfile(studentId);
     if (!profile) throw new Error("The cloud student profile does not exist.");
     cloud = profile;
@@ -157,7 +174,10 @@ async function uploadStudent(studentId: string) {
     });
   });
   if (local.changes.length || local.state.legacyProfile || unverifiedAssessment) {
-    if (!local.state.legacyProfile && local.changes.length && local.changes.every(change => change.syncRejection)) return "blocked" as const;
+    if (!local.changes.some(change => {
+      const operation = savedOperation(change);
+      return !change.syncRejection && operation && operation.type !== "worksheet";
+    })) return "blocked" as const;
     throw new Error("Some learning changes are still pending verification.");
   }
   for (const table of Object.values(progressTables)) {

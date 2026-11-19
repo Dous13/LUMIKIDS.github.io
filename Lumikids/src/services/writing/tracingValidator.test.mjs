@@ -6,7 +6,7 @@ registerHooks({ resolve(specifier, context, next) {
   if (specifier.startsWith('.') && !/\.[a-z]+$/.test(specifier)) return next(specifier + '.ts', context);
   return next(specifier, context);
 }});
-const { UPPERCASE_A_STROKES, validateUppercaseA, validateUppercaseAStroke, validateTraceStroke } = await import('./tracingValidator.ts');
+const { UPPERCASE_A_STROKES, isTraceCanvasSize, validateUppercaseA, validateUppercaseAStroke, validateTraceStroke } = await import('./tracingValidator.ts');
 const { writingStrokeTemplates, writingTraceDefinitions } = await import('../../data/writingStrokeTemplates.ts');
 const { writingLessons } = await import('../../data/writingLessons.ts');
 
@@ -50,6 +50,35 @@ test('rejects invalid dimensions, coordinates and indices', () => {
   assert.equal(validateUppercaseAStroke(strokes[0], 0, NaN, height), false);
   assert.equal(validateUppercaseAStroke([{ x: NaN, y: 0 }, strokes[0][40]], 0, width, height), false);
   assert.equal(validateUppercaseAStroke(strokes[0], 3, width, height), false);
+});
+
+test('bounds wide and tall canvases while accepting supported tablet proportions', () => {
+  for (const [w, h] of [[4096, 1], [1, 4096], [4097, 2048], [2048, 4097]]) {
+    assert.equal(isTraceCanvasSize(w, h), false);
+    const stroke = UPPERCASE_A_STROKES[0].map(p => ({ x: p.x * w, y: p.y * h }));
+    assert.equal(validateTraceStroke('A', stroke, 0, w, h), false);
+  }
+  assert.equal(isTraceCanvasSize(984, 390), true);
+});
+
+test('accepts 4000 well-formed points, rejects a larger or malformed stroke, and caps resampling and comparison work', () => {
+  const [start, end] = UPPERCASE_A_STROKES[0];
+  const dense = Array.from({ length: 4000 }, (_, i) => ({
+    x: (start.x + (end.x - start.x) * i / 3999) * width,
+    y: (start.y + (end.y - start.y) * i / 3999) * height,
+  }));
+  assert.equal(validateTraceStroke('A', dense, 0, width, height), true);
+  assert.equal(validateTraceStroke('A', [...dense, dense.at(-1)], 0, width, height), false);
+  for (const point of [null, { x: '12', y: 34 }, { x: Infinity, y: 0 }, { x: -2 * width, y: 0 }]) {
+    assert.equal(validateTraceStroke('A', [dense[0], point, dense.at(-1)], 0, width, height), false);
+  }
+  const pointBudget = { points: 5, comparisons: 150_000 };
+  const comparisonBudget = { points: 2048, comparisons: 10 };
+  assert.equal(validateTraceStroke('A', dense, 0, width, height, pointBudget), false);
+  assert.equal(validateTraceStroke('A', dense, 0, width, height, comparisonBudget), false);
+  const budget = { points: 2048, comparisons: 150_000 };
+  assert.equal(validateTraceStroke('A', dense, 0, width, height, budget), true);
+  assert.ok(budget.points < 2048 && budget.points > 0 && budget.comparisons < 150_000 && budget.comparisons > 0);
 });
 
 for (const [letter, template] of Object.entries(writingStrokeTemplates)) {

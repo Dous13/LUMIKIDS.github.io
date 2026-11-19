@@ -11,6 +11,14 @@ export const WORKSHEET_LAYOUT = {
   code: { x: 166, y: 36, columns: 16, rows: 12, cell: 2 },
 } as const;
 
+export const WORKSHEET_MAX_CLOCK_SKEW_MS = 5 * 60_000;
+
+export function worksheetTimestamp(value: unknown, now: number): number | undefined {
+  if (typeof value !== "string" || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value)) return;
+  const time = Date.parse(value);
+  if (Number.isFinite(time) && time <= now + WORKSHEET_MAX_CLOCK_SKEW_MS && new Date(time).toISOString() === value) return time;
+}
+
 export function createBubbleLayout(questions: WorksheetQuestion[]) {
   return {
     pageWidthMm: WORKSHEET_LAYOUT.width, pageHeightMm: WORKSHEET_LAYOUT.height,
@@ -26,6 +34,12 @@ export function createBubbleLayout(questions: WorksheetQuestion[]) {
 export const canonicalJson = (value: any): string => Array.isArray(value) ? `[${value.map(canonicalJson).join(",")}]` :
     value && typeof value === "object" ? `{${Object.keys(value).filter(key => value[key] !== undefined).sort()
       .map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}` : JSON.stringify(value);
+
+export function worksheetCaptureKey(capture: { capturedAt?: string; darkness: object } | null | undefined) {
+  if (!capture) return null;
+  const { capturedAt, darkness, ...content } = capture;
+  return canonicalJson({ ...content, darkness: { ...darkness } });
+}
 
 // A local template checksum, not an authentication signature.
 export function worksheetFingerprint(worksheet: GeneratedWorksheet): string {

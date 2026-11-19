@@ -191,21 +191,16 @@ function applyOperation(profile, operation) {
 }
 
 const validDate = (value, now) => worksheetTimestamp(value, now) !== undefined;
-function isOlderWorksheetCapture(existing, incoming, now) {
-  if (!existing) return false;
-  if (!incoming) return true;
-  const before = worksheetTimestamp(existing.capturedAt, now) ?? 0;
-  const after = worksheetTimestamp(incoming.capturedAt, now) ?? 0;
-  return before > after || (before !== 0 && before === after && canonicalJson(existing) > canonicalJson(incoming));
-}
+const isWorksheetInstanceId = value => typeof value === "string" &&
+  /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value);
 const answersValid = (list, count) => Array.isArray(list) && list.length === count && list.every(value => [null, "A", "B", "C"].includes(value));
 const range = (value, min, max) => Number.isFinite(value) && value >= min && value <= max;
 
-function verifyWorksheet(input, studentId, now = Date.now()) {
-  requireValid(input && input.studentId === studentId && typeof input.instanceId === "string" &&
-    /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.instanceId) &&
+function verifyWorksheet(input, studentId, now = Date.now(), existingWorksheet) {
+  const knownCopy = existingWorksheet && canonicalJson(input) === canonicalJson(existingWorksheet);
+  requireValid(input && input.studentId === studentId && isWorksheetInstanceId(input.instanceId) &&
     Object.hasOwn(units, input.subject) && typeof input.lessonId === "string" &&
-    units[input.subject].some(unit => String(unit.id) === input.lessonId) && validDate(input.createdAt, now));
+    units[input.subject].some(unit => String(unit.id) === input.lessonId) && (knownCopy || validDate(input.createdAt, now)));
   const expected = {
     ...createWorksheet(input.subject, input.lessonId), createdAt: input.createdAt,
     studentId, instanceId: input.instanceId, templateVersion: WORKSHEET_LAYOUT.version,
@@ -247,4 +242,4 @@ function applyWorksheet(profile, worksheet, review, teacherId, now = Date.now())
   };
 }
 
-module.exports = { InvalidOperation, requireValid, exact, profileSummary, applyOperation, verifyWorksheet, verifyCapture, isOlderWorksheetCapture, applyWorksheet };
+module.exports = { InvalidOperation, requireValid, exact, profileSummary, applyOperation, isWorksheetInstanceId, verifyWorksheet, verifyCapture, applyWorksheet };

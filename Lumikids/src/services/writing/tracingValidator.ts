@@ -2,6 +2,15 @@ import { writingStrokeTemplates, writingTraceDefinitions } from "../../data/writ
 export type TracePoint = { x: number; y: number };
 export type TraceStroke = TracePoint[];
 export const UPPERCASE_A_STROKES = writingStrokeTemplates.A;
+const MAX_STROKE_POINTS = 4000;
+const MAX_RESAMPLED_POINTS = 2048;
+const MAX_COMPARISONS = 150_000;
+export type TraceBudget = { points: number; comparisons: number };
+export function isTraceCanvasSize(width: number, height: number) {
+  return Number.isFinite(width) && Number.isFinite(height) &&
+    Math.min(width, height) >= 1 && Math.max(width, height) <= 4096 &&
+    Math.max(width, height) <= 6 * Math.min(width, height);
+}
 const distance = (a: TracePoint, b: TracePoint) => Math.hypot(a.x - b.x, a.y - b.y);
 function length(points: TraceStroke): number {
   return points.slice(1).reduce((sum, p, i) => sum + distance(points[i], p), 0);
@@ -12,28 +21,29 @@ function signedArea(points: TraceStroke): number {
     return sum + p.x * next.y - next.x * p.y;
   }, 0) / 2;
 }
-function sample(points: TraceStroke, spacing: number): TraceStroke {
+function sample(points: TraceStroke, spacing: number, limit: number): TraceStroke | null {
+  if (limit < 1 || !Number.isFinite(spacing) || spacing <= 0) return null;
   const result = [points[0]];
   for (let i = 1; i < points.length; i++) {
     const a = points[i - 1], b = points[i];
     const count = Math.max(1, Math.ceil(distance(a, b) / spacing));
+    if (!Number.isFinite(count) || result.length + count > limit) return null;
     for (let j = 1; j <= count; j++) result.push({
       x: a.x + (b.x - a.x) * j / count, y: a.y + (b.y - a.y) * j / count,
     });
   }
   return result;
 }
-/** Ordered geometric matching: every portion of both paths must be covered in direction.
- * No font, network, model or raw-coordinate upload is involved.
- */
+/** Ordered geometric matching. Every portion of both paths must be covered in direction. */
 export function validateTraceStroke(
-  letter: string, stroke: TraceStroke, index: number, width: number, height: number
+  letter: string, stroke: TraceStroke, index: number, width: number, height: number, budget?: TraceBudget
 ): boolean {
   const template = writingStrokeTemplates[letter];
   if (!template || !Number.isInteger(index) || !template[index] ||
-      !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0 ||
-      stroke.length < 2 || stroke.length > 4000 ||
-      stroke.some(p => !Number.isFinite(p.x) || !Number.isFinite(p.y))) return false;
+      !isTraceCanvasSize(width, height) || !Array.isArray(stroke) ||
+      stroke.length < 2 || stroke.length > MAX_STROKE_POINTS ||
+      stroke.some(p => !Number.isFinite(p?.x) || !Number.isFinite(p?.y) ||
+        p.x < -width || p.x > width * 2 || p.y < -height || p.y > height * 2)) return false;
   const expected = template[index].map(p => ({ x: p.x * width, y: p.y * height }));
   const config = writingTraceDefinitions[letter].validation;
   const guideLength = length(expected), actualLength = length(stroke);
@@ -54,7 +64,16 @@ export function validateTraceStroke(
     if (distance(actual[actual.length - 1], p) >= tolerance / 4) actual.push(p);
   }
   actual.push(stroke[stroke.length - 1]);
-  const a = sample(actual, tolerance / 2), e = sample(expected, tolerance / 2);
+  const pointLimit = Math.min(MAX_RESAMPLED_POINTS, budget?.points ?? MAX_RESAMPLED_POINTS);
+  const e = sample(expected, tolerance / 2, pointLimit);
+  if (!e) return false;
+  const comparisons = Math.min(MAX_COMPARISONS, budget?.comparisons ?? MAX_COMPARISONS);
+  const a = sample(actual, tolerance / 2, Math.min(pointLimit - e.length, Math.floor(comparisons / e.length)));
+  if (!a) return false;
+  if (budget) {
+    budget.points -= a.length + e.length;
+    budget.comparisons -= a.length * e.length;
+  }
   let previous = new Uint8Array(e.length);
   for (let i = 0; i < a.length; i++) {
     const row = new Uint8Array(e.length);

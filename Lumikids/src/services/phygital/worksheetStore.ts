@@ -16,12 +16,17 @@ export type WorksheetReview = { teacherId: string; answers: (WorksheetAnswer | n
 export type WorksheetResult = { studentId: string; instanceId: string; subject: string;
   lessonId: string; answers: (WorksheetAnswer | null)[]; writing: (boolean | null)[];
   score: number; total: number; passed: boolean; stars: number; teacherId: string; finalizedAt: string };
+export type WorksheetRevision = { revision: number; capture: WorksheetAnalysis | null; finalized: WorksheetResult | null };
 export type WorksheetRecord = { worksheet: GeneratedWorksheet; capture: WorksheetAnalysis | null;
-  photoUri: string | null; review: WorksheetReview | null; finalized: WorksheetResult | null };
-type Row = { worksheet: string; capture: string | null; photoUri: string | null; review: string | null; finalized: string | null };
+  photoUri: string | null; review: WorksheetReview | null; finalized: WorksheetResult | null;
+  captureRevision: number; captureSynced: boolean; syncConflict: WorksheetRevision | null };
+type Row = { worksheet: string; capture: string | null; photoUri: string | null; review: string | null; finalized: string | null;
+  captureRevision: number; captureSynced: number; syncConflict: string | null };
 const parse = (row: Row): WorksheetRecord => ({ worksheet: JSON.parse(row.worksheet),
   capture: row.capture ? JSON.parse(row.capture) : null, photoUri: row.photoUri,
-  review: row.review ? JSON.parse(row.review) : null, finalized: row.finalized ? JSON.parse(row.finalized) : null });
+  review: row.review ? JSON.parse(row.review) : null, finalized: row.finalized ? JSON.parse(row.finalized) : null,
+  captureRevision: row.captureRevision, captureSynced: row.captureSynced === 1,
+  syncConflict: row.syncConflict ? JSON.parse(row.syncConflict) : null });
 
 export function getWorksheetRecord(studentId: string, instanceId: string): WorksheetRecord {
   const row = db.getFirstSync<Row>("SELECT * FROM worksheet_instances WHERE studentId = ? AND instanceId = ?", [studentId, instanceId]);
@@ -45,12 +50,13 @@ export function saveWorksheetCapture(studentId: string, instanceId: string, capt
   db.withTransactionSync(() => {
     const record = getWorksheetRecord(studentId, instanceId);
     if (record.finalized) throw new Error("This copy is already finalized. Print a new copy to submit another attempt.");
+    if (record.syncConflict) throw new Error("Your teacher needs to load the latest scan before this copy can be updated.");
     if (capture.validated !== true || capture.worksheetInstanceId !== instanceId ||
         capture.answers.length !== record.worksheet.questions.length) throw new Error("Capture does not match this worksheet.");
     const now = Date.now();
     const previous = worksheetTimestamp(record.capture?.capturedAt, now);
     const capturedAt = new Date(Math.max(now, (previous ?? 0) + 1)).toISOString();
-    db.runSync("UPDATE worksheet_instances SET capture = ?, photoUri = ?, review = NULL WHERE studentId = ? AND instanceId = ?",
+    db.runSync("UPDATE worksheet_instances SET capture = ?, photoUri = ?, review = NULL, captureSynced = 0 WHERE studentId = ? AND instanceId = ?",
       [JSON.stringify({ ...capture, capturedAt }), photoUri, studentId, instanceId]);
     addToSyncQueue("SYNC_WORKSHEET", { studentId, instanceId });
   });
@@ -78,9 +84,24 @@ export function requireWorksheetReviewer(teacherId: string, studentId: string) {
     throw new Error("Open this student in the signed-in teacher's class roster before reviewing worksheets on this device.");
   }
 }
+
+export function loadLatestWorksheetDraft(studentId: string, instanceId: string, teacherId: string) {
+  requireWorksheetReviewer(teacherId, studentId);
+  db.withTransactionSync(() => {
+    const record = getWorksheetRecord(studentId, instanceId);
+    const latest = record.syncConflict;
+    if (!latest) return;
+    db.runSync("INSERT INTO worksheet_review_archive VALUES (?, ?, ?)", [studentId, instanceId, JSON.stringify(record)]);
+    db.runSync(`UPDATE worksheet_instances SET capture = ?, captureRevision = ?, captureSynced = 1, finalized = ?,
+      photoUri = NULL, review = NULL, syncConflict = NULL WHERE studentId = ? AND instanceId = ?`,
+    [latest.capture && JSON.stringify(latest.capture), latest.revision, latest.finalized && JSON.stringify(latest.finalized), studentId, instanceId]);
+    addToSyncQueue("SYNC_WORKSHEET", { studentId, instanceId });
+  });
+}
 export function saveWorksheetReview(studentId: string, instanceId: string, review: WorksheetReview) {
   requireWorksheetReviewer(review.teacherId, studentId);
   const record = getWorksheetRecord(studentId, instanceId);
+  if (record.syncConflict) throw new Error("Load the latest scan before reviewing this worksheet.");
   if (!record.capture || record.finalized) throw new Error("Only captured, unfinalized worksheets can be reviewed.");
   if (review.reviewed.length !== 5 || review.reviewed.some(v => typeof v !== "boolean") ||
       (record.worksheet.tracing ? review.writing.length !== 5 || review.writing.some(v => v !== null && typeof v !== "boolean") :
@@ -95,6 +116,7 @@ export function finalizeWorksheet(studentId: string, instanceId: string, teacher
   let result!: WorksheetResult;
   db.withTransactionSync(() => {
     const record = getWorksheetRecord(studentId, instanceId);
+    if (record.syncConflict) throw new Error("Load the latest scan before finalizing this worksheet.");
     if (record.finalized) { result = record.finalized; return; }
     const { worksheet: w, review, capture } = record;
     if (!capture?.validated || capture.worksheetInstanceId !== instanceId || w.studentId !== studentId ||

@@ -215,7 +215,9 @@ test('cloud map ordering cannot change the printed identity; older cloud records
     f.cloud.set('students/alice/worksheetResults/' + w.instanceId, { worksheet: w, finalized: { ...result, score: 0 } });
     await f.load('src/services/sync/syncWorksheet.ts').restoreWorksheetHistory('alice');
     assert.deepEqual(f.store.getWorksheetRecord('alice', w.instanceId).finalized, result);
-    await assert.rejects(f.load('src/services/sync/syncWorksheet.ts').syncWorksheet('alice', w.instanceId, () => true), /same worksheet result|finalized differently/);
+    assert.equal(await f.load('src/services/sync/syncWorksheet.ts').syncWorksheet('alice', w.instanceId, () => true), 'blocked');
+    assert.equal(f.store.getWorksheetRecord('alice', w.instanceId).syncConflict.finalized.score, 0);
+    assert.deepEqual(f.store.getWorksheetRecord('alice', w.instanceId).finalized, result);
     assert.equal(f.cloud.get('students/alice/worksheetResults/' + w.instanceId).finalized.score, 0);
   } finally { f.raw.close(); }
 });
@@ -289,12 +291,54 @@ test('an interrupted worksheet transaction leaves both result and progress pendi
     f.store.saveWorksheetReview('alice', w.instanceId, { teacherId: 'teacher', answers: w.questions.map(q => q.correctAnswer), writing: [], reviewed: Array(5).fill(true) });
     f.store.finalizeWorksheet('alice', w.instanceId, 'teacher');
     const { syncWorksheet } = f.load('src/services/sync/syncWorksheet.ts');
+    const before = structuredClone(f.cloud.get('students/alice'));
     f.interruptProgressUpload();
     await assert.rejects(syncWorksheet('alice', w.instanceId, () => true), /interrupted/);
-    assert.equal(f.cloud.has('students/alice/worksheetResults/' + w.instanceId), false);
+    assert.equal(f.cloud.get('students/alice/worksheetResults/' + w.instanceId).finalized, undefined);
+    assert.deepEqual(f.cloud.get('students/alice'), before);
     await syncWorksheet('alice', w.instanceId, () => true);
     assert.equal(f.cloud.get('students/alice').mathProgress['2'].unlocked, true);
     assert.equal([...f.cloud.keys()].filter(k => k.includes('worksheetResults')).length, 1);
     assert.equal(f.db.getFirstSync('SELECT coins FROM student WHERE id = ?', ['alice']).coins, 15);
   } finally { f.raw.close(); }
+});
+
+test('a stale offline review is archived and a teacher can review the latest revision without another reward', async t => {
+  const f = fixture();
+  t.after(() => f.raw.close());
+  const w = f.store.issueWorksheet('alice', 'math', 1, crypto.randomUUID());
+  const key = 'students/alice/worksheetResults/' + w.instanceId;
+  const { syncWorksheet, restoreWorksheetHistory } = f.load('src/services/sync/syncWorksheet.ts');
+  f.store.saveWorksheetCapture('alice', w.instanceId, analyzeWorksheet(worksheetPhoto(w), w), 'file:///original.jpg');
+  await syncWorksheet('alice', w.instanceId);
+  const observed = f.store.getWorksheetRecord('alice', w.instanceId);
+  assert.equal(observed.captureRevision, 1);
+  const mark = () => f.store.saveWorksheetReview('alice', w.instanceId, {
+    teacherId: 'teacher', answers: w.questions.map(q => q.correctAnswer), writing: [], reviewed: Array(5).fill(true),
+  });
+  mark();
+  const localFinal = f.store.finalizeWorksheet('alice', w.instanceId, 'teacher');
+  const newer = { ...f.cloud.get(key).capture, answers: [null, ...observed.capture.answers.slice(1)] };
+  f.cloud.set(key, { ...f.cloud.get(key), revision: 2, capture: newer });
+  assert.equal(await syncWorksheet('alice', w.instanceId, () => true), 'blocked');
+  assert.equal(f.cloud.get(key).finalized, undefined);
+  assert.equal(f.store.getWorksheetRecord('alice', w.instanceId).syncConflict.revision, 2);
+  f.cloud.set(key, { ...f.cloud.get(key), revision: 3 });
+  await restoreWorksheetHistory('alice');
+  assert.equal(f.store.getWorksheetRecord('alice', w.instanceId).syncConflict.revision, 3);
+  f.store.loadLatestWorksheetDraft('alice', w.instanceId, 'teacher');
+  const latest = f.store.getWorksheetRecord('alice', w.instanceId);
+  assert.equal(latest.captureRevision, 3);
+  assert.equal(latest.finalized, null);
+  assert.equal(latest.review, null);
+  const archived = JSON.parse(f.db.getFirstSync('SELECT snapshot FROM worksheet_review_archive WHERE studentId = ?', ['alice']).snapshot);
+  assert.deepEqual(archived.finalized, localFinal);
+  assert.equal(archived.photoUri, 'file:///original.jpg');
+  mark();
+  f.store.finalizeWorksheet('alice', w.instanceId, 'teacher');
+  await syncWorksheet('alice', w.instanceId, () => true);
+  await syncWorksheet('alice', w.instanceId, () => true);
+  assert.equal(f.cloud.get(key).finalized.score, 5);
+  assert.equal(f.cloud.get('students/alice').mathXP, 50);
+  assert.equal(f.db.getFirstSync('SELECT coins FROM student WHERE id = ?', ['alice']).coins, 15);
 });

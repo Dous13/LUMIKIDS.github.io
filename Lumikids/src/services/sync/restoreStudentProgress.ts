@@ -35,10 +35,10 @@ export function restoreStudentSnapshot(studentId: string, data: CloudStudent) {
       !(Array.isArray(data.ownedMascots) && data.ownedMascots.includes(mascot)));
     const staleProfile = local?.confirmed && profileRevision(data) <= profileRevision(local.confirmed) &&
       (profileRevision(data) < profileRevision(local.confirmed) || profile.coins !== data.coins || profile.avatar !== data.avatar);
-    if (progressAhead || unsyncedMascots || staleProfile || local?.changes.length || local?.state.legacyProfile ||
+    if (progressAhead || unsyncedMascots || staleProfile || local?.changes.some(change => !change.syncRejection) || local?.state.legacyProfile ||
         (previouslySaved && (profile.xp !== data.xp || profile.readingXP !== data.readingXP ||
           profile.writingXP !== data.writingXP || profile.mathXP !== data.mathXP))) {
-      addToSyncQueue("SYNC_STUDENT", { studentId });
+      addToSyncQueue("SYNC_STUDENT", { studentId }, !!local && profileRevision(data) > profileRevision(local.confirmed ?? {}));
     }
   });
 }

@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const { createHash } = require("node:crypto");
 const { readFileSync } = require("node:fs");
 const { test } = require("node:test");
 const { createRequire } = require("node:module");
@@ -13,8 +14,10 @@ const { getFirestore, connectFirestoreEmulator, doc, collection, getDocFromServe
 const { getFunctions, connectFunctionsEmulator, httpsCallable } = require("firebase/functions");
 const { readingQuizzes } = require("../backend/functions/curriculum/data/readingQuizzes");
 const { createWorksheet } = require("../backend/functions/curriculum/data/phygitalWorksheets");
+const { canonicalJson } = require("../backend/functions/curriculum/services/phygital/worksheetLayout");
 const { loader, sqlite, root } = require("./runtime.cjs");
 const { quizProof, traceProof } = require("./cloud-fixture.cjs");
+const { loginSource, EMULATOR_SOURCE_HEADER } = require("../backend/functions/loginSource.cjs");
 const path = require("node:path");
 const requireFunctions = createRequire(require.resolve("../backend/functions/package.json"));
 
@@ -24,6 +27,41 @@ if (!process.env.FIRESTORE_EMULATOR_HOST || !process.env.FIREBASE_AUTH_EMULATOR_
   throw new Error("Run this suite through Firebase emulators:exec with project demo-lumikids.");
 }
 const [firestoreHost, firestorePort] = process.env.FIRESTORE_EMULATOR_HOST.split(":");
+
+test("source simulation is restricted to the loopback demo emulator", () => {
+  const peer = "192.0.2.10", simulated = "198.51.100.20", ingress = "203.0.113.30";
+  const headers = { [EMULATOR_SOURCE_HEADER]: simulated, "x-forwarded-for": simulated,
+    "x-real-ip": simulated, "x-lumikids-client-ip": ingress };
+  const request = { headers, socket: { remoteAddress: "::ffff:" + peer } };
+  const pipeRequest = { headers, socket: {} };
+  const demo = { GCLOUD_PROJECT: projectId, FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099",
+    FIRESTORE_EMULATOR_HOST: "127.0.0.1:8080" };
+
+  assert.equal(loginSource(request, {}), peer);
+  assert.equal(loginSource(request, { ...demo, FUNCTIONS_EMULATOR: "false" }), peer);
+  assert.equal(loginSource(pipeRequest, demo), null);
+  const deployed = { LOGIN_TRUSTED_SOURCE_HEADER: "1" };
+  assert.equal(loginSource(request, deployed), ingress);
+  for (const invalid of [undefined, "not-an-ip", `${ingress}, ${simulated}`, [ingress, simulated]]) {
+    assert.equal(loginSource({ ...request, headers: { ...headers, "x-lumikids-client-ip": invalid } }, deployed), null);
+  }
+
+  const emulated = { ...demo, FUNCTIONS_EMULATOR: "true" };
+  assert.equal(loginSource({ ...pipeRequest, headers: {} }, emulated), "127.0.0.1");
+  assert.equal(loginSource({ ...request, headers: { "x-forwarded-for": simulated } }, emulated), peer);
+  assert.equal(loginSource(pipeRequest, emulated), simulated);
+  assert.equal(loginSource(pipeRequest, { ...emulated, GCLOUD_PROJECT: "another-project" }), "127.0.0.1");
+  assert.equal(loginSource(pipeRequest, { ...emulated, FIRESTORE_EMULATOR_HOST: "192.0.2.20:8080" }), "127.0.0.1");
+});
+
+async function loginFromTestSource(name, classCode, source) {
+  const response = await fetch(`http://127.0.0.1:5001/${projectId}/us-central1/loginStudent`, {
+    method: "POST",
+    headers: { "content-type": "application/json", [EMULATOR_SOURCE_HEADER]: source },
+    body: JSON.stringify({ data: { name, classCode } }),
+  });
+  return { status: response.status, body: await response.json() };
+}
 
 function client(name) {
   const app = initializeApp({ projectId, apiKey: "demo-api-key", authDomain: projectId + ".firebaseapp.com" }, name);
@@ -159,7 +197,7 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
     await assertFails(getDocFromServer(doc(claimedStudent.firestore(), "classes", "ROOMA2")));
     const proposed = JSON.parse(JSON.stringify({ ...createWorksheet("math", 1), studentId: "role-test-learner",
       instanceId: "11554433-1234-1234-1234-123456789012", templateVersion: 2 }));
-    await assert.rejects(reserved.call("syncWorksheet", { studentId: "role-test-learner", worksheet: proposed, capture: null, review: null }),
+    await assert.rejects(reserved.call("syncWorksheet", { studentId: "role-test-learner", worksheet: proposed, capture: null, review: null, baseRevision: 0 }),
       { code: "functions/permission-denied" });
   });
 
@@ -216,6 +254,234 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
     assert.equal(rejected.profile.writingXP, 0);
   });
 
+  await t.test("delayed equipment receipts preserve newer choices across batches and devices", async t => {
+    await addLearner(a, teacherA, "ROOMA2", "wallet-learner", "Mira");
+    const wallet = client("wallet-learner");
+    t.after(() => deleteApp(wallet.app));
+    await login(wallet, "Mira", "ROOMA2");
+    const op = (device, sequence, operation) => ({ id: device.repeat(16) + "-" + sequence, operation });
+    const equip = (device, sequence, mascotId) => op(device, sequence, { type: "equip", mascotId });
+    const delayed = equip("aa", 3, "frog");
+    const send = (...operations) => wallet.call("syncStudentLearning", { studentId: "wallet-learner", operations });
+    assert.deepEqual((await send(delayed)).rejected, [{ id: delayed.id, reason: "dependency" }]);
+    const newer = equip("bb", 1, "default");
+    const confirmed = await send(newer);
+    assert.deepEqual(confirmed.accepted, [newer.id]);
+    // The latest writer is again the deferred operation's device, but the intervening
+    // confirmation by another device must still protect the wallet from a stale retry.
+    await send(equip("aa", 2, "default"));
+    await send(op("cc", 1, quizProof("reading", "A")), op("cc", 2, quizProof("reading", "B")));
+    const purchase = op("aa", 4, { type: "purchase", mascotId: "frog" });
+    const result = await send(purchase, delayed);
+    assert.deepEqual(result.supersededEquip, [delayed.id]);
+    assert.equal(result.profile.avatar, "default");
+    assert.equal(result.profile.coins, 5);
+    assert.ok(result.profile.ownedMascots.includes("frog"));
+    const retried = await send(purchase, delayed);
+    assert.deepEqual(retried.accepted, [purchase.id, delayed.id]);
+    assert.deepEqual(retried.supersededEquip, [delayed.id]);
+    assert.equal(retried.profile.profileRevision, result.profile.profileRevision);
+    assert.equal(retried.profile.coins, 5);
+    const latest = await send(equip("aa", 6, "default"));
+    assert.equal((await send(equip("aa", 5, "frog"))).profile.avatar, "default");
+    assert.equal((await send(equip("aa", 5, "frog"))).profile.profileRevision, latest.profile.profileRevision);
+  });
+
+  await t.test("two deferred choices from one device apply in sequence when both purchases become eligible", async t => {
+    const studentId = "deferred-wallet-learner";
+    await addLearner(a, teacherA, "ROOMA2", studentId, "Dee");
+    const wallet = client(studentId);
+    t.after(() => deleteApp(wallet.app));
+    await login(wallet, "Dee", "ROOMA2");
+    const device = "de".repeat(16);
+    const op = (sequence, type, mascotId) => ({ id: `${device}-${sequence}`, operation: { type, mascotId } });
+    const operations = [op(1, "purchase", "frog"), op(2, "equip", "frog"), op(3, "purchase", "fox"), op(5, "equip", "fox")];
+    const send = entries => wallet.call("syncStudentLearning", { studentId, operations: entries });
+    const receipt = (db, id) => doc(db, "students", studentId, "syncReceipts", id);
+    const walletState = ({ avatar, coins, ownedMascots, profileRevision }) => ({ avatar, coins, ownedMascots, profileRevision });
+    const pending = await send(operations);
+    assert.deepEqual(pending.accepted, []);
+    assert.deepEqual(pending.rejected, operations.map(({ id }) => ({ id, reason: "dependency" })));
+    await env.withSecurityRulesDisabled(async context => {
+      const db = context.firestore();
+      for (const item of operations) {
+        const snap = await getDocFromServer(receipt(db, item.id));
+        if (item.operation.type === "equip") assert.equal(snap.data().waitingAt, 0);
+        else assert.equal(snap.exists(), false);
+      }
+      await updateDoc(doc(db, "students", studentId), { coins: 100 });
+    });
+
+    const applied = await send(operations);
+    assert.deepEqual(applied.accepted, operations.map(({ id }) => id));
+    assert.deepEqual(applied.supersededEquip, []);
+    assert.deepEqual(applied.rejected, []);
+    assert.equal(applied.profile.avatar, "fox");
+    assert.equal(applied.profile.coins, 25);
+    assert.deepEqual(applied.profile.ownedMascots.slice().sort(), ["default", "fox", "frog"]);
+
+    // Drop the first acknowledgement from the client perspective and resend identical IDs.
+    const replay = await send(operations);
+    assert.deepEqual(replay.accepted, applied.accepted);
+    assert.deepEqual(replay.supersededEquip, []);
+    assert.deepEqual(replay.rejected, []);
+    assert.deepEqual(walletState(replay.profile), walletState(applied.profile));
+    const late = op(4, "equip", "frog");
+    const superseded = await send([late]);
+    assert.deepEqual(superseded.accepted, [late.id]);
+    assert.deepEqual(superseded.supersededEquip, [late.id]);
+    assert.deepEqual(walletState(superseded.profile), walletState(applied.profile));
+    assert.deepEqual(await send([late]), superseded);
+
+    const invalid = op(6, "equip", "not-a-mascot");
+    const wrong = await send([invalid]);
+    assert.deepEqual(wrong.accepted, []);
+    assert.deepEqual(wrong.rejected, [{ id: invalid.id, reason: "invalid-operation" }]);
+    await assert.rejects(wallet.call("syncStudentLearning", { studentId: "learner-a", operations: [op(7, "equip", "default")] }),
+      { code: "functions/permission-denied" });
+
+    await env.withSecurityRulesDisabled(async context => {
+      const db = context.firestore();
+      for (const item of [...operations, late]) {
+        const data = (await getDocFromServer(receipt(db, item.id))).data();
+        assert.equal(data.digest, createHash("sha256").update(canonicalJson(item.operation)).digest("hex"));
+        assert.ok(data.committedAt);
+        assert.equal(data.waitingAt, undefined);
+        assert.equal(data.superseded === true, item.id === late.id);
+      }
+      assert.equal((await getDocFromServer(receipt(db, invalid.id))).exists(), false);
+      assert.deepEqual((await getDocFromServer(receipt(db, "wallet-version"))).data(), { version: 2, device, otherDeviceVersion: 0 });
+    });
+  });
+
+  await t.test("a superseded equip persists its terminal sequence without changing the wallet", async t => {
+    const studentId = "terminal-wallet-learner";
+    await addLearner(a, teacherA, "ROOMA2", studentId, "Lex");
+    const wallet = client(studentId);
+    t.after(() => deleteApp(wallet.app));
+    await login(wallet, "Lex", "ROOMA2");
+    const deviceA = "e1".repeat(16), deviceB = "e2".repeat(16), legacyDevice = "e3".repeat(16);
+    const op = (device, sequence, type, mascotId) => ({ id: `${device}-${sequence}`, operation: { type, mascotId } });
+    const receipt = (db, id) => doc(db, "students", studentId, "syncReceipts", id);
+    const readReceipt = async id => {
+      let data;
+      await env.withSecurityRulesDisabled(async context => {
+        data = (await getDocFromServer(receipt(context.firestore(), id))).data();
+      });
+      return data;
+    };
+    const send = operations => wallet.call("syncStudentLearning", { studentId, operations });
+    const deferred = op(deviceA, 2, "equip", "frog");
+    const older = op(deviceA, 1, "equip", "default");
+    const checkpointA = `wallet-${deviceA}`;
+    assert.deepEqual((await send([deferred])).rejected, [{ id: deferred.id, reason: "dependency" }]);
+    assert.equal(await readReceipt(checkpointA), undefined);
+
+    await env.withSecurityRulesDisabled(context => updateDoc(doc(context.firestore(), "students", studentId), { coins: 100 }));
+    const purchase = op(deviceB, 1, "purchase", "fox");
+    const deviceBEquip = op(deviceB, 2, "equip", "fox");
+    const other = await send([purchase, deviceBEquip]);
+    assert.deepEqual(other.accepted, [purchase.id, deviceBEquip.id]);
+    assert.deepEqual([other.profile.avatar, other.profile.coins], ["fox", 50]);
+    const head = await readReceipt("wallet-version");
+
+    const retired = await send([deferred]);
+    assert.deepEqual(retired.accepted, [deferred.id]);
+    assert.deepEqual(retired.supersededEquip, [deferred.id]);
+    assert.deepEqual([retired.profile.avatar, retired.profile.coins, retired.profile.profileRevision],
+      ["fox", 50, other.profile.profileRevision]);
+    assert.deepEqual(await readReceipt(checkpointA), { sequence: 0, terminalSequence: 2 });
+    assert.deepEqual(await readReceipt("wallet-version"), head);
+    const terminalReceipt = await readReceipt(deferred.id);
+    assert.equal(terminalReceipt.superseded, true);
+    assert.equal(terminalReceipt.waitingAt, undefined);
+
+    const late = await send([older]);
+    assert.deepEqual(late.accepted, [older.id]);
+    assert.deepEqual(late.supersededEquip, [older.id]);
+    assert.deepEqual([late.profile.avatar, late.profile.coins, late.profile.profileRevision],
+      ["fox", 50, other.profile.profileRevision]);
+    const replay = await send([purchase, deferred, older]);
+    assert.deepEqual(replay.accepted, [purchase.id, deferred.id, older.id]);
+    assert.deepEqual(replay.supersededEquip, [deferred.id, older.id]);
+    assert.equal(replay.profile.coins, 50);
+    assert.deepEqual(await readReceipt(deferred.id), terminalReceipt);
+    assert.deepEqual(await readReceipt(checkpointA), { sequence: 0, terminalSequence: 2 });
+    assert.deepEqual(await readReceipt("wallet-version"), head);
+
+    const invalid = op(deviceA, 20, "equip", "not-a-mascot");
+    assert.deepEqual((await send([invalid])).rejected, [{ id: invalid.id, reason: "invalid-operation" }]);
+    const unauthorized = op(deviceA, 21, "equip", "default");
+    await assert.rejects(student.call("syncStudentLearning", { studentId, operations: [unauthorized] }),
+      { code: "functions/permission-denied" });
+    assert.deepEqual(await readReceipt(checkpointA), { sequence: 0, terminalSequence: 2 });
+    assert.equal(await readReceipt(invalid.id), undefined);
+    assert.equal(await readReceipt(unauthorized.id), undefined);
+
+    const newest = op(deviceA, 3, "equip", "default");
+    const applied = await send([newest]);
+    assert.deepEqual(applied.accepted, [newest.id]);
+    assert.deepEqual(applied.supersededEquip, []);
+    assert.equal(applied.profile.avatar, "default");
+    assert.deepEqual(await readReceipt(checkpointA), { sequence: 3, terminalSequence: 3 });
+
+    // Checkpoints written before terminal sequences existed still floor deferred and fresh retries.
+    const legacyCheckpoint = `wallet-${legacyDevice}`;
+    await env.withSecurityRulesDisabled(context => setDoc(receipt(context.firestore(), legacyCheckpoint), { sequence: 5 }));
+    assert.deepEqual((await send([op(legacyDevice, 4, "equip", "fox")])).supersededEquip, [`${legacyDevice}-4`]);
+    assert.deepEqual(await readReceipt(legacyCheckpoint), { sequence: 5 });
+    assert.equal((await send([op(legacyDevice, 6, "equip", "fox")])).profile.avatar, "fox");
+    assert.deepEqual(await readReceipt(legacyCheckpoint), { sequence: 6, terminalSequence: 6 });
+  });
+
+  await t.test("invalid operation sequences are rejected and concurrent wallet commits preserve the latest equip", async t => {
+    const studentId = "concurrent-wallet-learner";
+    await addLearner(a, teacherA, "ROOMA2", studentId, "Zoe");
+    const wallet = client(studentId);
+    t.after(() => deleteApp(wallet.app));
+    await login(wallet, "Zoe", "ROOMA2");
+    const device = "e4".repeat(16), boundaryDevice = "e5".repeat(16);
+    const op = (source, sequence, type, mascotId) => ({ id: `${source}-${sequence}`, operation: { type, mascotId } });
+    const send = operations => wallet.call("syncStudentLearning", { studentId, operations });
+    const receipt = (db, id) => doc(db, "students", studentId, "syncReceipts", id);
+    const invalidSequences = ["9007199254740992", "9007199254740993", "01", "1e3", "1.2", "1\n"];
+    for (const sequence of invalidSequences) {
+      await assert.rejects(send([op(boundaryDevice, sequence, "equip", "default")]), { code: "functions/invalid-argument" });
+    }
+    await env.withSecurityRulesDisabled(async context => {
+      const db = context.firestore();
+      assert.equal((await getDocFromServer(receipt(db, `wallet-${boundaryDevice}`))).exists(), false);
+      await updateDoc(doc(db, "students", studentId), { coins: 100 });
+    });
+    const max = op(boundaryDevice, Number.MAX_SAFE_INTEGER, "equip", "default");
+    assert.deepEqual((await send([max])).accepted, [max.id]);
+
+    const purchase = op(device, 1, "purchase", "frog");
+    const purchases = await Promise.all([send([purchase]), send([purchase])]);
+    for (const result of purchases) {
+      assert.deepEqual(result.accepted, [purchase.id]);
+      assert.equal(result.profile.coins, 75);
+      assert.equal(result.profile.profileRevision, 2);
+    }
+    const equips = [op(device, 2, "equip", "frog"), op(device, 3, "equip", "default")];
+    const outcomes = await Promise.all(equips.map(item => send([item])));
+    outcomes.forEach((result, index) => {
+      assert.deepEqual(result.accepted, [equips[index].id]);
+      assert.equal(result.profile.coins, 75);
+    });
+    assert.deepEqual(outcomes[1].supersededEquip, []);
+    await env.withSecurityRulesDisabled(async context => {
+      const db = context.firestore();
+      const state = (await getDocFromServer(doc(db, "students", studentId))).data();
+      assert.deepEqual([state.avatar, state.coins, state.profileRevision],
+        ["default", 75, 4 - outcomes[0].supersededEquip.length]);
+      assert.deepEqual((await getDocFromServer(receipt(db, `wallet-${device}`))).data(), { sequence: 3, terminalSequence: 3 });
+      assert.deepEqual((await getDocFromServer(receipt(db, `wallet-${boundaryDevice}`))).data(),
+        { sequence: Number.MAX_SAFE_INTEGER, terminalSequence: Number.MAX_SAFE_INTEGER });
+      for (const item of [purchase, ...equips, max]) assert.ok((await getDocFromServer(receipt(db, item.id))).data().committedAt);
+    });
+  });
+
   await t.test("only the assigned teacher finalizes a worksheet and the server derives a stable result", async () => {
     const instanceId = "12345678-1234-1234-1234-123456789012";
     worksheet = JSON.parse(JSON.stringify({
@@ -228,8 +494,9 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
       quality: { paperBrightness: 210, edgeSharpness: 100 }, capturedAt: new Date().toISOString(),
     };
     review = { answers: capture.answers, writing: [], finalizedAt: new Date().toISOString() };
-    const data = { studentId: "learner-a", worksheet, capture, review };
-    await student.call("syncWorksheet", { ...data, review: null });
+    const data = { studentId: "learner-a", worksheet, capture, review, baseRevision: 1 };
+    const draft = await student.call("syncWorksheet", { ...data, review: null, baseRevision: 0 });
+    assert.equal(draft.revision, 1);
     await assert.rejects(student.call("syncWorksheet", data), { code: "functions/permission-denied" });
     await assert.rejects(b.call("syncWorksheet", data), { code: "functions/permission-denied" });
     await assertFails(updateDoc(doc(student.db, "students/learner-a/worksheetResults/" + instanceId), { finalized: { score: 5 } }));
@@ -240,59 +507,93 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
     const replay = await a.call("syncWorksheet", data);
     assert.deepEqual(replay.finalized, result.finalized);
     assert.equal(replay.profile.xp, result.profile.xp);
-    await assert.rejects(a.call("syncWorksheet", { ...data, review: { ...review, answers: Array(5).fill(null) } }),
-      { code: "functions/failed-precondition" });
+    const changedReview = await a.call("syncWorksheet", { ...data, review: { ...review, answers: Array(5).fill(null) } });
+    assert.equal(changedReview.conflict, true);
+    assert.deepEqual(changedReview.finalized, result.finalized);
     assert.equal((await getDocsFromServer(collection(student.db, "students/learner-a/worksheetResults"))).size, 1);
 
     const tracingId = "87654321-1234-1234-1234-123456789012";
     const tracing = JSON.parse(JSON.stringify({
       ...createWorksheet("writing", "A"), instanceId: tracingId, studentId: "learner-a", templateVersion: 2,
     }));
-    const writing = await a.call("syncWorksheet", {
+    const writingDraft = {
       studentId: "learner-a", worksheet: tracing,
       capture: { ...capture, worksheetInstanceId: tracingId, answers: [], confidence: [], statuses: [], darkness: [] },
+      baseRevision: 0, review: null,
+    };
+    const uploaded = await a.call("syncWorksheet", writingDraft);
+    const writing = await a.call("syncWorksheet", {
+      ...writingDraft, baseRevision: uploaded.revision,
       review: { answers: [], writing: Array(5).fill(true), finalizedAt: review.finalizedAt },
     });
     assert.equal(writing.finalized.score, 5);
     assert.equal(writing.profile.writingProgress.A.completed, true);
   });
 
-  await t.test("worksheet ordering accepts offline work and replacements without trusting future timestamps", async () => {
+  await t.test("worksheet revisions resolve out-of-order drafts, timestamps, concurrent review and lost acknowledgements", async () => {
     const now = Date.now();
     const day = 86_400_000;
     const at = offset => new Date(now + offset).toISOString();
     const instanceId = "55667788-1234-1234-1234-123456789012";
     const offlineSheet = JSON.parse(JSON.stringify({ ...createWorksheet("math", 1), instanceId, studentId: "learner-a",
       templateVersion: 2, createdAt: at(-8 * day) }));
-    const offlineCapture = { ...capture, worksheetInstanceId: instanceId, capturedAt: at(-7 * day) };
-    const draft = { studentId: "learner-a", worksheet: offlineSheet, capture: offlineCapture, review: null };
+    const oldCapture = { ...capture, worksheetInstanceId: instanceId, capturedAt: at(-7 * day) };
+    const draft = { studentId: "learner-a", worksheet: offlineSheet, capture: oldCapture, review: null, baseRevision: 0 };
     const call = (caller, overrides) => caller.call("syncWorksheet", { ...draft, ...overrides });
-    const fail = { code: "functions/failed-precondition" };
-    await assert.rejects(call(student, { worksheet: { ...offlineSheet, createdAt: at(day) } }), fail);
-    await assert.rejects(call(student, { capture: { ...offlineCapture, capturedAt: at(day) } }), fail);
-    await call(student);
-    const record = doc(a.db, "students", "learner-a", "worksheetResults", instanceId);
-    assert.equal((await getDocFromServer(record)).data().capture.capturedAt, at(-7 * day));
+    const invalid = { code: "functions/failed-precondition" };
+    await assert.rejects(call(student, { worksheet: { ...offlineSheet, createdAt: at(day) } }), invalid);
+    await assert.rejects(call(student, { capture: { ...oldCapture, capturedAt: at(day) } }), invalid);
+    assert.equal((await call(student)).revision, 1);
+    assert.equal((await call(student)).revision, 1, "a lost draft acknowledgement does not advance the revision");
+    for (const offset of [220_000, 230_000, 240_000]) {
+      assert.equal((await call(student, { capture: { ...oldCapture, capturedAt: at(offset) }, baseRevision: 1 })).revision, 1);
+    }
+    const replacement = { ...oldCapture, answers: [null, ...oldCapture.answers.slice(1)], capturedAt: at(-8 * day) };
+    assert.equal((await call(student, { capture: replacement, baseRevision: 1 })).revision, 2, "timestamps cannot determine replacement order");
+    const late = await call(student, { capture: { ...oldCapture, capturedAt: at(245_000) }, baseRevision: 1 });
+    assert.equal(late.conflict, true);
+    assert.equal(late.revision, 2);
+    assert.deepEqual(late.capture.answers, replacement.answers);
 
-    const replacement = { ...offlineCapture, capturedAt: at(-6 * day) };
-    await call(student, { capture: replacement });
-    await call(student);
-    assert.equal((await getDocFromServer(record)).data().capture.capturedAt, at(-6 * day));
-    const finalReview = { answers: replacement.answers, writing: [], finalizedAt: at(-5 * day) };
-    await assert.rejects(call(a, { review: finalReview }), fail);
-    await assert.rejects(call(a, { capture: replacement, review: { ...finalReview, finalizedAt: at(day) } }), fail);
-    await assert.rejects(call(b, { capture: replacement, review: finalReview }), { code: "functions/permission-denied" });
-
-    // A pre-upgrade draft with a future timestamp must not block a legitimate review.
-    await env.withSecurityRulesDisabled(context => updateDoc(
-      doc(context.firestore(), "students", "learner-a", "worksheetResults", instanceId), { "capture.capturedAt": at(day) },
-    ));
-    const finalized = await call(a, { capture: replacement, review: finalReview });
+    const finalReview = { answers: oldCapture.answers, writing: [], finalizedAt: at(-5 * day) };
+    const stale = await call(a, { baseRevision: 1, review: finalReview });
+    assert.equal(stale.conflict, true);
+    assert.equal(stale.finalized, null);
+    await assert.rejects(call(a, { capture: replacement, baseRevision: 2, review: { ...finalReview, finalizedAt: at(day) } }), invalid);
+    await assert.rejects(call(student, { capture: replacement, baseRevision: 2, review: finalReview }), { code: "functions/permission-denied" });
+    await assert.rejects(call(b, { capture: replacement, baseRevision: 2, review: finalReview }), { code: "functions/permission-denied" });
+    const submitted = { baseRevision: 2, capture: replacement, review: finalReview };
+    const finalized = await call(a, submitted);
     assert.equal(finalized.finalized.score, 5);
     assert.equal(finalized.finalized.teacherId, teacherA);
-    assert.equal((await getDocFromServer(record)).data().capture.capturedAt, replacement.capturedAt);
-    await call(student, { capture: { ...replacement, capturedAt: at(-4 * day) } });
-    assert.deepEqual((await getDocFromServer(record)).data().finalized, finalized.finalized);
+    assert.equal(finalized.revision, 2);
+    const replay = await call(a, submitted);
+    assert.deepEqual(replay.finalized, finalized.finalized);
+    assert.equal(replay.profile.profileRevision, finalized.profile.profileRevision);
+    const after = await call(student, { capture: oldCapture, baseRevision: 2 });
+    assert.deepEqual(after.finalized, finalized.finalized);
+  });
+
+  await t.test("legacy finalized worksheets retain their original timestamps and result", async () => {
+    const instanceId = "10101010-1234-1234-1234-123456789012";
+    const oldClock = new Date(Date.now() + 86_400_000).toISOString();
+    const legacySheet = { ...worksheet, instanceId, createdAt: oldClock };
+    const legacyCapture = { ...capture, worksheetInstanceId: instanceId, capturedAt: oldClock };
+    const legacyReview = { ...review, finalizedAt: oldClock };
+    const final = { ...legacyReview, teacherId: teacherA, studentId: "learner-a", instanceId, subject: "math",
+      lessonId: "1", score: 5, total: 5, passed: true, stars: 3 };
+    const request = { studentId: "learner-a", worksheet: legacySheet, capture: legacyCapture, baseRevision: 0, review: null };
+    await env.withSecurityRulesDisabled(context => setDoc(doc(context.firestore(), "students/learner-a/worksheetResults/" + instanceId), {
+      worksheet: legacySheet, capture: { ...legacyCapture, darkness: { ...legacyCapture.darkness } }, finalized: final,
+    }));
+    const existing = await student.call("syncWorksheet", request);
+    assert.equal(existing.revision, 0);
+    assert.deepEqual(existing.finalized, final);
+    await assert.rejects(b.call("syncWorksheet", request), { code: "functions/permission-denied" });
+    assert.deepEqual((await a.call("syncWorksheet", { ...request, review: legacyReview })).finalized, final);
+    assert.equal((await a.call("syncWorksheet", { ...request, review: legacyReview, baseRevision: 1 })).conflict, true);
+    await assert.rejects(a.call("syncWorksheet", { ...request, worksheet: { ...legacySheet, createdAt: new Date().toISOString() } }),
+      { code: "functions/failed-precondition" });
   });
 
   await t.test("revocation and account switching prevent stale cloud access", async () => {
@@ -374,8 +675,8 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
     for (let i = 0; i < 12; i++) assert.equal((await submit(sharedSource[i % 3], "Tess")).studentId, "tess");
     await assert.rejects(submit(b, "Tess"), denial);
     for (let i = 0; i < 9; i++) {
-      assert.equal((await submit(guest, "Rae")).studentId, "rae");
-      assert.equal((await submit(student, "Lou")).studentId, "lou");
+      const peers = await Promise.all([submit(guest, "Rae"), submit(student, "Lou")]);
+      assert.deepEqual(peers.map(result => result.studentId), ["rae", "lou"]);
     }
     async function buckets() {
       const result = new Map();
@@ -398,8 +699,38 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
     assert.equal(saturated.count, value.count + 9);
     assert.equal((await submit(b, "Rae")).studentId, "rae");
     await env.withSecurityRulesDisabled(context => updateDoc(doc(context.firestore(), "loginLimits", ipBucket), { count: 119 }));
-    await assert.rejects(submit(student, "Unknown"), denial);
+    await Promise.all(["Unknown", "Another", "Missing", "Unmatched", "Absent", "Different"].map((name, i) =>
+      assert.rejects(submit(sharedSource[i % 3], name), denial)));
     assert.equal((await buckets()).get(ipBucket).count, 120);
+    assert.equal((await buckets()).size, after.size);
     await assert.rejects(submit(b, "Rae"), denial);
+  });
+
+  await t.test("simulated classmates share source quotas and separate sources remain independent", async () => {
+    const sourceA = "198.51.100.10", sourceB = "198.51.100.11";
+    const submit = (name, source, classCode = "ROOMA2") => loginFromTestSource(name, classCode, source);
+    const deny = { status: 403, body: { error: { status: "PERMISSION_DENIED",
+      message: "We could not verify your name and classroom code." } } };
+    for (let i = 0; i < 12; i++) {
+      const { status, body } = await submit("Tess", sourceA);
+      assert.equal(status, 200);
+      assert.equal(body.result.studentId, "tess");
+    }
+    assert.deepEqual(await submit("Tess", sourceA), deny);
+    assert.equal((await submit("Rae", sourceA)).body.result.studentId, "rae");
+    assert.equal((await submit("Tess", sourceB)).body.result.studentId, "tess");
+
+    assert.deepEqual(await submit("Unknown", sourceA, "UNKNOWN1"), deny);
+    const failurePath = "loginLimits/" + createHash("sha256").update("failed:" + sourceA).digest("hex");
+    await env.withSecurityRulesDisabled(async context => {
+      const ref = doc(context.firestore(), failurePath);
+      assert.equal((await getDocFromServer(ref)).data().count, 1);
+      await updateDoc(ref, { count: 119 });
+    });
+    assert.deepEqual(await submit("Unknown", sourceA, "UNKNOWN1"), deny);
+    assert.deepEqual(await submit("Rae", sourceA), deny);
+    assert.deepEqual(await submit("Lou", sourceA), deny);
+    assert.equal((await submit("Rae", sourceB)).body.result.studentId, "rae");
+    assert.equal((await submit("Lou", sourceB)).body.result.studentId, "lou");
   });
 });

@@ -1,14 +1,12 @@
 const { createHash } = require("node:crypto");
-const { isIP } = require("node:net");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
-const { canonicalJson } = require("./curriculum/services/phygital/worksheetLayout");
-const {
-  InvalidOperation, exact, profileSummary, applyOperation, verifyWorksheet, verifyCapture, isOlderWorksheetCapture, applyWorksheet,
-} = require("./learning.cjs");
-
+const { InvalidOperation, exact, profileSummary, isWorksheetInstanceId } = require("./learning.cjs");
+const { applyLearningBatch, equipDevice, operationSequence } = require("./learningBatch.cjs");
+const { syncWorksheetRevision } = require("./worksheetRevision.cjs");
+const { loginSource } = require("./loginSource.cjs");
 initializeApp();
 const auth = getAuth();
 const db = getFirestore();
@@ -21,13 +19,6 @@ const denied = () => new HttpsError("permission-denied", "This account cannot ac
 const loginDenied = () => new HttpsError("permission-denied", "We could not verify your name and classroom code.");
 const sameEnrollment = (entry, studentId, classCode, teacherId) =>
   entry?.id === studentId && entry.classCode === classCode && entry.teacherId === teacherId;
-
-function loginSource(request) {
-  const forwarded = request.headers["x-forwarded-for"];
-  const lastHop = typeof forwarded === "string" ? forwarded.slice(forwarded.lastIndexOf(",") + 1).trim() : "";
-  const address = !process.env.FUNCTIONS_EMULATOR && isIP(lastHop) ? lastHop : request.socket.remoteAddress;
-  return address?.replace(/^::ffff:/i, "").toLowerCase() || "unknown";
-}
 
 const LOGIN_WINDOW = 300_000;
 const FAILED_LOGINS_PER_SOURCE = 120;
@@ -89,6 +80,7 @@ exports.loginStudent = onCall(options, async request => {
     ? request.data.classCode.trim().toUpperCase() : "";
   const valid = exact(request.data, ["name", "classCode"]) && name.length > 0 && name.length <= 100 && validClassCode(code);
   const source = loginSource(request.rawRequest);
+  if (!source) throw loginDenied();
   const failures = loginBucket("failed:" + source);
   // A fixed set of slots keeps repeated guesses for one name from spending
   // the shared source budget and prevents arbitrary names creating documents.
@@ -162,8 +154,7 @@ exports.syncStudentLearning = onCall(options, async request => {
       caller.role !== "student" || caller.studentId !== data.studentId || caller.uid !== studentUid(data.studentId)) throw denied();
   const { studentId, operations } = data;
   if (!Array.isArray(operations) || operations.length < 1 || operations.length > 24 ||
-      !operations.every(item => exact(item, ["id", "operation"]) && typeof item.id === "string" &&
-        /^[a-f0-9]{32}-[1-9]\d{0,15}$/.test(item.id)) ||
+      !operations.every(item => exact(item, ["id", "operation"]) && operationSequence(item.id) !== null) ||
       new Set(operations.map(item => item.id)).size !== operations.length ||
       Buffer.byteLength(JSON.stringify(operations)) > 1_500_000) {
     throw new HttpsError("invalid-argument", "Invalid learning batch.");
@@ -171,88 +162,45 @@ exports.syncStudentLearning = onCall(options, async request => {
   return db.runTransaction(async tx => {
     const context = await enrollment(tx, studentId);
     authorize(caller, context, false);
-    const refs = operations.map(item => context.rootRef.collection("syncReceipts").doc(item.id));
-    const receipts = await tx.getAll(...refs);
-    let profile = profileSummary(context.student);
-    const accepted = [];
-    const rejected = [];
-    let changed = false;
-    for (const [index, item] of operations.entries()) {
-      let digest;
-      try { digest = hash(canonicalJson(item.operation)); }
-      catch (error) {
-        if (!(error instanceof RangeError)) throw error;
-        rejected.push({ id: item.id, reason: "invalid-operation" });
-        continue;
-      }
-      if (receipts[index].exists) {
-        if (receipts[index].data().digest === digest) accepted.push(item.id);
-        else rejected.push({ id: item.id, reason: "receipt-conflict" });
-        continue;
-      }
-      const candidate = structuredClone(profile);
-      try { applyOperation(candidate, item.operation); }
-      catch (error) {
-        if (error instanceof InvalidOperation) {
-          rejected.push({ id: item.id, reason: error.reason });
-          continue;
-        }
-        throw error;
-      }
-      profile = candidate;
-      tx.create(refs[index], { digest, committedAt: FieldValue.serverTimestamp() });
-      accepted.push(item.id);
-      changed = true;
+    const collection = context.rootRef.collection("syncReceipts");
+    const refs = operations.map(item => collection.doc(item.id));
+    const devices = [...new Set(operations.map(equipDevice).filter(Boolean))];
+    const head = collection.doc("wallet-version");
+    const checkpoints = devices.map(device => collection.doc("wallet-" + device));
+    const snapshots = await tx.getAll(...refs, ...(devices.length ? [head, ...checkpoints] : []));
+    const stored = snapshots.slice(0, refs.length).map(snapshot => snapshot.data());
+    const wallet = snapshots[refs.length]?.data() ?? { version: 0 };
+    const storedCheckpoints = new Map(devices.map((device, index) => [device, snapshots[refs.length + index + 1].data()]));
+    const batch = applyLearningBatch(profileSummary(context.student), operations, stored, wallet, storedCheckpoints);
+    for (const [id, receipt] of batch.receipts) {
+      const stamp = receipt.waitingAt === undefined ? { committedAt: FieldValue.serverTimestamp() } : {};
+      tx.set(collection.doc(id), { ...receipt, ...stamp });
     }
-    if (changed) writeSummary(tx, context, profile);
-    return { accepted, rejected, profile };
+    if (batch.walletChanged) tx.set(head, batch.wallet);
+    for (const [device, checkpoint] of batch.checkpoints) tx.set(collection.doc("wallet-" + device), checkpoint);
+    if (batch.changed) writeSummary(tx, context, batch.profile);
+    return { accepted: batch.accepted, supersededEquip: batch.supersededEquip, rejected: batch.rejected, profile: batch.profile };
   });
 });
-
-function sameReview(result, review, teacherId) {
-  return result.teacherId === teacherId && result.finalizedAt === review.finalizedAt &&
-    canonicalJson(result.answers) === canonicalJson(review.answers) && canonicalJson(result.writing) === canonicalJson(review.writing);
-}
 
 exports.syncWorksheet = onCall(options, async request => {
   const caller = await verifiedCaller(request);
   const data = request.data;
-  if (!exact(data, ["studentId", "worksheet", "capture", "review"]) || !validStudentId(data.studentId) ||
+  if (!exact(data, ["studentId", "worksheet", "capture", "review", "baseRevision"]) || !validStudentId(data.studentId) ||
+      !isWorksheetInstanceId(data.worksheet?.instanceId) || !Number.isSafeInteger(data.baseRevision) || data.baseRevision < 0 ||
       (caller.role === "student" && (caller.studentId !== data.studentId || data.review !== null))) throw denied();
   try {
     const now = Date.now();
-    const worksheet = verifyWorksheet(data.worksheet, data.studentId, now);
-    const capture = data.capture === null ? null : verifyCapture(data.capture, worksheet, now);
-    // Firestore does not accept arrays nested directly inside arrays.
-    const storedCapture = capture && { ...capture, darkness: Object.fromEntries(capture.darkness.entries()) };
     return await db.runTransaction(async tx => {
       const context = await enrollment(tx, data.studentId);
       const role = authorize(caller, context, true);
       if (data.review !== null && role !== "teacher") throw denied();
-      const ref = context.rootRef.collection("worksheetResults").doc(worksheet.instanceId);
+      const ref = context.rootRef.collection("worksheetResults").doc(data.worksheet.instanceId);
       const existing = (await tx.get(ref)).data();
-      if (existing && canonicalJson(existing.worksheet) !== canonicalJson(worksheet)) {
-        throw new InvalidOperation("The worksheet identity has changed.");
-      }
-      let profile = profileSummary(context.student);
-      if (existing?.finalized) {
-        if (data.review !== null && !sameReview(existing.finalized, data.review, caller.uid)) {
-          throw new InvalidOperation("This worksheet was finalized with a different review.");
-        }
-        return { finalized: existing.finalized, profile };
-      }
-      const older = isOlderWorksheetCapture(existing?.capture, storedCapture, now);
-      if (data.review === null) {
-        if (!existing || (capture && !older && canonicalJson(existing.capture ?? null) !== canonicalJson(storedCapture))) {
-          tx.set(ref, { worksheet, ...(storedCapture ? { capture: storedCapture } : {}) }, { merge: true });
-        }
-        return { finalized: null, profile };
-      }
-      if (!capture || older) throw new InvalidOperation("Review the most recent capture before finalizing.");
-      const finalized = applyWorksheet(profile, worksheet, data.review, caller.uid, now);
-      tx.set(ref, { worksheet, capture: storedCapture, finalized });
-      writeSummary(tx, context, profile);
-      return { finalized, profile };
+      const update = syncWorksheetRevision(existing, data, profileSummary(context.student), caller.uid, now);
+      if (update.write) tx.set(ref, update.write);
+      if (update.award) writeSummary(tx, context, update.result.profile);
+      return update.result;
     });
   } catch (error) {
     if (error instanceof InvalidOperation) throw new HttpsError("failed-precondition", error.message);

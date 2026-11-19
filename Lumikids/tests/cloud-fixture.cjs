@@ -1,9 +1,8 @@
 // The app regression suite uses SQLite with a deterministic callable transport.
 // Authorization is exercised separately against all three Firebase emulators.
-const { createHash } = require("node:crypto");
-const { applyOperation, applyWorksheet, profileSummary, InvalidOperation, verifyWorksheet, verifyCapture, isOlderWorksheetCapture } =
-  require("../backend/functions/learning.cjs");
-const { canonicalJson } = require("../backend/functions/curriculum/services/phygital/worksheetLayout");
+const { profileSummary } = require("../backend/functions/learning.cjs");
+const { applyLearningBatch, equipDevice } = require("../backend/functions/learningBatch.cjs");
+const { syncWorksheetRevision } = require("../backend/functions/worksheetRevision.cjs");
 const { readingQuizzes } = require("../backend/functions/curriculum/data/readingQuizzes");
 const { mathQuizzes } = require("../backend/functions/curriculum/data/mathQuizzes");
 const { writingLessons } = require("../backend/functions/curriculum/data/writingLessons");
@@ -79,53 +78,26 @@ function fakeFirebase(cloud, { network = () => {}, commit, auth, teacherId = "te
           };
           if (name === "syncStudentLearning") {
             onLearning?.(input.operations);
-            const accepted = [];
-            const rejected = [];
-            for (const item of input.operations) {
-              const key = root + "/syncReceipts/" + item.id;
-              const digest = createHash("sha256").update(canonicalJson(item.operation)).digest("hex");
-              if (cloud.has(key)) {
-                if (cloud.get(key).digest === digest) accepted.push(item.id);
-                else rejected.push({ id: item.id, reason: "receipt-conflict" });
-                continue;
-              }
-              const candidate = structuredClone(profile);
-              try { applyOperation(candidate, item.operation); }
-              catch (error) {
-                if (error instanceof InvalidOperation) {
-                  rejected.push({ id: item.id, reason: error.reason });
-                  continue;
-                }
-                throw error;
-              }
-              profile = candidate;
-              writes.push([key, { digest }]);
-              accepted.push(item.id);
-            }
-            if (writes.length) { mirror(); await commit(writes); }
-            return { data: { accepted, rejected, profile } };
+            const prefix = root + "/syncReceipts/";
+            const devices = [...new Set(input.operations.map(equipDevice).filter(Boolean))];
+            const checkpoints = new Map(devices.map(device => [device, cloud.get(prefix + "wallet-" + device)]));
+            const batch = applyLearningBatch(profile, input.operations, input.operations.map(item => cloud.get(prefix + item.id)),
+              cloud.get(prefix + "wallet-version") ?? { version: 0 }, checkpoints);
+            profile = batch.profile;
+            for (const [id, receipt] of batch.receipts) writes.push([prefix + id, { waitingAt: null, ...receipt }]);
+            if (batch.walletChanged) writes.push([prefix + "wallet-version", batch.wallet]);
+            for (const [device, checkpoint] of batch.checkpoints) writes.push([prefix + "wallet-" + device, checkpoint]);
+            if (batch.changed) mirror();
+            if (writes.length) await commit(writes);
+            return { data: { accepted: batch.accepted, supersededEquip: batch.supersededEquip, rejected: batch.rejected, profile } };
           }
           assertWorksheetCall(name);
-          const worksheet = verifyWorksheet(input.worksheet, studentId);
-          const key = root + "/worksheetResults/" + worksheet.instanceId;
-          const previous = cloud.get(key);
-          if (previous?.finalized) {
-            if (input.review && (previous.finalized.teacherId !== teacherId ||
-                canonicalJson(previous.finalized.answers) !== canonicalJson(input.review.answers))) {
-              throw new Error("This worksheet was finalized differently.");
-            }
-            return { data: { finalized: previous.finalized, profile } };
-          }
-          const capture = input.capture ? verifyCapture(input.capture, worksheet) : null;
-          if (isOlderWorksheetCapture(previous?.capture, capture, Date.now())) {
-            if (input.review) throw new Error("A newer capture needs review.");
-            return { data: { finalized: null, profile } };
-          }
-          const finalized = input.review ? applyWorksheet(profile, worksheet, input.review, teacherId) : null;
-          writes.push([key, { worksheet, ...(capture ? { capture } : {}), ...(finalized ? { finalized } : {}) }]);
-          if (finalized) mirror();
-          await commit(writes);
-          return { data: { finalized, profile } };
+          const key = root + "/worksheetResults/" + input.worksheet.instanceId;
+          const update = syncWorksheetRevision(cloud.get(key), input, profile, teacherId, Date.now());
+          if (update.write) writes.push([key, update.write]);
+          if (update.award) mirror();
+          if (writes.length) await commit(writes);
+          return { data: update.result };
         };
       },
     },

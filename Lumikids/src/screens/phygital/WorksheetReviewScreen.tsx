@@ -8,7 +8,7 @@ import { Colors } from "../../theme";
 import { getSession } from "../../services/session/session";
 import { hasStudentCloudSession, invalidateStudentCloudSession } from "../../services/student/studentLogin";
 import { getTeacherSession } from "../../services/teacher/teacherSession";
-import { getWorksheetRecord, getWorksheetHistory, requireWorksheetReviewer, revokeWorksheetReviewAccess, saveWorksheetReview, finalizeWorksheet,
+import { getWorksheetRecord, getWorksheetHistory, requireWorksheetReviewer, revokeWorksheetReviewAccess, saveWorksheetReview, finalizeWorksheet, loadLatestWorksheetDraft,
   type WorksheetRecord, type WorksheetReview } from "../../services/phygital/worksheetStore";
 import { restoreWorksheetHistory } from "../../services/sync/syncWorksheet";
 import type { WorksheetAnswer } from "../../services/phygital/worksheetTypes";
@@ -55,7 +55,7 @@ export default function WorksheetReviewScreen() {
       const teacher = await getTeacherSession();
       if (!teacherId || teacher?.teacherId !== teacherId) throw new Error("Sign in as the reviewing teacher again.");
       const latest = getWorksheetRecord(params.studentId, record.worksheet.instanceId!);
-      if (canonicalJson(latest.capture) !== canonicalJson(record.capture)) {
+      if (latest.syncConflict || latest.captureRevision !== record.captureRevision || canonicalJson(latest.capture) !== canonicalJson(record.capture)) {
         setRecords(getWorksheetHistory(params.studentId));
         throw new Error("The photo changed. Review the updated capture before confirming answers.");
       }
@@ -76,7 +76,7 @@ export default function WorksheetReviewScreen() {
       const teacher = await getTeacherSession();
       if (teacher?.teacherId !== teacherId) throw new Error("Sign in as the reviewing teacher again.");
       const latest = getWorksheetRecord(params.studentId, record.worksheet.instanceId!);
-      if (canonicalJson(latest.capture) !== canonicalJson(record.capture)) {
+      if (latest.syncConflict || latest.captureRevision !== record.captureRevision || canonicalJson(latest.capture) !== canonicalJson(record.capture)) {
         setRecords(getWorksheetHistory(params.studentId));
         throw new Error("The photo changed. Review the updated capture before finalizing.");
       }
@@ -84,6 +84,14 @@ export default function WorksheetReviewScreen() {
       setRecords(getWorksheetHistory(params.studentId));
       Alert.alert("Result saved", `${result.score}/5. ${result.passed ? "Completion saved." : "More practice is needed."}`);
     } catch (e) { Alert.alert("Cannot finalize", e instanceof Error ? e.message : "Please try again."); }
+  }
+  async function loadLatest(record: WorksheetRecord) {
+    try {
+      const teacher = await getTeacherSession();
+      if (!teacherId || teacher?.teacherId !== teacherId) throw new Error("Sign in as the reviewing teacher again.");
+      loadLatestWorksheetDraft(params.studentId, record.worksheet.instanceId!, teacherId);
+      setRecords(getWorksheetHistory(params.studentId));
+    } catch (e) { Alert.alert("Cannot load the latest scan", e instanceof Error ? e.message : "Please try again."); }
   }
   return <SafeAreaView style={styles.container}><ScrollView contentContainerStyle={styles.content}>
     <TouchableOpacity style={styles.back} onPress={() => navigation.goBack()}><Text style={styles.link}>← Back</Text></TouchableOpacity>
@@ -95,7 +103,12 @@ export default function WorksheetReviewScreen() {
       const w = record.worksheet;
       return <View key={w.instanceId} style={styles.card}>
         <Text style={styles.heading}>{w.title}</Text><Text style={styles.note}>Copy {w.instanceId} · Ages {w.ageRange.min}–{w.ageRange.max}</Text>
-        {record.finalized ? <Text style={styles.heading}>Finalized: {record.finalized.score}/5</Text> : !record.capture ?
+        {record.syncConflict ? <>
+          <Text style={styles.note}>A newer scan or result is saved online. Review the latest copy to continue.</Text>
+          {teacherId ? <TouchableOpacity style={styles.primary} onPress={() => loadLatest(record)}>
+            <Text style={styles.primaryText}>Load Latest Copy</Text>
+          </TouchableOpacity> : null}
+        </> : record.finalized ? <Text style={styles.heading}>Finalized: {record.finalized.score}/5</Text> : !record.capture ?
           <Text style={styles.note}>Awaiting a valid photo.</Text> : <>
           {record.photoUri ? <Image source={{ uri: record.photoUri }} style={styles.photo} /> :
             <Text style={styles.note}>Photo is stored on the capture device. Check the original printed page before confirming answers here.</Text>}

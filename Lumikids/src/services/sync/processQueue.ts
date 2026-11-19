@@ -22,9 +22,12 @@ async function drainQueue(canSync: Scope, canPublishWorksheet?: WorksheetPublish
     if (!payload || !canSync(payload.studentId, job.action)) continue;
     try {
       if (job.action === "SYNC_WORKSHEET") {
-        await syncWorksheet(payload.studentId, payload.instanceId!, canPublishWorksheet);
+        if (await syncWorksheet(payload.studentId, payload.instanceId!, canPublishWorksheet, () => canSync(payload.studentId, job.action)) === "blocked") {
+          blockQueueJob(job);
+          continue;
+        }
       } else if (job.action === "SYNC_STUDENT") {
-        if (await syncStudent(payload.studentId) === "blocked") {
+        if (await syncStudent(payload.studentId, () => canSync(payload.studentId, job.action)) === "blocked") {
           blockQueueJob(job);
           continue;
         }

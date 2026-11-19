@@ -257,6 +257,139 @@ test('a purchase missing its server funding is retried after unrelated rewards c
   assert.equal(f.queue().length, 0);
 });
 
+test('a delayed offline equip never replaces a newer choice after the purchase clears', async t => {
+  const f = fixture();
+  t.after(() => f.raw.close());
+  await f.login('alice');
+  f.cloud.set('students/alice', { ...f.cloud.get('students/alice'), coins: 24 });
+  const { buyMascot } = f.service('database/localMascot');
+  const { equipMascot } = f.service('database/localStudent');
+  const { processQueue } = f.service('sync/processQueue');
+  f.offline(true);
+  assert.equal(buyMascot('alice', 'frog', 25), 'purchased');
+  equipMascot('alice', 'frog');
+  equipMascot('alice', 'default');
+  progress(f).reading.saveReadingAssessment('alice', 'A', 4, 4, false, quizProof('reading', 'A'));
+  await processQueue();
+  f.offline(false);
+  f.loseAcknowledgement();
+  await processQueue();
+  await processQueue();
+  assert.equal(f.student('alice').avatar, 'default');
+  await processQueue();
+  assert.deepEqual([f.cloud.get('students/alice').coins, f.cloud.get('students/alice').avatar], [14, 'default']);
+  assert.deepEqual([f.student('alice').coins, f.student('alice').avatar], [14, 'default']);
+  assert.equal(f.cloud.get('students/alice').ownedMascots.filter(id => id === 'frog').length, 1);
+  assert.equal(f.queue().length, 0);
+});
+
+test('deferred same-device purchases keep the latest equip when the successful batch acknowledgement is lost', async t => {
+  const attempts = [];
+  const f = fixture({ onLearning: operations => attempts.push(operations.map(item => item.id)) });
+  t.after(() => f.raw.close());
+  const server = 'students/alice';
+  f.cloud.set(server, { ...f.cloud.get(server), coins: 100 });
+  await f.login('alice');
+  f.cloud.set(server, { ...f.cloud.get(server), coins: 0 });
+  const { buyMascot } = f.service('database/localMascot');
+  const { equipMascot } = f.service('database/localStudent');
+  const { processQueue } = f.service('sync/processQueue');
+  assert.equal(buyMascot('alice', 'frog', 25), 'purchased');
+  equipMascot('alice', 'frog');
+  assert.equal(buyMascot('alice', 'fox', 50), 'purchased');
+  equipMascot('alice', 'fox');
+  await processQueue();
+  const [ids] = attempts;
+  assert.equal(ids.length, 4);
+  assert.equal(f.cloud.get(server).avatar, 'default');
+  assert.equal(f.cloud.get(`${server}/syncReceipts/${ids[1]}`).waitingAt, 0);
+  assert.equal(f.cloud.get(`${server}/syncReceipts/${ids[3]}`).waitingAt, 0);
+
+  f.cloud.set(server, { ...f.cloud.get(server), coins: 100 });
+  f.loseAcknowledgement();
+  await processQueue();
+  assert.deepEqual([f.cloud.get(server).coins, f.cloud.get(server).avatar], [25, 'fox']);
+  assert.equal(f.queue().length, 1);
+  assert.equal(f.db.getFirstSync("SELECT count(*) AS n FROM student_profile_changes WHERE studentId = 'alice'").n, 4);
+
+  const confirmed = structuredClone(f.cloud.get(server));
+  await processQueue();
+  assert.deepEqual(attempts, [ids, ids, ids]);
+  assert.deepEqual(f.cloud.get(server), confirmed);
+  assert.deepEqual([f.student('alice').coins, f.student('alice').avatar], [25, 'fox']);
+  assert.equal(f.db.getFirstSync("SELECT count(*) AS n FROM student_profile_changes WHERE studentId = 'alice'").n, 0);
+  assert.equal(f.queue().length, 0);
+});
+
+test('dependent purchases and newer equipment survive multi-batch sync and an account switch between batches', async t => {
+  const attempts = [];
+  const f = fixture({ onLearning: batch => attempts.push(batch) });
+  t.after(() => f.raw.close());
+  f.cloud.set('students/alice', { ...f.cloud.get('students/alice'), coins: 100 });
+  await f.login('alice');
+  f.cloud.set('students/alice', { ...f.cloud.get('students/alice'), coins: 24 });
+  const { buyMascot } = f.service('database/localMascot');
+  const { equipMascot, stageLearningOperation } = f.service('database/localStudent');
+  const { processQueue } = f.service('sync/processQueue');
+  const { canSyncStudentSession } = f.service('student/studentLogin');
+  assert.equal(buyMascot('alice', 'frog', 25), 'purchased');
+  equipMascot('alice', 'frog');
+  assert.equal(buyMascot('alice', 'fox', 50), 'purchased');
+  equipMascot('alice', 'fox');
+  progress(f).reading.saveReadingAssessment('alice', 'A', 4, 4, false, quizProof('reading', 'A'));
+  for (let i = 0; i < 19; i++) stageLearningOperation('alice', quizProof('reading', 'A'));
+  equipMascot('alice', 'default');
+  progress(f).math.completeMathLesson('alice', 1, 10, 10, 3, 50, false, quizProof('math', 1));
+  progress(f).reading.saveReadingAssessment('alice', 'B', 4, 4, false, quizProof('reading', 'B'));
+  progress(f).writing.completeWritingLesson('alice', 'A', 3, false, traceProof('A'));
+  f.beforeCommit(async () => { await f.login('bob'); });
+  await processQueue(canSyncStudentSession);
+  assert.deepEqual(attempts.map(batch => batch.length), [24]);
+  assert.deepEqual(await f.getSession(), { studentId: 'bob' });
+  assert.equal(f.cloud.get('students/bob').coins, 30);
+  await f.login('alice');
+  await processQueue(canSyncStudentSession);
+  await processQueue(canSyncStudentSession);
+  assert.ok(f.cloud.get('students/alice').ownedMascots.includes('frog'));
+  assert.ok(f.cloud.get('students/alice').ownedMascots.includes('fox'));
+  assert.equal(f.cloud.get('students/alice').avatar, 'default');
+  assert.equal(f.student('alice').avatar, 'default');
+  assert.equal(f.cloud.get('students/bob').coins, 30);
+});
+
+test('mixed legacy and quarantined work stays idle and accepts an explicit correction without losing the original', async t => {
+  const f = fixture();
+  t.after(() => f.raw.close());
+  await f.login('alice');
+  const { inspect, stageCorrection } = require('../scripts/sync-recovery.cjs');
+  const { processQueue } = f.service('sync/processQueue');
+  const { addToSyncQueue, getPendingQueue } = f.service('sync/localQueue');
+  const bad = JSON.stringify({ ...quizProof('reading', 'A'), answers: [] });
+  const originalId = Number(f.db.runSync("INSERT INTO student_profile_changes (studentId, subject, lessonId, operation) VALUES ('alice', 'reading', 'A', ?)", [bad]).lastInsertRowid);
+  f.db.runSync("INSERT INTO student_profile_sync (studentId, legacyProfile) VALUES ('alice', ?)", [JSON.stringify({ xp: 999 })]);
+  addToSyncQueue('SYNC_STUDENT', { studentId: 'alice' });
+  await processQueue();
+  const original = inspect(f.raw, 'alice')[0];
+  assert.equal(original.reason, 'invalid-operation');
+  assert.equal(original.operation, bad);
+  assert.equal(getPendingQueue(true).length, 0);
+  const readCount = f.reads.length;
+  await processQueue();
+  await processQueue();
+  assert.equal(f.reads.length, readCount);
+  assert.throws(() => stageCorrection(f.raw, 'alice', originalId, quizProof('reading', 'B')), /same identifiable/);
+  assert.throws(() => stageCorrection(f.raw, 'alice', originalId, JSON.parse(bad)), /Invalid/);
+  const replacementId = stageCorrection(f.raw, 'alice', originalId, quizProof('reading', 'A'));
+  assert.equal(getPendingQueue(true).length, 1);
+  assert.deepEqual(inspect(f.raw, 'alice').map(row => row.status), ['quarantined', 'eligible']);
+  await processQueue();
+  const retained = inspect(f.raw, 'alice')[0];
+  assert.deepEqual([retained.operationId, retained.operation, retained.replacementId], [original.operationId, bad, replacementId]);
+  assert.equal(getPendingQueue(true).length, 0);
+  assert.equal(f.cloud.get('students/alice').readingProgress.A.completed, true);
+  assert.throws(() => stageCorrection(f.raw, 'alice', originalId, quizProof('reading', 'A')), /already queued/);
+});
+
 test('queue retains invalid jobs, missing records and offline failures and processes each authorized job serially', async t => {
   const f = fixture();
   t.after(() => f.raw.close());
@@ -760,6 +893,7 @@ test('a student queue cannot publish a new worksheet finalization on behalf of i
   assert.ok(f.queue().length > 0);
   await processQueue(studentId => studentId === 'alice', (studentId, teacherId) =>
     studentId === 'alice' && teacherId === 'teacher');
+  await processQueue(canSyncStudentSession);
   assert.deepEqual(f.cloud.get(ref).finalized, result);
   assert.equal(f.cloud.get('students/alice').readingProgress.A.completed, true);
   assert.equal(f.queue().length, 0);
