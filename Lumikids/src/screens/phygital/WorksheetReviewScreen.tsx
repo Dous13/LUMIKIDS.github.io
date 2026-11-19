@@ -6,6 +6,7 @@ import type { RootStackParamList } from "../../types/navigation";
 import TouchableOpacity from "../../components/common/MotionTouchable";
 import { Colors } from "../../theme";
 import { getSession } from "../../services/session/session";
+import { hasStudentCloudSession, invalidateStudentCloudSession } from "../../services/student/studentLogin";
 import { getTeacherSession } from "../../services/teacher/teacherSession";
 import { getWorksheetRecord, getWorksheetHistory, requireWorksheetReviewer, revokeWorksheetReviewAccess, saveWorksheetReview, finalizeWorksheet,
   type WorksheetRecord, type WorksheetReview } from "../../services/phygital/worksheetStore";
@@ -30,11 +31,17 @@ export default function WorksheetReviewScreen() {
       }
       if (!reviewer && student?.studentId !== params.studentId) throw new Error("Open this student from your class roster first.");
       if (active) { setTeacherId(reviewer); setRecords(getWorksheetHistory(params.studentId)); }
+      if (!reviewer && !hasStudentCloudSession(params.studentId)) return;
       try { await restoreWorksheetHistory(params.studentId); }
       catch (error) {
         if ((error as { code?: string })?.code === "permission-denied") {
-          if (reviewer) revokeWorksheetReviewAccess(reviewer, params.studentId);
-          throw new Error("This account no longer has access to this student's worksheets.");
+          if (reviewer) {
+            revokeWorksheetReviewAccess(reviewer, params.studentId);
+            throw new Error("This account no longer has access to this student's worksheets.");
+          }
+          await invalidateStudentCloudSession(params.studentId, error);
+          if (active) setError("Showing saved worksheets. Sign in again to sync.");
+          return;
         }
         if (active) setError("Showing saved local worksheets. Cloud history is unavailable.");
       }

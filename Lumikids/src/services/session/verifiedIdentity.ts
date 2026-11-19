@@ -23,12 +23,12 @@ export function clearVerifiedIdentity() {
   current = null;
 }
 
-export async function withSignIn<T>(signIn: () => Promise<T>): Promise<T> {
+export async function withSignIn<T>(signIn: () => Promise<T>, preserveOfflineStudent = false): Promise<T> {
   if (signingIn) throw new Error("A sign-in is already in progress.");
   signingIn = true;
   clearVerifiedIdentity();
   try {
-    await clearSession();
+    if (!preserveOfflineStudent) await clearSession();
     if (auth.currentUser) await auth.signOut();
     return await signIn();
   } catch (error) {

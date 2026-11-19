@@ -1,9 +1,10 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { initializeAuth, inMemoryPersistence } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { connectAuthEmulator, initializeAuth, inMemoryPersistence } from "firebase/auth";
+import { connectFunctionsEmulator, getFunctions } from "firebase/functions";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const firebaseConfig = {
+const productionConfig = {
   apiKey: "AIzaSyBGs_sMUWlMxyc31UZQe9ZhKHVDLuBydTA",
   authDomain: "lumikids-a94d8.firebaseapp.com",
   projectId: "lumikids-a94d8",
@@ -13,14 +14,24 @@ const firebaseConfig = {
   measurementId: "G-6270691B6D",
 };
 
-const app = initializeApp(firebaseConfig);
+const emulatorHost = __DEV__ ? process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST : undefined;
+const app = initializeApp(emulatorHost
+  ? { projectId: "demo-lumikids", apiKey: "demo-api-key", authDomain: "demo-lumikids.firebaseapp.com" }
+  : productionConfig);
 
 export const db = getFirestore(app);
 export const auth = initializeAuth(app, { persistence: inMemoryPersistence });
+export const functions = getFunctions(app);
+
+if (emulatorHost) {
+  connectAuthEmulator(auth, "http://" + emulatorHost + ":9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, emulatorHost, 8080);
+  connectFunctionsEmulator(functions, emulatorHost, 5001);
+}
 
 export function clearLegacyTeacherAuthStorage() {
   return AsyncStorage.multiRemove([
     "teacherSession",
-    `firebase:authUser:${firebaseConfig.apiKey}:${app.name}`,
+    "firebase:authUser:" + productionConfig.apiKey + ":" + app.name,
   ]);
 }

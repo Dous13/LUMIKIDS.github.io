@@ -41,6 +41,7 @@ export default function QuizScreen() {
   const [message, setMessage] = useState("");
 
   const answered = useRef(false);
+  const attempts = useRef<string[]>([]);
   const finishing = useRef(false);
 
   if (!lesson || !quiz || quiz.length === 0) {
@@ -67,7 +68,9 @@ export default function QuizScreen() {
     try {
       const session = await getSession();
       if (!session) throw new Error("Student session expired.");
-      const result = saveReadingAssessment(session.studentId, lessonId, finalScore, validQuiz.length);
+      const result = saveReadingAssessment(session.studentId, lessonId, finalScore, validQuiz.length, false, {
+        type: "quiz", subject: "reading", lessonId, answers: [...attempts.current],
+      });
       if (!result.passed) {
         navigation.replace("RemedialQuiz", { subject: "reading", lessonId });
         return;
@@ -87,6 +90,7 @@ export default function QuizScreen() {
   async function chooseAnswer(choice: string) {
     if (answered.current) return;
     answered.current = true;
+    attempts.current[currentQuestion] = choice;
 
     setSelected(choice);
     setLocked(true);

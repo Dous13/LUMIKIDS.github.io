@@ -1,5 +1,6 @@
 import { db } from "./database";
 import { addToSyncQueue } from "../sync/localQueue";
+import { stageLearningOperation } from "./localStudent";
 
 export type MistakeSubject = "reading" | "math";
 
@@ -26,43 +27,48 @@ export function recordMistake(
   correctAnswer: string,
   skillId: string
 ) {
-  db.runSync(
-    `
-  INSERT INTO mistakes (
-    studentId,
-    subject,
-    lessonId,
-    questionKey,
-    question,
-    selectedAnswer,
-    correctAnswer,
-    skillId,
-    count,
-    synced
-  )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0)
-  ON CONFLICT(studentId, subject, lessonId, questionKey)
-  DO UPDATE SET
-    question = excluded.question,
-    selectedAnswer = excluded.selectedAnswer,
-    correctAnswer = excluded.correctAnswer,
-    skillId = excluded.skillId,
-    count = mistakes.count + 1,
-    synced = 0
-    `,
-  [
-    studentId,
-    subject,
-    String(lessonId),
-    String(questionKey),
-    question,
-    selectedAnswer,
-    correctAnswer,
-    skillId,
-  ]
-  );
+  db.withTransactionSync(() => {
+    db.runSync(
+      `
+    INSERT INTO mistakes (
+      studentId,
+      subject,
+      lessonId,
+      questionKey,
+      question,
+      selectedAnswer,
+      correctAnswer,
+      skillId,
+      count,
+      synced
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0)
+    ON CONFLICT(studentId, subject, lessonId, questionKey)
+    DO UPDATE SET
+      question = excluded.question,
+      selectedAnswer = excluded.selectedAnswer,
+      correctAnswer = excluded.correctAnswer,
+      skillId = excluded.skillId,
+      count = mistakes.count + 1,
+      synced = 0
+      `,
+    [
+      studentId,
+      subject,
+      String(lessonId),
+      String(questionKey),
+      question,
+      selectedAnswer,
+      correctAnswer,
+      skillId,
+    ]
+    );
 
-  addToSyncQueue("SYNC_STUDENT", { studentId });
+    stageLearningOperation(studentId, {
+      type: "mistake", subject, lessonId: String(lessonId), questionIndex: Number(questionKey), answer: selectedAnswer,
+    });
+    addToSyncQueue("SYNC_STUDENT", { studentId });
+  });
 }
 
 export function getAllMistakes(studentId: string): Mistake[] {

@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { loader, sqlite, hooks, nodes, native, root } = require('./runtime.cjs');
+const { fakeFirebase, quizProof, traceProof } = require('./cloud-fixture.cjs');
 
 const profile = (id, overrides) => ({
   id, name: id, classCode: 'ROOM', teacherId: 'teacher', xp: 0, coins: 30,
@@ -31,7 +32,18 @@ function fixture(options = {}) {
   const network = () => {
     if (offline) throw Object.assign(new Error('offline'), { code: 'unavailable' });
   };
-  const snapshot = ref => ({ exists: () => cloud.has(ref), data: () => structuredClone(cloud.get(ref)) });
+  const firebase = fakeFirebase(cloud, { auth, network, onLearning: options.onLearning, async commit(transactionWrites) {
+    const pause = beforeCommit;
+    beforeCommit = undefined;
+    if (pause) await pause();
+    network();
+    for (const [ref, value] of transactionWrites) cloud.set(ref, { ...cloud.get(ref), ...value });
+    writes.push(transactionWrites);
+    if (failAfterCommit) {
+      failAfterCommit = false;
+      throw new Error('connection dropped after commit');
+    }
+  } });
   const load = loader({
     'expo-sqlite': { openDatabaseSync: () => storage.db },
     [path.join(root, 'src/services/firebase/firebase.ts')]: { auth, db: {} },
@@ -40,48 +52,16 @@ function fixture(options = {}) {
       setItem: async (key, value) => { sessions.set(key, value); },
       removeItem: async key => { sessions.delete(key); },
     },
-    'firebase/auth': {
-      signInWithEmailAndPassword() { assert.fail('Student login must not use Firebase Auth.'); },
-    },
+    'firebase/auth': firebase.authMock,
+    'firebase/functions': firebase.functionsMock,
     'firebase/firestore': {
       doc: (_, ...parts) => parts.join('/'),
       collection: (_, ...parts) => parts.join('/'),
-      serverTimestamp: () => 'server-time',
-      query: (ref, ...constraints) => ({ ref, constraints }),
-      where: (field, operator, value) => ({ field, operator, value }),
-      limit: count => ({ count }),
-      getDocFromServer: async ref => { network(); reads.push(ref); return snapshot(ref); },
-      getDocsFromServer: async target => {
-        network();
-        reads.push(target);
-        const { ref, constraints } = typeof target === 'string' ? { ref: target, constraints: [] } : target;
-        const filters = constraints.filter(constraint => constraint.field);
-        const count = constraints.find(constraint => constraint.count)?.count;
-        const docs = [...cloud].filter(([key, data]) => key.startsWith(ref + '/') &&
-          !key.slice(ref.length + 1).includes('/') && filters.every(({ field, operator, value }) => {
-            assert.equal(operator, '==');
-            return data[field] === value;
-          })).slice(0, count).map(([key, data]) => ({ id: key.split('/').at(-1), data: () => structuredClone(data) }));
-        return { empty: docs.length === 0, docs };
-      },
-      runTransaction: async (_, work) => {
-        network();
-        const transactionWrites = [];
-        const result = await work({
-          get: async ref => snapshot(ref),
-          set: (ref, value) => transactionWrites.push([ref, structuredClone(value)]),
-        });
-        const pause = beforeCommit;
-        beforeCommit = undefined;
-        if (pause) await pause();
-        network();
-        for (const [ref, value] of transactionWrites) cloud.set(ref, { ...cloud.get(ref), ...value });
-        writes.push(transactionWrites);
-        if (failAfterCommit) {
-          failAfterCommit = false;
-          throw new Error('connection dropped after commit');
-        }
-        return result;
+      getDocFromServer: async ref => { network(); reads.push(ref); return firebase.getStudent(ref); },
+      getDocsFromServer: async ref => {
+        network(); reads.push(ref);
+        return { docs: [...cloud].filter(([key]) => key.startsWith(ref + '/'))
+          .map(([key, data]) => ({ id: key.split('/').at(-1), data: () => structuredClone(data) })) };
       },
     },
   });
@@ -126,17 +106,17 @@ test('verified login merges pending rewards, signed spending and mascot ownershi
   const mascots = f.service('database/localMascot');
   f.offline(true);
   assert.deepEqual(await f.getSession(), { studentId: 'alice' });
-  assert.equal(reading.saveReadingAssessment('alice', 'A', 4, 4).rewarded, true);
-  assert.equal(writing.completeWritingLesson('alice', 'A', 3).rewarded, true);
-  assert.equal(math.completeMathLesson('alice', 1, 10, 10, 3, 50), true);
-  assert.equal(mascots.buyMascot('alice', 'panda', 50), 'purchased');
-  assert.equal(mascots.buyMascot('alice', 'panda', 50), 'owned');
-  f.service('database/localStudent').equipMascot('alice', 'panda');
+  assert.equal(reading.saveReadingAssessment('alice', 'A', 4, 4, false, quizProof('reading', 'A')).rewarded, true);
+  assert.equal(writing.completeWritingLesson('alice', 'A', 3, false, traceProof('A')).rewarded, true);
+  assert.equal(math.completeMathLesson('alice', 1, 10, 10, 3, 50, false, quizProof('math', 1)), true);
+  assert.equal(mascots.buyMascot('alice', 'fox', 50), 'purchased');
+  assert.equal(mascots.buyMascot('alice', 'fox', 50), 'owned');
+  f.service('database/localStudent').equipMascot('alice', 'fox');
   const before = f.student('alice');
   assert.ok(before.coins < 30, 'purchase reduced the stale cloud balance');
   await f.service('session/session').clearSession();
   assert.equal(await f.getSession(), null);
-  await assert.rejects(f.login('alice'), /offline/);
+  await assert.rejects(f.login('alice'), /Connect to the internet/);
   assert.equal(await f.getSession(), null);
 
   const cloud = f.cloud;
@@ -159,10 +139,10 @@ test('verified login merges pending rewards, signed spending and mascot ownershi
   const restored = f.student('alice');
   assert.deepEqual(
     [restored.name, restored.classCode, restored.xp, restored.readingXP, restored.writingXP, restored.mathXP, restored.coins, restored.avatar],
-    ['Alice updated online', 'ROOM', before.xp + 12, before.readingXP, before.writingXP, before.mathXP + 12, before.coins, 'panda'],
+    ['Alice updated online', 'ROOM', before.xp + 12, before.readingXP, before.writingXP, before.mathXP + 12, before.coins, 'fox'],
   );
   assert.equal(restored.level, loader()('src/utils/xp.ts').getLevel(restored.xp));
-  assert.deepEqual(f.service('database/localMascot').getOwnedMascots('alice').map(row => row.mascotId).sort(), ['cat', 'default', 'panda']);
+  assert.deepEqual(f.service('database/localMascot').getOwnedMascots('alice').map(row => row.mascotId).sort(), ['cat', 'default', 'fox']);
   assert.equal(other.reading.isLessonCompleted('alice', 'A'), true);
   assert.equal(other.writing.isWritingLessonCompleted('alice', 'A'), true);
   assert.equal(other.math.isMathLessonCompleted('alice', 1), true);
@@ -191,10 +171,90 @@ test('legacy migration preserves pending local balance, avatar and XP and tolera
   const student = f.student('alice');
   assert.deepEqual([student.xp, student.readingXP, student.writingXP, student.mathXP, student.coins, student.level, student.avatar], [75, 20, 5, 50, 8, 4, 'panda']);
   await f.service('sync/processQueue').processQueue();
-  assert.equal(f.cloud.get('students/alice').coins, 8);
-  assert.equal(f.cloud.get('classes/ROOM/students/alice').avatar, 'panda');
-  assert.equal(f.queue().length, 1);
+  assert.equal(f.cloud.get('students/alice').coins, 30);
+  assert.equal(f.student('alice').coins, 30);
+  assert.equal(f.student('alice').avatar, 'default');
+  assert.equal(f.student('alice').xp, 75);
+  assert.deepEqual(JSON.parse(f.db.getFirstSync("SELECT legacyProfile FROM student_profile_sync WHERE studentId = 'alice'").legacyProfile),
+    { xp: 75, readingXP: 20, writingXP: 5, mathXP: 50 });
+  assert.equal(f.cloud.get('classes/ROOM/students/alice').avatar, 'default');
+  assert.equal(f.queue().length, 2);
   assert.equal(f.queue()[0].payload, '{bad');
+});
+
+test('a migrated wallet adopts a newer cloud balance, preserves offline purchases on failure and settles a lost acknowledgement once', async t => {
+  const f = fixture();
+  t.after(() => f.raw.close());
+  await f.login('alice');
+  const { buyMascot } = f.service('database/localMascot');
+  const { equipMascot } = f.service('database/localStudent');
+  const { processQueue } = f.service('sync/processQueue');
+  const state = () => f.db.getFirstSync("SELECT legacyProfile FROM student_profile_sync WHERE studentId = 'alice'");
+  f.db.runSync("INSERT OR REPLACE INTO student_profile_sync (studentId, legacyProfile) VALUES ('alice', ?)",
+    [JSON.stringify({ coins: 30, avatar: 'default' })]);
+  f.cloud.set('students/alice', { ...f.cloud.get('students/alice'), profileRevision: 5, coins: 90, avatar: 'cat', ownedMascots: ['default', 'cat'] });
+  f.offline(true);
+  assert.equal(buyMascot('alice', 'frog', 25), 'purchased');
+  equipMascot('alice', 'frog');
+  await assert.rejects(f.login('alice'), /Connect to the internet/);
+  await processQueue();
+  assert.deepEqual([f.student('alice').coins, f.student('alice').avatar], [5, 'frog']);
+  assert.ok(state().legacyProfile);
+  f.offline(false);
+  await f.login('alice');
+  f.loseAcknowledgement();
+  await processQueue();
+  assert.equal(f.cloud.get('students/alice').coins, 65);
+  assert.ok(state().legacyProfile);
+  assert.equal(f.queue().length, 1);
+  await processQueue();
+  assert.deepEqual([f.student('alice').coins, f.student('alice').avatar], [65, 'frog']);
+  assert.equal(f.cloud.get('students/alice').coins, 65);
+  assert.equal(f.cloud.get('students/alice').ownedMascots.filter(id => id === 'frog').length, 1);
+  assert.equal(state().legacyProfile, null);
+  assert.equal(f.queue().length, 0);
+  await f.service('sync/restoreStudentProgress').restoreStudentSnapshot('alice', profile('alice', { coins: 90, profileRevision: 5, avatar: 'cat' }));
+  assert.deepEqual([f.student('alice').coins, f.student('alice').avatar], [65, 'frog']);
+});
+
+test('a full rejected batch stays in SQLite without starving or retrying past later valid entries', async t => {
+  const attempts = [];
+  const f = fixture({ onLearning: batch => attempts.push(batch) });
+  t.after(() => f.raw.close());
+  await f.login('alice');
+  const { processQueue } = f.service('sync/processQueue');
+  for (let i = 0; i < 24; i++) {
+    f.db.runSync("INSERT INTO student_profile_changes (studentId, operation) VALUES ('alice', ?)", [JSON.stringify({ type: 'invalid' })]);
+  }
+  progress(f).reading.saveReadingAssessment('alice', 'A', 4, 4, false, quizProof('reading', 'A'));
+  await processQueue();
+  assert.deepEqual(attempts.map(batch => batch.length), [24, 1]);
+  assert.equal(f.cloud.get('students/alice').readingProgress.A.completed, true);
+  assert.equal(f.db.getFirstSync("SELECT COUNT(*) AS n FROM student_profile_changes WHERE syncRejection = 'invalid-operation'").n, 24);
+  assert.equal(f.queue().length, 1);
+  await processQueue();
+  assert.equal(attempts.length, 2);
+  progress(f).reading.saveReadingAssessment('alice', 'B', 4, 4, false, quizProof('reading', 'B'));
+  await processQueue();
+  assert.deepEqual(attempts.map(batch => batch.length), [24, 1, 1]);
+  assert.equal(f.cloud.get('students/alice').readingProgress.B.completed, true);
+  assert.equal(f.db.getFirstSync("SELECT COUNT(*) AS n FROM student_profile_changes WHERE syncRejection = 'invalid-operation'").n, 24);
+});
+
+test('a purchase missing its server funding is retried after unrelated rewards clear the dependency', async t => {
+  const f = fixture();
+  t.after(() => f.raw.close());
+  await f.login('alice');
+  const { processQueue } = f.service('sync/processQueue');
+  f.cloud.set('students/alice', { ...f.cloud.get('students/alice'), coins: 24 });
+  assert.equal(f.service('database/localMascot').buyMascot('alice', 'frog', 25), 'purchased');
+  progress(f).reading.saveReadingAssessment('alice', 'A', 4, 4, false, quizProof('reading', 'A'));
+  await processQueue();
+  assert.equal(f.cloud.get('students/alice').readingProgress.A.completed, true);
+  assert.equal(f.db.getFirstSync("SELECT syncRejection FROM student_profile_changes").syncRejection, null);
+  await processQueue();
+  assert.ok(f.cloud.get('students/alice').ownedMascots.includes('frog'));
+  assert.equal(f.queue().length, 0);
 });
 
 test('queue retains invalid jobs, missing records and offline failures and processes each authorized job serially', async t => {
@@ -202,6 +262,7 @@ test('queue retains invalid jobs, missing records and offline failures and proce
   t.after(() => f.raw.close());
   await f.login('alice');
   await f.restore('bob');
+  progress(f).reading.saveReadingAssessment('alice', 'A', 4, 4, false, quizProof('reading', 'A'));
   const { addToSyncQueue } = f.service('sync/localQueue');
   const { processQueue } = f.service('sync/processQueue');
   const { syncStudent } = f.service('sync/syncStudent');
@@ -245,12 +306,12 @@ test('lost acknowledgement and edits during upload preserve spending and rewards
   });
   await f.login('alice');
   const { reading } = progress(f);
-  assert.equal(reading.saveReadingAssessment('alice', 'A', 4, 4).rewarded, true);
-  assert.equal(f.service('database/localMascot').buyMascot('alice', 'panda', 20), 'purchased');
+  assert.equal(reading.saveReadingAssessment('alice', 'A', 4, 4, false, quizProof('reading', 'A')).rewarded, true);
+  assert.equal(f.service('database/localMascot').buyMascot('alice', 'frog', 25), 'purchased');
   const initial = f.student('alice');
   f.beforeCommit(async () => {
-    assert.equal(reading.saveReadingAssessment('alice', 'B', 4, 4).rewarded, true);
-    f.service('database/localStudent').equipMascot('alice', 'panda');
+    assert.equal(reading.saveReadingAssessment('alice', 'B', 4, 4, false, quizProof('reading', 'B')).rewarded, true);
+    f.service('database/localStudent').equipMascot('alice', 'frog');
     f.loseAcknowledgement();
   });
   await f.service('sync/processQueue').processQueue();
@@ -268,7 +329,7 @@ test('lost acknowledgement and edits during upload preserve spending and rewards
   assert.deepEqual(f.student('alice'), expected);
   assert.equal(f.cloud.get('students/alice').xp, expected.xp);
   assert.equal(f.cloud.get('students/alice').coins, expected.coins);
-  assert.equal(f.cloud.get('students/alice').avatar, 'panda');
+  assert.equal(f.cloud.get('students/alice').avatar, 'frog');
   assert.equal(f.queue().length, 0);
   assert.equal(f.db.getFirstSync('SELECT COUNT(*) AS n FROM student_profile_changes').n, 0);
 });
@@ -277,15 +338,16 @@ test('successful upload acknowledges only its snapshot when a newer local edit a
   const f = fixture();
   t.after(() => f.raw.close());
   await f.login('alice');
+  progress(f).reading.saveReadingAssessment('alice', 'A', 4, 4, false, quizProof('reading', 'A'));
   f.beforeCommit(async () => {
-    progress(f).reading.saveReadingAssessment('alice', 'A', 4, 4);
-    f.service('database/localMascot').buyMascot('alice', 'panda', 20);
+    progress(f).reading.saveReadingAssessment('alice', 'B', 4, 4, false, quizProof('reading', 'B'));
+    f.service('database/localMascot').buyMascot('alice', 'frog', 25);
   });
   const { processQueue } = f.service('sync/processQueue');
   await processQueue();
-  assert.equal(f.cloud.get('students/alice').xp, 0);
+  assert.equal(f.cloud.get('students/alice').xp, 25);
   assert.equal(f.queue().length, 1);
-  assert.equal(f.db.getFirstSync("SELECT synced FROM lesson_progress WHERE studentId = 'alice' AND lessonId = 'A'").synced, 0);
+  assert.equal(f.db.getFirstSync("SELECT synced FROM lesson_progress WHERE studentId = 'alice' AND lessonId = 'B'").synced, 0);
   f.db.runSync("INSERT INTO sync_queue (action, payload) VALUES (?, ?)", ['SYNC_STUDENT', '{"studentId":"alice"}']);
   assert.equal(f.queue().length, 2);
   await processQueue();
@@ -299,21 +361,21 @@ test('a confirmed profile revision protects spent coins and equipment from an ol
   t.after(() => f.raw.close());
   await f.login('alice');
   const original = f.cloud.get('students/alice');
-  f.service('database/localMascot').buyMascot('alice', 'panda', 20);
-  f.service('database/localStudent').equipMascot('alice', 'panda');
+  f.service('database/localMascot').buyMascot('alice', 'frog', 25);
+  f.service('database/localStudent').equipMascot('alice', 'frog');
   const { processQueue } = f.service('sync/processQueue');
   await processQueue();
   const synced = f.cloud.get('students/alice');
-  assert.equal(synced.coins, 10);
-  assert.equal(synced.avatar, 'panda');
+  assert.equal(synced.coins, 5);
+  assert.equal(synced.avatar, 'frog');
   f.cloud.set('students/alice', original);
   await f.restore('alice');
-  assert.equal(f.student('alice').coins, 10);
-  assert.equal(f.student('alice').avatar, 'panda');
+  assert.equal(f.student('alice').coins, 5);
+  assert.equal(f.student('alice').avatar, 'frog');
   await processQueue();
-  assert.ok(f.cloud.get('students/alice').profileRevision > synced.profileRevision);
-  assert.equal(f.cloud.get('students/alice').coins, 10);
-  assert.equal(f.cloud.get('students/alice').avatar, 'panda');
+  assert.equal(f.cloud.get('students/alice').coins, original.coins);
+  assert.equal(f.student('alice').coins, 5);
+  assert.equal(f.student('alice').avatar, 'frog');
 });
 
 test('two devices completing the same lesson or purchasing the same mascot converge without a second award or debit', async t => {
@@ -321,16 +383,16 @@ test('two devices completing the same lesson or purchasing the same mascot conve
   t.after(() => { a.raw.close(); b.raw.close(); });
   for (const device of [a, b]) {
     await device.login('alice');
-    assert.equal(progress(device).math.completeMathLesson('alice', 1, 10, 10, 3, 50), true);
-    assert.equal(device.service('database/localMascot').buyMascot('alice', 'panda', 20), 'purchased');
+    assert.equal(progress(device).math.completeMathLesson('alice', 1, 10, 10, 3, 50, false, quizProof('math', 1)), true);
+    assert.equal(device.service('database/localMascot').buyMascot('alice', 'frog', 25), 'purchased');
   }
   await a.service('sync/processQueue').processQueue();
   const cloud = a.cloud.get('students/alice');
   // A legacy installation may have written a numeric-alias progress key.
   a.cloud.set('students/alice', { ...cloud, mathProgress: { '1.0': cloud.mathProgress['1'] } });
   await b.service('sync/processQueue').processQueue();
-  assert.deepEqual([b.student('alice').xp, b.student('alice').mathXP, b.student('alice').coins], [50, 50, 25]);
-  assert.deepEqual([a.cloud.get('students/alice').xp, a.cloud.get('students/alice').coins], [50, 25]);
+  assert.deepEqual([b.student('alice').xp, b.student('alice').mathXP, b.student('alice').coins], [50, 50, 20]);
+  assert.deepEqual([a.cloud.get('students/alice').xp, a.cloud.get('students/alice').coins], [50, 20]);
 });
 
 test('paired Reading and Math attempts resist weaker digital results, alias rows, and stale cloud data', async t => {
@@ -391,11 +453,11 @@ test('Reading completion rolls back on queue failure and a replay pays only once
 test('a fresh session requires verified enrollment, and expiry, revocation and account switching invalidate it', async t => {
   const f = fixture();
   t.after(() => f.raw.close());
-  await assert.rejects(f.login('unregistered'), /No student with that name/);
+  await assert.rejects(f.login('unregistered'), /could not verify/);
   f.cloud.set('classes/ROOM/students/unlinked', { ...profile('unlinked', { classCode: 'OTHER' }), preferredNameLower: 'unlinked' });
-  await assert.rejects(f.login('unlinked'), /does not match the classroom/);
+  await assert.rejects(f.login('unlinked'), /could not verify/);
   f.cloud.set('classes/ROOM/students/missing', { ...profile('missing'), preferredNameLower: 'missing' });
-  await assert.rejects(f.login('missing'), /does not exist/);
+  await assert.rejects(f.login('missing'), /could not verify/);
   assert.equal(await f.getSession(), null);
   await f.login('alice');
   const { refreshStudentSession, canSyncStudentSession } = f.service('student/studentLogin');
@@ -410,7 +472,7 @@ test('a fresh session requires verified enrollment, and expiry, revocation and a
     f.offline(true);
     assert.equal(await f.getSession(), null);
     assert.equal(canSyncStudentSession('bob'), false);
-    assert.equal(f.auth.currentUser, null);
+    assert.equal(canSyncStudentSession('bob'), false);
   } finally { Date.now = originalClock; }
   f.offline(false);
   await f.login('bob');
@@ -419,19 +481,20 @@ test('a fresh session requires verified enrollment, and expiry, revocation and a
   Date.now = () => now + 6 * 60_000;
   try {
     await refreshStudentSession();
-    assert.equal(await f.getSession(), null);
-    assert.equal(f.sessions.has('studentSession'), false);
+    assert.deepEqual(await f.getSession(), { studentId: 'bob' });
+    assert.equal(canSyncStudentSession('bob'), false);
+    assert.equal(f.auth.currentUser, null);
   } finally { Date.now = originalClock; }
-  await assert.rejects(f.login('bob'), /missing from the classroom roster/);
+  await assert.rejects(f.login('bob'), /could not verify/);
 });
 
-test('registered name and classroom code restore the same ID without Auth or duplicate student records', async t => {
+test('registered name and classroom code use the same custom-token identity without duplicate student records', async t => {
   const f = fixture();
   t.after(() => f.raw.close());
   const keys = [...f.cloud.keys()];
   await f.login('  ALIce  ', '  rOoM ');
   assert.deepEqual(await f.getSession(), { studentId: 'alice' });
-  assert.equal(f.auth.currentUser, null);
+  assert.equal(f.auth.currentUser.uid, 'student:alice');
   assert.equal(f.student('alice').classCode, 'ROOM');
   await f.login('Alice', 'ROOM');
   assert.deepEqual(await f.getSession(), { studentId: 'alice' });
@@ -476,12 +539,12 @@ test('the login screen submits Student Name and Classroom Code and opens Home on
 test('empty fields, invalid classroom codes and unknown student names fail before a session is created', async t => {
   const f = fixture();
   t.after(() => f.raw.close());
-  await assert.rejects(f.login('  ', 'ROOM'), /Enter your student name/);
-  await assert.rejects(f.login('Alice', '  '), /Enter your classroom code/);
-  await assert.rejects(f.login('Alice', 'ROOM / OTHER'), /Enter a valid classroom code/);
+  await assert.rejects(f.login('  ', 'ROOM'), /Enter your student name and classroom code/);
+  await assert.rejects(f.login('Alice', '  '), /Enter your student name and classroom code/);
+  await assert.rejects(f.login('Alice', 'ROOM / OTHER'), /could not verify/);
   assert.equal(f.reads.length, 0);
-  await assert.rejects(f.login('Alice', 'UNKNOWN'), /classroom code was not found/);
-  await assert.rejects(f.login('Unknown Learner', 'ROOM'), /No student with that name/);
+  await assert.rejects(f.login('Alice', 'UNKNOWN'), /could not verify/);
+  await assert.rejects(f.login('Unknown Learner', 'ROOM'), /could not verify/);
   assert.equal(await f.getSession(), null);
   assert.equal(f.sessions.has('studentSession'), false);
   assert.equal(f.db.getFirstSync('SELECT COUNT(*) AS count FROM student').count, 0);
@@ -506,8 +569,8 @@ test('same-name students in different classrooms remain isolated, and an ambiguo
   assert.equal(JSON.parse(f.sessions.get('studentSession')).studentId, studentId);
 
   f.cloud.set('classes/BLUE/students/duplicate', { ...other, id: 'duplicate', preferredNameLower: 'alice' });
-  await assert.rejects(f.login('Alice', 'BLUE'), /More than one student/);
-  assert.equal(await f.getSession(), null);
+  await assert.rejects(f.login('Alice', 'BLUE'), /could not verify/);
+  assert.deepEqual(await f.getSession(), { studentId: 'alice-other' });
 });
 
 test('legacy root-only enrollment keeps its exact-name fallback within the selected classroom', async t => {
@@ -515,7 +578,7 @@ test('legacy root-only enrollment keeps its exact-name fallback within the selec
   t.after(() => f.raw.close());
   f.cloud.set('students/legacy', profile('legacy', { name: 'Legacy Learner' }));
   f.cloud.set('students/unrelated', profile('unrelated', { name: 'Legacy Learner', classCode: 'OTHER' }));
-  await assert.rejects(f.login('legacy learner'), /No student with that name/);
+  await assert.rejects(f.login('legacy learner'), /could not verify/);
   await f.login('  Legacy Learner  ', ' room ', false);
   assert.deepEqual(await f.getSession(), { studentId: 'legacy' });
   assert.equal(f.sessions.has('studentSession'), false);
@@ -543,7 +606,7 @@ test('a remembered session resumes offline after restart and reconnects only the
   assert.deepEqual(await f.getSession(), { studentId: 'alice' });
   assert.equal(f.reads.length, 0);
   const { reading } = progress(f);
-  assert.equal(reading.saveReadingAssessment('alice', 'A', 4, 4).rewarded, true);
+  assert.equal(reading.saveReadingAssessment('alice', 'A', 4, 4, false, quizProof('reading', 'A')).rewarded, true);
   const offlineCoins = f.student('alice').coins;
   await refreshStudentSession();
   await processQueue(canSyncStudentSession);
@@ -556,6 +619,8 @@ test('a remembered session resumes offline after restart and reconnects only the
   Date.now = () => now + 31_000;
   try {
     await refreshStudentSession();
+    assert.equal(canSyncStudentSession('alice'), false);
+    await f.login('alice');
     await processQueue(canSyncStudentSession);
   } finally { Date.now = originalClock; }
   assert.equal(cloud.get('students/alice').coins, offlineCoins);
@@ -566,7 +631,7 @@ test('a remembered session resumes offline after restart and reconnects only the
   await session.clearSession();
   assert.equal(await session.restoreRememberedSession(), null);
   f.offline(true);
-  await assert.rejects(f.login('Alice', 'ROOM'), /offline/);
+  await assert.rejects(f.login('Alice', 'ROOM'), /Connect to the internet/);
   assert.equal(await f.getSession(), null);
 });
 
@@ -579,19 +644,19 @@ test('legacy saved sessions get a bounded migration, while expired, malformed an
   const session = f.service('session/session');
   assert.equal((await session.restoreRememberedSession()).studentId, 'alice');
   const migrated = JSON.parse(f.sessions.get('studentSession'));
-  assert.equal(migrated.version, 1);
-  assert.equal(migrated.classCode, 'ROOM');
+  assert.equal(migrated.version, 2);
+  assert.equal(migrated.classCode, undefined);
   assert.ok(migrated.expiresAt > Date.now() && migrated.expiresAt <= Date.now() + 86_400_000);
 
   f.offline(false);
-  await f.service('student/studentLogin').refreshStudentSession();
+  await f.login('alice');
   const reverified = JSON.parse(f.sessions.get('studentSession'));
   assert.ok(reverified.expiresAt > migrated.expiresAt);
   await session.clearSession();
   for (const invalid of [
     '{broken',
     JSON.stringify({ ...migrated, expiresAt: Date.now() - 1 }),
-    JSON.stringify({ ...migrated, classCode: 'OTHER' }),
+    JSON.stringify({ ...migrated, version: 1, classCode: 'OTHER' }),
     JSON.stringify({ studentId: 'unknown', remember: true }),
     JSON.stringify({ studentId: 'alice', remember: false }),
   ]) {
@@ -631,7 +696,8 @@ test('worksheet draft retry leaves newer captures and finalized cloud results in
   const copy = crypto.randomUUID();
   const w = store.issueWorksheet('alice', 'reading', 'A', copy);
   const capture = { worksheetInstanceId: copy, validated: true, answers: Array(5).fill('A'),
-    statuses: Array(5).fill('recognized'), confidence: Array(5).fill(1), capturedAt: '2090-01-01T00:00:00.000Z' };
+    statuses: Array(5).fill('recognized'), confidence: Array(5).fill(1), darkness: Array.from({ length: 5 }, () => [1, 0, 0]), imageWidth: 900, imageHeight: 1200,
+    quality: { paperBrightness: 210, edgeSharpness: 100 }, capturedAt: new Date(Date.now() + 60_000).toISOString() };
   store.saveWorksheetCapture('alice', copy, capture, 'file:///old.jpg');
   const ref = 'students/alice/worksheetResults/' + copy;
   f.cloud.set(ref, { worksheet: w, capture });
@@ -649,6 +715,26 @@ test('worksheet draft retry leaves newer captures and finalized cloud results in
   assert.equal(f.queue().length, 0);
 });
 
+test('rescanning a legacy worksheet replaces its implausible local capture timestamp', async t => {
+  const f = fixture();
+  t.after(() => f.raw.close());
+  await f.login('alice');
+  const store = f.service('phygital/worksheetStore');
+  const copy = crypto.randomUUID();
+  store.issueWorksheet('alice', 'reading', 'A', copy);
+  const capture = { worksheetInstanceId: copy, validated: true, answers: Array(5).fill('A'),
+    statuses: Array(5).fill('recognized'), confidence: Array(5).fill(1), darkness: Array.from({ length: 5 }, () => [1, 0, 0]),
+    imageWidth: 900, imageHeight: 1200, quality: { paperBrightness: 210, edgeSharpness: 100 } };
+  const old = { ...capture, capturedAt: new Date(Date.now() + 86_400_000).toISOString() };
+  f.db.runSync('UPDATE worksheet_instances SET capture = ? WHERE studentId = ? AND instanceId = ?', [JSON.stringify(old), 'alice', copy]);
+  store.saveWorksheetCapture('alice', copy, capture, 'file:///replacement.jpg');
+  const saved = store.getWorksheetRecord('alice', copy);
+  assert.ok(Math.abs(Date.parse(saved.capture.capturedAt) - Date.now()) < 60_000);
+  assert.equal(saved.photoUri, 'file:///replacement.jpg');
+  await f.service('sync/syncWorksheet').syncWorksheet('alice', copy);
+  assert.equal(f.cloud.get('students/alice/worksheetResults/' + copy).capture.capturedAt, saved.capture.capturedAt);
+});
+
 test('a student queue cannot publish a new worksheet finalization on behalf of its reviewing teacher', async t => {
   const f = fixture();
   t.after(() => f.raw.close());
@@ -661,14 +747,15 @@ test('a student queue cannot publish a new worksheet finalization on behalf of i
   const answers = worksheet.questions.map(question => question.correctAnswer);
   store.saveWorksheetCapture('alice', id, {
     worksheetInstanceId: id, validated: true, answers,
-    statuses: Array(5).fill('recognized'), confidence: Array(5).fill(1),
+    statuses: Array(5).fill('recognized'), confidence: Array(5).fill(1), darkness: Array.from({ length: 5 }, () => [1, 0, 0]), imageWidth: 900, imageHeight: 1200,
+    quality: { paperBrightness: 210, edgeSharpness: 100 },
   }, 'file:///captured.jpg');
   store.cacheWorksheetReviewAccess('teacher', 'alice', 'ROOM');
   store.saveWorksheetReview('alice', id, { teacherId: 'teacher', answers, reviewed: Array(5).fill(true), writing: [] });
   const result = store.finalizeWorksheet('alice', id, 'teacher');
   await processQueue(canSyncStudentSession, () => false);
   const ref = 'students/alice/worksheetResults/' + id;
-  assert.equal(f.cloud.has(ref), false);
+  assert.equal(f.cloud.get(ref).finalized, undefined);
   assert.equal(f.cloud.get('students/alice').xp, 0);
   assert.ok(f.queue().length > 0);
   await processQueue(studentId => studentId === 'alice', (studentId, teacherId) =>

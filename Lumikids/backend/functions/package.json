@@ -1,0 +1,20 @@
+{
+  "name": "lumikids-functions",
+  "private": true,
+  "main": "index.cjs",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "node build-curriculum.cjs"
+  },
+  "dependencies": {
+    "firebase-admin": "14.5.1",
+    "firebase-functions": "7.4.0"
+  },
+  "overrides": {
+    "firebase-admin": {
+      "@firebase/database-compat": "2.1.4"
+    }
+  }
+}

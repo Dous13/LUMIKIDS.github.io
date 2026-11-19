@@ -1,21 +1,28 @@
-import { doc, collection, getDocsFromServer, runTransaction } from "firebase/firestore";
-import { db as firestore } from "../firebase/firebase";
+import { collection, getDocsFromServer } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import { db as firestore, functions } from "../firebase/firebase";
 import { db } from "../database/database";
 import { getWorksheetRecord, type WorksheetResult } from "../phygital/worksheetStore";
-import { canonicalJson, worksheetIdentityBits } from "../phygital/worksheetLayout";
+import { canonicalJson, worksheetIdentityBits, worksheetTimestamp } from "../phygital/worksheetLayout";
 import type { WorksheetAnalysis } from "../phygital/worksheetAnalyzer";
-import { syncStudent } from "./syncStudent";
+import { invalidateStudentCloudSession } from "../student/studentLogin";
+import { savedOperation, settleStudentProgress } from "./syncStudent";
+import { readProfile, type CloudStudent } from "./studentProfile";
 
-function validCapture(value: unknown, instanceId: string): value is WorksheetAnalysis {
-  if (!value || typeof value !== "object") return false;
+function decodeCapture(value: unknown, instanceId: string, count: number): WorksheetAnalysis | null {
+  if (!value || typeof value !== "object") return null;
   const capture = value as Partial<WorksheetAnalysis>;
-  return capture.validated === true && capture.worksheetInstanceId === instanceId &&
-    [capture.answers, capture.statuses, capture.confidence].every(list => Array.isArray(list) && list.length === 5);
+  if (capture.validated !== true || capture.worksheetInstanceId !== instanceId ||
+      ![capture.answers, capture.statuses, capture.confidence].every(list => Array.isArray(list) && list.length === count)) return null;
+  const darkness = Array.isArray(capture.darkness) ? capture.darkness
+    : Array.from({ length: count }, (_, index) => capture.darkness?.[index] ?? []);
+  return { ...capture, darkness } as WorksheetAnalysis;
 }
 
 function newerCapture(candidate: WorksheetAnalysis, existing: WorksheetAnalysis) {
-  const timestamp = (capture: WorksheetAnalysis) => Date.parse(capture.capturedAt ?? "") || 0;
-  const left = timestamp(candidate), right = timestamp(existing);
+  const now = Date.now();
+  const left = worksheetTimestamp(candidate.capturedAt, now) ?? 0;
+  const right = worksheetTimestamp(existing.capturedAt, now) ?? 0;
   return left > right || (left !== 0 && left === right && canonicalJson(candidate) > canonicalJson(existing));
 }
 
@@ -23,38 +30,28 @@ export async function syncWorksheet(
   studentId: string, instanceId: string, canPublish?: (studentId: string, teacherId: string) => boolean,
 ) {
   const record = getWorksheetRecord(studentId, instanceId);
-  const ref = doc(firestore, "students", studentId, "worksheetResults", instanceId);
-  await runTransaction(firestore, async transaction => {
-    const snapshot = await transaction.get(ref);
-    const existing = snapshot.exists() ? snapshot.data() : undefined;
-    if (existing && canonicalJson(existing.worksheet) !== canonicalJson(record.worksheet)) {
-      throw new Error("The saved worksheet does not match this cloud copy.");
-    }
-    if (existing?.finalized) {
-      if (record.finalized && canonicalJson(existing.finalized) !== canonicalJson(record.finalized)) {
-        throw new Error("This worksheet was finalized differently on another device. Its queued result is preserved locally for review.");
+  const final = record.finalized;
+  const review = final && canPublish?.(studentId, final.teacherId)
+    ? { answers: final.answers, writing: final.writing, finalizedAt: final.finalizedAt }
+    : null;
+  const request = { studentId, worksheet: record.worksheet, capture: record.capture, review };
+  const call = httpsCallable<typeof request, { finalized: WorksheetResult | null; profile: CloudStudent }>(functions, "syncWorksheet");
+  try {
+    const { data } = await call(request);
+    if (final) {
+      if (!data.finalized || canonicalJson(data.finalized) !== canonicalJson(final)) {
+        throw new Error("The reviewing teacher must publish the same worksheet result before sync can finish.");
       }
-      return;
+      const accepted = new Set(readProfile(studentId).changes.filter(change => {
+        const operation = savedOperation(change);
+        return operation?.type === "worksheet" && operation.instanceId === instanceId;
+      }).map(change => change.id));
+      settleStudentProgress(studentId, data.profile, accepted);
     }
-    if (record.finalized && canPublish && !canPublish(studentId, record.finalized.teacherId)) {
-      throw new Error("The reviewing teacher must sign in to publish this worksheet result.");
-    }
-    const olderCapture = record.capture && validCapture(existing?.capture, instanceId) &&
-      newerCapture(existing.capture, record.capture);
-    if (record.finalized && olderCapture) {
-      throw new Error("A newer photo was saved for this worksheet. Its queued result is preserved locally for review.");
-    }
-    if (existing && !record.finalized && (!record.capture || olderCapture ||
-        canonicalJson(existing.capture ?? null) === canonicalJson(record.capture))) return;
-    transaction.set(ref, {
-      worksheet: record.worksheet,
-      ...(record.capture ? { capture: record.capture } : {}),
-      ...(record.finalized ? { finalized: record.finalized } : {}),
-    }, { merge: true });
-  });
-  // A failed progress upload keeps this result's job retryable. The result
-  // transaction is idempotent and leaves finalized cloud data immutable.
-  if (record.finalized) await syncStudent(studentId);
+  } catch (error) {
+    await invalidateStudentCloudSession(studentId, error).catch(() => undefined);
+    throw error;
+  }
 }
 
 export async function restoreWorksheetHistory(studentId: string) {
@@ -70,7 +67,7 @@ export async function restoreWorksheetHistory(studentId: string) {
         "SELECT worksheet, finalized, capture, review FROM worksheet_instances WHERE studentId = ? AND instanceId = ?",
         [studentId, snapshot.id],
       );
-      const capture = validCapture(value.capture, snapshot.id) ? value.capture : null;
+      const capture = decodeCapture(value.capture, snapshot.id, worksheet.questions.length);
       const candidate = value.finalized as WorksheetResult | undefined;
       const final = candidate?.studentId === studentId && candidate.instanceId === snapshot.id &&
         candidate.subject === worksheet.subject && candidate.lessonId === worksheet.lessonId &&

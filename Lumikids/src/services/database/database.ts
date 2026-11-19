@@ -133,7 +133,9 @@ export function initializeDatabase() {
       xp INTEGER NOT NULL DEFAULT 0,
       coins INTEGER NOT NULL DEFAULT 0,
       avatar TEXT,
-      mascotId TEXT
+      mascotId TEXT,
+      operation TEXT,
+      syncRejection TEXT
     );
     CREATE INDEX IF NOT EXISTS student_profile_changes_student ON student_profile_changes (studentId, id);
   `);
@@ -155,6 +157,13 @@ export function initializeDatabase() {
   if (!columns.some(column => column.name === "quizTotal")) {
     db.execSync(`ALTER TABLE lesson_progress ADD COLUMN quizTotal INTEGER DEFAULT 0`);
   }
+  const changeColumns = db.getAllSync<{ name: string }>("PRAGMA table_info(student_profile_changes)");
+  if (!changeColumns.some(column => column.name === "operation")) {
+    db.execSync("ALTER TABLE student_profile_changes ADD COLUMN operation TEXT");
+  }
+  if (!changeColumns.some(column => column.name === "syncRejection")) {
+    db.execSync("ALTER TABLE student_profile_changes ADD COLUMN syncRejection TEXT");
+  }
 
   const queueColumns = db.getAllSync<{ name: string }>("PRAGMA table_info(sync_queue)");
   if (!queueColumns.some(column => column.name === "revision")) {
@@ -173,6 +182,9 @@ export function initializeDatabase() {
         ALTER TABLE sync_queue ADD COLUMN revision INTEGER NOT NULL DEFAULT 0;
       `);
     });
+  }
+  if (!queueColumns.some(column => column.name === "blocked")) {
+    db.execSync("ALTER TABLE sync_queue ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0");
   }
 }
 

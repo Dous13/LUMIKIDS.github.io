@@ -31,8 +31,8 @@ export function buyMascot(
     if (!debit.changes) { result = "insufficient"; return; }
     db.runSync("INSERT INTO owned_mascots (studentId, mascotId) VALUES (?, ?)", [studentId, mascotId]);
     db.runSync(
-      "INSERT INTO student_profile_changes (studentId, coins, mascotId) VALUES (?, ?, ?)",
-      [studentId, -price, mascotId],
+      "INSERT INTO student_profile_changes (studentId, coins, mascotId, operation) VALUES (?, ?, ?, ?)",
+      [studentId, -price, mascotId, JSON.stringify({ type: "purchase", mascotId })],
     );
     addToSyncQueue("SYNC_STUDENT", { studentId });
     result = "purchased";

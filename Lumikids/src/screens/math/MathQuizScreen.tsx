@@ -47,6 +47,7 @@ export default function MathQuizScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const scoreRef = useRef(0);
+  const attempts = useRef<string[]>([]);
   const [answerLocked, setAnswerLocked] = useState(false);
   const [selectedAnswer, setSelectedAnswer] =
     useState<string | null>(null);
@@ -98,15 +99,10 @@ export default function MathQuizScreen() {
 
       const result = evaluateQuiz(finalScore, questions.length);
 
-      // Save the assessment result locally.
-      await saveMathQuizProgress(
-        session.studentId,
-        lessonId,
-        finalScore,
-        questions.length
-      );
+      const operation = { type: "quiz", subject: "math", lessonId: String(lessonId), answers: [...attempts.current] } as const;
 
       if (!result.passed) {
+        saveMathQuizProgress(session.studentId, lessonId, finalScore, questions.length, false, operation);
         navigation.replace("RemedialQuiz", {
           subject: "math",
           lessonId,
@@ -133,7 +129,9 @@ export default function MathQuizScreen() {
         finalScore,
         questions.length,
         result.stars,
-        xpEarned
+        xpEarned,
+        false,
+        operation,
       );
 
       if (!completed) {
@@ -172,8 +170,9 @@ export default function MathQuizScreen() {
   }
 
   async function chooseAnswer(choice: string) {
-    if (answerLocked || finishing) return;
+    if (answerLocked || finishing || attempts.current[currentIndex] !== undefined) return;
 
+    attempts.current[currentIndex] = choice;
     setAnswerLocked(true);
     setSelectedAnswer(choice);
 

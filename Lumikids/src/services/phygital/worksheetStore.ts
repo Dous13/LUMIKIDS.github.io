@@ -2,7 +2,7 @@ import { db } from "../database/database";
 import { createWorksheet } from "../../data/phygitalWorksheets";
 import type { GeneratedWorksheet, WorksheetAnswer } from "./worksheetTypes";
 import type { WorksheetAnalysis } from "./worksheetAnalyzer";
-import { WORKSHEET_LAYOUT, worksheetIdentityBits } from "./worksheetLayout";
+import { WORKSHEET_LAYOUT, worksheetIdentityBits, worksheetTimestamp } from "./worksheetLayout";
 import { evaluateQuiz } from "../../utils/ruleEngine";
 import { getLocalStudent } from "../database/localStudent";
 import { completeMathLesson, getMathProgress, isMathLessonCompleted } from "../database/localMath";
@@ -47,8 +47,9 @@ export function saveWorksheetCapture(studentId: string, instanceId: string, capt
     if (record.finalized) throw new Error("This copy is already finalized. Print a new copy to submit another attempt.");
     if (capture.validated !== true || capture.worksheetInstanceId !== instanceId ||
         capture.answers.length !== record.worksheet.questions.length) throw new Error("Capture does not match this worksheet.");
-    const previous = Date.parse(record.capture?.capturedAt ?? "");
-    const capturedAt = new Date(Math.max(Date.now(), (Number.isFinite(previous) ? previous : 0) + 1)).toISOString();
+    const now = Date.now();
+    const previous = worksheetTimestamp(record.capture?.capturedAt, now);
+    const capturedAt = new Date(Math.max(now, (previous ?? 0) + 1)).toISOString();
     db.runSync("UPDATE worksheet_instances SET capture = ?, photoUri = ?, review = NULL WHERE studentId = ? AND instanceId = ?",
       [JSON.stringify({ ...capture, capturedAt }), photoUri, studentId, instanceId]);
     addToSyncQueue("SYNC_WORKSHEET", { studentId, instanceId });
@@ -108,14 +109,14 @@ export function finalizeWorksheet(studentId: string, instanceId: string, teacher
       const lesson = mathLessons.find(l => l.id === Number(w.lessonId));
       if (!lesson || getMathProgress(studentId, lesson.id)?.unlocked !== 1) throw new Error("This Math level is locked.");
       completeMathLesson(studentId, lesson.id, score, 5, evaluated.stars,
-        isMathLessonCompleted(studentId, lesson.id) ? 0 : lesson.xpReward, true);
+        isMathLessonCompleted(studentId, lesson.id) ? 0 : lesson.xpReward, true, { type: "worksheet", instanceId });
     } else if (w.subject === "reading") {
-      saveReadingAssessment(studentId, w.lessonId, score, 5, true);
+      saveReadingAssessment(studentId, w.lessonId, score, 5, true, { type: "worksheet", instanceId });
     } else if (w.subject === "writing") {
       initializeWritingProgress(studentId);
       const progress = getWritingProgress(studentId, w.lessonId);
       if (progress?.unlocked !== 1) throw new Error("This Writing level is locked.");
-      if (passed) completeWritingLesson(studentId, w.lessonId, 3, true);
+      if (passed) completeWritingLesson(studentId, w.lessonId, 3, true, { type: "worksheet", instanceId });
     } else throw new Error("Unsupported worksheet subject.");
     result = { studentId, instanceId, subject: w.subject, lessonId: w.lessonId, answers: review.answers,
       writing: review.writing, score, total: 5, passed, stars: passed ? evaluated.stars : 0, teacherId, finalizedAt: new Date().toISOString() };

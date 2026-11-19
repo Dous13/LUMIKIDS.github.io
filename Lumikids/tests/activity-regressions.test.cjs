@@ -4,26 +4,20 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { loader, sqlite, hooks, nodes, native, root } = require('./runtime.cjs');
+const { fakeFirebase, quizProof } = require('./cloud-fixture.cjs');
 
 function fixture(filename, cloud = {}) {
   const storage = sqlite(filename);
   const uploads = [];
+  const records = new Map(['alice', 'bob'].map(id => ['students/' + id, { id, name: id, classCode: 'class', ...cloud }]));
+  const firebase = fakeFirebase(records, { async commit(writes) {
+    for (const [ref, payload] of writes) { uploads.push({ ref, payload }); records.set(ref, { ...records.get(ref), ...payload }); }
+  } });
   const load = loader({
     'expo-sqlite': { openDatabaseSync: () => storage.db },
     [path.join(root, 'src/services/firebase/firebase.ts')]: { db: {} },
-    'firebase/firestore': {
-      doc: (_, ...parts) => parts.join('/'), serverTimestamp: () => 'timestamp',
-      getDocFromServer: async () => ({ exists: () => true, data: () => cloud }),
-      runTransaction: async (_, work) => {
-        const writes = [];
-        const result = await work({
-          get: async () => ({ exists: () => true, data: () => cloud }),
-          set: (ref, payload) => writes.push({ ref, payload }),
-        });
-        uploads.push(...writes);
-        return result;
-      },
-    },
+    'firebase/auth': firebase.authMock, 'firebase/functions': firebase.functionsMock,
+    'firebase/firestore': { doc: (_, ...parts) => parts.join('/'), getDocFromServer: firebase.getStudent },
   });
   load('src/services/database/database.ts').initializeDatabase();
   const math = load('src/services/database/localMath.ts');
@@ -100,7 +94,7 @@ test('restart, account switching, stale cloud restore and queued upload retain o
   const filename = path.join(dir, 'progress.db');
   let f = fixture(filename);
   try {
-    f.math.completeMathLesson('alice', 1, 10, 10, 3, 50);
+    f.math.completeMathLesson('alice', 1, 10, 10, 3, 50, false, quizProof('math', 1));
     f.raw.close();
     f = fixture(filename, { mathProgress: { '1': { completed: false }, '2': { unlocked: false } } });
     assert.equal(f.math.isMathLessonUnlocked('alice', 2), true);

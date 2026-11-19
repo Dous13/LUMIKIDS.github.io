@@ -8,6 +8,10 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+backend/functions/curriculum/
+firebase-debug*.log
+firestore-debug*.log
+ui-debug*.log
 
 # Native
 .kotlin/

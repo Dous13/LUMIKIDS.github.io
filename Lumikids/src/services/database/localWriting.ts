@@ -1,7 +1,8 @@
 import { db } from "./database";
 import { writingLessons } from "../../data/writingLessons";
 import { addToSyncQueue } from "../sync/localQueue";
-import { awardLessonRewards, getLocalStudent } from "./localStudent";
+import { awardLessonRewards, getLocalStudent, stageLearningOperation } from "./localStudent";
+import type { LocalLearningOperation } from "../sync/learningOperation";
 
 type WritingProgress = { unlocked: number; completed: number; stars: number; lessonId: string };
 
@@ -77,6 +78,7 @@ export function completeWritingLesson(
   lessonId: string,
   stars: number,
   withinTransaction = false,
+  operation?: LocalLearningOperation,
 ) {
   const index = writingLessons.findIndex(lesson => lesson.id === lessonId);
   if (index < 0 || !Number.isInteger(stars) || stars < 0 || stars > 3) throw new Error("Invalid Writing completion.");
@@ -93,9 +95,9 @@ export function completeWritingLesson(
     );
     if (!previous.completed) {
       const lesson = writingLessons[index];
-      awardLessonRewards(studentId, "writing", lessonId, lesson.xp, lesson.coins);
+      awardLessonRewards(studentId, "writing", lessonId, lesson.xp, lesson.coins, operation);
       rewarded = true;
-    }
+    } else stageLearningOperation(studentId, operation);
     unlockNextWritingLesson(studentId, lessonId);
     addToSyncQueue("SYNC_STUDENT", { studentId });
   };

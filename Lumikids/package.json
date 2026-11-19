@@ -34,17 +34,22 @@
     "uuid": "^14.0.1"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0",
     "@react-native-community/cli": "^20.2.0",
     "@types/jpeg-js": "^0.3.0",
     "@types/react": "~19.3.0",
     "@types/uuid": "^10.0.0",
+    "firebase-tools": "^15.37.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:firebase": "node backend/functions/build-curriculum.cjs",
+    "test:firebase": "npm run build:firebase && firebase emulators:exec --only auth,firestore,functions --project demo-lumikids \"node --test tests/firebase-emulator.test.cjs\"",
+    "test:regressions": "npm run build:firebase && node --enable-source-maps --experimental-strip-types --test tests/activity-regressions.test.cjs tests/worksheets.test.cjs tests/offline-sync-regressions.test.cjs src/services/writing/tracingValidator.test.mjs"
   },
   "private": true,
   "allowScripts": {

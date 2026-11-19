@@ -4,10 +4,8 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Animated, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useAmbientFloat } from "../../hooks/useAmbientFloat";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  getSession,
-  clearSession,
-} from "../../services/session/session";
+import { getSession } from "../../services/session/session";
+import { hasStudentCloudSession, logoutStudent } from "../../services/student/studentLogin";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -36,6 +34,7 @@ export default function HomeScreen() {
 
   const [studentId, setStudentId] = useState("");
   const [logoutPrompt, setLogoutPrompt] = useState(false);
+  const [cloudAvailable, setCloudAvailable] = useState(true);
   const backgroundDrift = useAmbientFloat();
 
   useEffect(() => {
@@ -68,8 +67,16 @@ export default function HomeScreen() {
     }, [reload, studentId])
   );
 
+  useEffect(() => {
+    if (!studentId) return;
+    const update = () => setCloudAvailable(hasStudentCloudSession(studentId));
+    update();
+    const timer = setInterval(update, 2000);
+    return () => clearInterval(timer);
+  }, [studentId]);
+
   async function logout() {
-    await clearSession();
+    await logoutStudent().catch(() => undefined);
     navigation.reset({
       index: 0,
       routes: [{ name: "Welcome" }],
@@ -127,6 +134,12 @@ export default function HomeScreen() {
           contentContainerStyle={styles.content}
         >
           <HomeHeader name={student.name}/>
+          {!cloudAvailable && (
+            <TouchableOpacity accessibilityRole="button" style={styles.reconnect}
+              onPress={() => navigation.navigate("StudentLogin")}>
+              <Text style={styles.reconnectText}>Sign in to sync your saved progress</Text>
+            </TouchableOpacity>
+          )}
 
           <MascotCard avatar={student.avatar} />
 
@@ -192,6 +205,8 @@ const styles = StyleSheet.create({
   },
 
   content: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16, width: "100%", maxWidth: 720, alignSelf: "center" },
+  reconnect: { padding: 12, minHeight: 44, borderRadius: 12, marginBottom: 12, backgroundColor: "#FFFFFF" },
+  reconnectText: { color: "#176BC1", fontWeight: "800" },
 
   logoutPrompt: { position: "absolute", left: 20, right: 20, bottom: 180, backgroundColor: "#FFFFFF", borderRadius: 20, padding: 18, elevation: 1, borderWidth: 1, borderColor: "#E1E7E5", maxWidth: 680, alignSelf: "center" },
 

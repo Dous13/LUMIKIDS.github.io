@@ -3,7 +3,8 @@ import { readingLessons } from "../../data/readingLessons";
 import { addToSyncQueue } from "../sync/localQueue";
 import { bestAttempt, isAssessmentAttempt } from "../../utils/assessmentAttempt";
 import { evaluateQuiz } from "../../utils/ruleEngine";
-import { awardLessonRewards, getLocalStudent } from "./localStudent";
+import { awardLessonRewards, getLocalStudent, stageLearningOperation } from "./localStudent";
+import type { LocalLearningOperation } from "../sync/learningOperation";
 
 type ReadingProgress = { unlocked: number; completed: number; stars: number; quizScore: number; quizTotal: number };
 
@@ -85,6 +86,7 @@ export function saveReadingAssessment(
   quizScore: number,
   quizTotal: number,
   withinTransaction = false,
+  operation?: LocalLearningOperation,
 ) {
   const attempt = { quizScore, quizTotal };
   const index = readingLessons.findIndex(lesson => lesson.id === lessonId);
@@ -98,7 +100,7 @@ export function saveReadingAssessment(
     const previous = getLessonProgress(studentId, lessonId);
     if (previous?.unlocked !== 1) throw new Error("This Reading level is locked.");
     const best = bestAttempt(previous, attempt)!;
-    if (!result.passed && best === previous) return;
+    if (!result.passed && best === previous && !operation) return;
 
     db.runSync(
       `UPDATE lesson_progress SET completed = MAX(completed, ?), stars = MAX(stars, ?),
@@ -107,11 +109,12 @@ export function saveReadingAssessment(
     );
     if (result.passed) {
       if (!previous.completed) {
-        awardLessonRewards(studentId, "reading", lessonId, lesson.xp, lesson.coins);
+        awardLessonRewards(studentId, "reading", lessonId, lesson.xp, lesson.coins, operation);
         rewarded = true;
       }
       unlockNextLesson(studentId, lessonId);
     }
+    if (!rewarded) stageLearningOperation(studentId, operation);
     addToSyncQueue("SYNC_STUDENT", { studentId });
   };
   if (withinTransaction) commit();

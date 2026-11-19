@@ -1,5 +1,5 @@
 import { Colors } from "../../theme";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -11,6 +11,7 @@ import { writingLessons } from "../../data/writingLessons";
 import TracingCanvas from "../../components/writing/TracingCanvas";
 import { getSession } from "../../services/session/session";
 import { completeWritingLesson } from "../../services/database/localWriting";
+import type { LetterTrace } from "../../services/sync/learningOperation";
 
 type Phase = "uppercase" | "lowercase" | "word";
 
@@ -25,6 +26,7 @@ export default function TraceLetterScreen() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
+  const traces = useRef<LetterTrace[][]>([]);
 
   if (!lesson) return <SafeAreaView style={styles.center}><Text style={styles.error}>Lesson not found.</Text></SafeAreaView>;
   const validLesson = lesson;
@@ -64,7 +66,9 @@ export default function TraceLetterScreen() {
     }
 
     try {
-      const result = completeWritingLesson(session.studentId, validLesson.id, 3);
+      const result = completeWritingLesson(session.studentId, validLesson.id, 3, false, {
+        type: "trace", lessonId: validLesson.id, phases: [...traces.current],
+      });
       navigation.replace("Reward", {
         subject: "writing", lessonId: validLesson.id,
         xp: result.rewarded ? validLesson.xp : 0,
@@ -101,6 +105,7 @@ export default function TraceLetterScreen() {
               target={target}
               resetKey={resetKey}
               onPhaseComplete={setIsPhaseComplete}
+              onTraceComplete={letters => { traces.current[phaseNumber - 1] = letters; }}
               onDrawingStart={() => setIsDrawing(true)}
               onDrawingEnd={() => setIsDrawing(false)}
             />

@@ -1,3 +1,4 @@
+const { fakeFirebase } = require('./cloud-fixture.cjs');
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const fs = require('node:fs');
@@ -82,25 +83,22 @@ test('scanner rejects cropped pages, missing markers, blur, dark, overexposed an
 
 function fixture(filename, cloud = new Map()) {
   const storage = sqlite(filename); let failUpload = false, failRootOnce = false;
+  const firebase = fakeFirebase(cloud, {
+    network() { if (failUpload) throw new Error('offline'); },
+    async commit(writes) {
+      if (failRootOnce && writes.some(([ref]) => ref === 'students/alice')) {
+        failRootOnce = false; throw new Error('interrupted worksheet transaction');
+      }
+      for (const [ref, payload] of writes) cloud.set(ref, { ...cloud.get(ref), ...payload });
+    },
+  });
   const load = loader({ 'expo-sqlite': { openDatabaseSync: () => storage.db },
     [path.join(root, 'src/services/firebase/firebase.ts')]: { db: {} },
+    'firebase/auth': firebase.authMock, 'firebase/functions': firebase.functionsMock,
     'firebase/firestore': {
-      doc: (_, ...parts) => parts.join('/'), collection: (_, ...parts) => parts.join('/'), serverTimestamp: () => 'now',
+      doc: (_, ...parts) => parts.join('/'), collection: (_, ...parts) => parts.join('/'),
+      getDocFromServer: firebase.getStudent,
       getDocsFromServer: async ref => ({ docs: [...cloud].filter(([key]) => key.startsWith(ref + '/')).map(([key, value]) => ({ id: key.split('/').at(-1), data: () => value })) }),
-      runTransaction: async (_, callback) => {
-        if (failUpload) throw new Error('offline');
-        const writes = [];
-        const result = await callback({
-          get: async ref => ({ exists: () => cloud.has(ref), data: () => cloud.get(ref) }),
-          set: (ref, payload) => writes.push([ref, payload]),
-        });
-        if (failRootOnce && writes.some(([ref]) => ref === 'students/alice')) {
-          failRootOnce = false;
-          throw new Error('interrupted after result upload');
-        }
-        for (const [ref, payload] of writes) cloud.set(ref, { ...cloud.get(ref), ...payload });
-        return result;
-      },
     },
   });
   load('src/services/database/database.ts').initializeDatabase();
@@ -141,11 +139,11 @@ test('end-to-end: issue → HTML → synthetic JPEG → correction draft → res
     assert.equal(math.isMathLessonUnlocked('alice', 2), true); assert.equal(math.isMathLessonUnlocked('bob', 2), false);
     assert.equal(f.store.getWorksheetHistory('bob').length, 0);
     assert.deepEqual({ ...f.db.getFirstSync('SELECT mathXP, coins FROM student WHERE id = ?', ['alice']) }, { mathXP: 50, coins: 15 });
-    f.offline(true); await f.load('src/services/sync/processQueue.ts').processQueue();
+    f.offline(true); await f.load('src/services/sync/processQueue.ts').processQueue(undefined, () => true);
     assert.ok(f.db.getFirstSync('SELECT COUNT(*) AS n FROM sync_queue WHERE synced = 0').n > 0);
     f.offline(false);
-    cloud.set('students/alice', { mathProgress: { '1': { completed: false }, '2': { unlocked: false } } });
-    await f.load('src/services/sync/processQueue.ts').processQueue();
+    cloud.set('students/alice', { ...cloud.get('students/alice'), mathProgress: { '1': { completed: false }, '2': { unlocked: false } } });
+    await f.load('src/services/sync/processQueue.ts').processQueue(undefined, () => true);
     assert.equal(f.db.getFirstSync('SELECT COUNT(*) AS n FROM sync_queue WHERE synced = 0').n, 0);
     const remote = cloud.get('students/alice/worksheetResults/' + w.instanceId);
     assert.deepEqual(remote.finalized, result); assert.equal(remote.worksheet.studentId, 'alice');
@@ -217,7 +215,7 @@ test('cloud map ordering cannot change the printed identity; older cloud records
     f.cloud.set('students/alice/worksheetResults/' + w.instanceId, { worksheet: w, finalized: { ...result, score: 0 } });
     await f.load('src/services/sync/syncWorksheet.ts').restoreWorksheetHistory('alice');
     assert.deepEqual(f.store.getWorksheetRecord('alice', w.instanceId).finalized, result);
-    await assert.rejects(f.load('src/services/sync/syncWorksheet.ts').syncWorksheet('alice', w.instanceId), /finalized differently/);
+    await assert.rejects(f.load('src/services/sync/syncWorksheet.ts').syncWorksheet('alice', w.instanceId, () => true), /same worksheet result|finalized differently/);
     assert.equal(f.cloud.get('students/alice/worksheetResults/' + w.instanceId).finalized.score, 0);
   } finally { f.raw.close(); }
 });
@@ -265,6 +263,7 @@ test('real capture and review handlers connect camera output to persisted correc
         useFocusEffect: fn => r.React.useEffect(fn, []) },
       [path.join(root, 'src/components/common/MotionTouchable.tsx')]: { __esModule: true, default: 'Button' },
       [path.join(root, 'src/services/session/session.ts')]: { getSession: async () => null },
+      [path.join(root, 'src/services/student/studentLogin.ts')]: f.load('src/services/student/studentLogin.ts'),
       [path.join(root, 'src/services/teacher/teacherSession.ts')]: { getTeacherSession: async () => ({ teacherId: 'teacher' }) },
       [path.join(root, 'src/services/phygital/worksheetStore.ts')]: f.store,
       [path.join(root, 'src/services/sync/syncWorksheet.ts')]: f.load('src/services/sync/syncWorksheet.ts'),
@@ -282,7 +281,7 @@ test('real capture and review handlers connect camera output to persisted correc
   } finally { f.raw.close(); }
 });
 
-test('interruption after result upload retains the same result ID and retries progress synchronization', async () => {
+test('an interrupted worksheet transaction leaves both result and progress pending for retry', async () => {
   const f = fixture();
   try {
     const w = f.store.issueWorksheet('alice', 'math', 1, crypto.randomUUID());
@@ -291,9 +290,9 @@ test('interruption after result upload retains the same result ID and retries pr
     f.store.finalizeWorksheet('alice', w.instanceId, 'teacher');
     const { syncWorksheet } = f.load('src/services/sync/syncWorksheet.ts');
     f.interruptProgressUpload();
-    await assert.rejects(syncWorksheet('alice', w.instanceId), /interrupted/);
-    assert.ok(f.cloud.get('students/alice/worksheetResults/' + w.instanceId).finalized);
-    await syncWorksheet('alice', w.instanceId);
+    await assert.rejects(syncWorksheet('alice', w.instanceId, () => true), /interrupted/);
+    assert.equal(f.cloud.has('students/alice/worksheetResults/' + w.instanceId), false);
+    await syncWorksheet('alice', w.instanceId, () => true);
     assert.equal(f.cloud.get('students/alice').mathProgress['2'].unlocked, true);
     assert.equal([...f.cloud.keys()].filter(k => k.includes('worksheetResults')).length, 1);
     assert.equal(f.db.getFirstSync('SELECT coins FROM student WHERE id = ?', ['alice']).coins, 15);

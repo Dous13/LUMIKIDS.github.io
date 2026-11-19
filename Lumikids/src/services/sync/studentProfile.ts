@@ -11,7 +11,7 @@ type Profile = Counters & Pick<Student, "id" | "name" | "classCode" | "avatar" |
 export type CloudStudent = Partial<Omit<Profile, "ownedMascots"> & StudentProgress> & {
   teacherId?: string;
   ownedMascots?: unknown;
-  profileReceipts?: Record<string, number>;
+  mistakes?: Record<string, { subject: string; lessonId: string; questionKey: string; count: number }>;
   profileRevision?: number;
 };
 
@@ -23,11 +23,15 @@ type Change = {
   coins: number;
   avatar: string | null;
   mascotId: string | null;
+  operation: string | null;
+  syncRejection: string | null;
 };
 
 const progressKey = { reading: "readingProgress", writing: "writingProgress", math: "mathProgress" } as const;
 const safeNumber = (value: unknown, fallback: number) => typeof value === "number" && Number.isSafeInteger(value) ? value : fallback;
 export const profileRevision = (cloud: CloudStudent) => Math.max(0, safeNumber(cloud.profileRevision, 0));
+export const hasConfirmedWallet = (profile?: CloudStudent) => safeNumber(profile?.coins, -1) >= 0 &&
+  typeof profile?.avatar === "string" && profile.avatar.length > 0;
 
 export function readProfile(studentId: string) {
   const local = getLocalStudent(studentId);
@@ -43,7 +47,9 @@ export function readProfile(studentId: string) {
   return { local, state, confirmed, changes, mascots: getOwnedMascots(studentId).map(item => item.mascotId) };
 }
 
-export function mergeStudentProfile(studentId: string, cloud: CloudStudent, snapshot?: ReturnType<typeof readProfile>) {
+export function mergeStudentProfile(
+  studentId: string, cloud: CloudStudent, snapshot?: ReturnType<typeof readProfile>, acknowledged = new Set<number>(),
+) {
   if ((cloud.id !== undefined && cloud.id !== studentId) ||
     (cloud.classCode !== undefined && snapshot && cloud.classCode !== snapshot.local.classCode)) {
     throw new Error("Student identity or classroom does not match the saved account.");
@@ -58,10 +64,10 @@ export function mergeStudentProfile(studentId: string, cloud: CloudStudent, snap
     local: undefined, state: undefined, confirmed: undefined, changes: [], mascots: [],
   };
   const authority = confirmed && profileRevision(cloud) <= profileRevision(confirmed) ? confirmed : cloud;
-  const receipt = state ? safeNumber(cloud.profileReceipts?.[state.deviceId], -1) : -1;
-  const legacy = state?.legacyProfile && receipt < 0
+  const legacy = state?.legacyProfile
     ? JSON.parse(state.legacyProfile) as Partial<Counters & { avatar: string }>
     : undefined;
+  const legacyWallet = hasConfirmedWallet(confirmed) ? undefined : legacy;
   const deltas: Counters = { xp: 0, readingXP: 0, writingXP: 0, mathXP: 0, coins: 0 };
   for (const change of changes) {
     deltas.xp += change.xp;
@@ -74,18 +80,19 @@ export function mergeStudentProfile(studentId: string, cloud: CloudStudent, snap
     const localBase = safeNumber(local?.[field], 0) - deltas[field];
     const remote = safeNumber(authority[field], localBase);
     values[field] = field === "coins"
-      ? safeNumber(legacy?.coins, remote)
+      ? safeNumber(legacyWallet?.coins, remote)
       : Math.max(localBase, remote, safeNumber(legacy?.[field], 0));
   }
 
   const remoteMascots = new Set<string>(["default"]);
-  if (Array.isArray(cloud.ownedMascots)) {
-    for (const mascot of cloud.ownedMascots) if (typeof mascot === "string" && mascot) remoteMascots.add(mascot);
+  const cloudMascots = authority.ownedMascots ?? cloud.ownedMascots;
+  if (Array.isArray(cloudMascots)) {
+    for (const mascot of cloudMascots) if (typeof mascot === "string" && mascot) remoteMascots.add(mascot);
   }
-  let avatar = legacy?.avatar ?? authority.avatar ?? local?.avatar ?? "default";
+  let avatar = legacyWallet?.avatar ?? authority.avatar ?? local?.avatar ?? "default";
   const cloudProgress = mergeProgress({}, cloud);
   for (const change of changes) {
-    if (change.id <= receipt) continue;
+    if (acknowledged.has(change.id) || (change.syncRejection && (change.mascotId || change.avatar))) continue;
     if (change.subject && change.lessonId) {
       const remoteProgress = cloudProgress[progressKey[change.subject]];
       if (flag(remoteProgress?.[change.lessonId]?.completed)) continue;
@@ -110,11 +117,12 @@ export function mergeStudentProfile(studentId: string, cloud: CloudStudent, snap
 
 export function rememberConfirmedProfile(studentId: string, cloud: CloudStudent, previous?: CloudStudent) {
   if (profileRevision(cloud) <= (previous ? profileRevision(previous) : 0)) return;
-  const { xp, coins, readingXP, writingXP, mathXP, avatar, profileRevision: revision } = cloud;
+  if (!hasConfirmedWallet(cloud)) return;
+  const { xp, coins, readingXP, writingXP, mathXP, avatar, ownedMascots, profileRevision: revision } = cloud;
   db.runSync(
     `INSERT INTO student_profile_sync (studentId, confirmedProfile) VALUES (?, ?)
      ON CONFLICT(studentId) DO UPDATE SET confirmedProfile = excluded.confirmedProfile`,
-    [studentId, JSON.stringify({ xp, coins, readingXP, writingXP, mathXP, avatar, profileRevision: revision })],
+    [studentId, JSON.stringify({ xp, coins, readingXP, writingXP, mathXP, avatar, ownedMascots, profileRevision: revision })],
   );
 }
 

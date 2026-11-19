@@ -2,8 +2,13 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function teacherAccount() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'password' &&
+        request.auth.token.get('role', '') != 'student' && !request.auth.uid.matches('^student:.*');
+    }
+
     function isTeacher() {
-      return request.auth != null &&
+      return teacherAccount() &&
         exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
     }
 
@@ -13,114 +18,108 @@ service cloud.firestore {
     }
 
     function assignedTeacher(student) {
-      return isTeacher() && student.teacherId == request.auth.uid && ownsClass(student.classCode);
+      return teacherAccount() && student.teacherId == request.auth.uid && ownsClass(student.classCode);
+    }
+
+    function verifiedEnrollment(student) {
+      let classroom = get(/databases/$(database)/documents/classes/$(student.classCode)).data;
+      let rosterPath = /databases/$(database)/documents/classes/$(student.classCode)/students/$(student.id);
+      return classroom.code == student.classCode && classroom.teacherId == student.teacherId &&
+        exists(/databases/$(database)/documents/teachers/$(student.teacherId)) &&
+        (exists(rosterPath)
+          ? get(rosterPath).data.id == student.id && get(rosterPath).data.classCode == student.classCode &&
+            get(rosterPath).data.teacherId == student.teacherId
+          : !student.keys().hasAny(['preferredNameLower']));
+    }
+
+    function currentStudentGrant(studentId) {
+      let path = /databases/$(database)/documents/studentAccess/$(studentId);
+      return exists(path)
+        ? get(path).data.enabled == true && request.auth.token.sessionVersion == get(path).data.version
+        : request.auth.token.sessionVersion == 0;
+    }
+
+    function ownsStudent(student) {
+      return request.auth != null && request.auth.token.get('role', '') == 'student' &&
+        request.auth.token.studentId == student.id && request.auth.uid == 'student:' + student.id &&
+        request.auth.token.classCode == student.classCode &&
+        currentStudentGrant(student.id) && verifiedEnrollment(student);
     }
 
     function canReadStudent(studentId, student) {
-      return student.id == studentId && assignedTeacher(student);
+      return student.id == studentId && (assignedTeacher(student) || ownsStudent(student));
     }
 
-    function progressFields() {
-      return ['xp', 'coins', 'level', 'streak', 'readingXP', 'writingXP', 'mathXP',
-        'avatar', 'ownedMascots', 'mistakes', 'readingProgress', 'writingProgress',
-        'mathProgress', 'updatedAt'];
+    function nonempty(value, maximum) {
+      return value is string && value.size() > 0 && value.size() <= maximum;
     }
 
-    function validStudentUpdate(studentId, fields) {
-      return canReadStudent(studentId, resource.data) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
-    }
-
-    function sameRosterIdentity(student, other) {
-      return student.id == other.id && student.teacherId == other.teacherId &&
-        student.classCode == other.classCode;
-    }
-
-    function sameProgress(student, roster) {
-      return !student.diff(roster).affectedKeys().hasAny(progressFields());
+    function validInitialStudent(studentId, code, data) {
+      let fields = ['id', 'fullName', 'name', 'preferredName', 'preferredNameLower', 'classCode',
+        'teacherId', 'xp', 'coins', 'level', 'streak', 'readingXP', 'writingXP', 'mathXP', 'avatar', 'createdAt'];
+      return data.keys().hasAll(fields) && data.keys().hasOnly(fields) &&
+        data.id == studentId && studentId.matches('^[A-Za-z0-9_-]{1,96}$') &&
+        data.classCode == code && data.teacherId == request.auth.uid &&
+        nonempty(data.fullName, 120) && nonempty(data.name, 100) &&
+        data.name == data.preferredName && data.preferredNameLower == data.name.lower() &&
+        data.xp is int && data.xp == 0 && data.coins is int && data.coins == 0 &&
+        data.level is int && data.level == 1 && data.streak is int && data.streak == 0 &&
+        data.readingXP is int && data.readingXP == 0 && data.writingXP is int && data.writingXP == 0 &&
+        data.mathXP is int && data.mathXP == 0 && data.avatar == 'default' && data.createdAt == request.time;
     }
 
     match /teachers/{teacherId} {
-      allow get: if request.auth != null && teacherId == request.auth.uid;
-      allow create: if request.auth != null && teacherId == request.auth.uid &&
+      allow get: if teacherAccount() && teacherId == request.auth.uid;
+      allow create: if teacherAccount() && teacherId == request.auth.uid &&
+        request.resource.data.keys().hasOnly(['id', 'name', 'email', 'createdAt']) &&
         request.resource.data.id == teacherId &&
-        request.resource.data.keys().hasOnly(['id', 'name', 'email', 'createdAt']);
+        nonempty(request.resource.data.name, 100) &&
+        request.resource.data.email == request.auth.token.email.lower() &&
+        request.resource.data.createdAt == request.time;
     }
 
     match /classes/{code} {
       allow get, list: if isTeacher() && resource.data.teacherId == request.auth.uid;
-      allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid &&
-        request.resource.data.code == code &&
-        request.resource.data.keys().hasOnly(['code', 'teacherId', 'teacherName', 'name', 'createdAt']);
+      allow create: if isTeacher() && code.matches('^[A-Z2-9]{6}$') &&
+        request.resource.data.keys().hasOnly(['code', 'teacherId', 'teacherName', 'name', 'createdAt']) &&
+        request.resource.data.teacherId == request.auth.uid && request.resource.data.code == code &&
+        nonempty(request.resource.data.teacherName, 100) && nonempty(request.resource.data.name, 120) &&
+        request.resource.data.createdAt == request.time;
 
       match /students/{studentId} {
-        function rosterStudent() {
-          return getAfter(/databases/$(database)/documents/students/$(studentId)).data;
-        }
-
-        allow get: if resource.data.classCode == code && resource.data.id == studentId &&
-          ownsClass(code) && resource.data.teacherId == request.auth.uid;
+        allow get: if ownsClass(code) && resource.data.classCode == code &&
+          resource.data.id == studentId && resource.data.teacherId == request.auth.uid;
         allow list: if ownsClass(code) && resource.data.teacherId == request.auth.uid;
-        allow create: if ownsClass(code) && request.resource.data.teacherId == request.auth.uid &&
-          request.resource.data.id == studentId && request.resource.data.classCode == code &&
-          request.resource.data == rosterStudent();
-        allow update: if resource.data.classCode == code &&
-          validStudentUpdate(studentId, progressFields()) &&
-          sameRosterIdentity(request.resource.data, rosterStudent()) &&
-          sameProgress(request.resource.data, rosterStudent());
+        allow create: if ownsClass(code) && validInitialStudent(studentId, code, request.resource.data) &&
+          request.resource.data == getAfter(/databases/$(database)/documents/students/$(studentId)).data;
       }
     }
 
     match /students/{studentId} {
-      function matchingRoster(student) {
-        return getAfter(/databases/$(database)/documents/classes/$(student.classCode)/students/$(studentId)).data;
-      }
-
       allow get: if canReadStudent(studentId, resource.data);
-      allow create: if request.resource.data.id == studentId && assignedTeacher(request.resource.data) &&
-        request.resource.data == matchingRoster(request.resource.data);
-      allow update: if validStudentUpdate(studentId, progressFields().concat(['profileReceipts', 'profileRevision'])) &&
-        request.resource.data.profileRevision is int &&
-        request.resource.data.profileRevision > resource.data.get('profileRevision', 0) &&
-        sameRosterIdentity(request.resource.data, matchingRoster(resource.data)) &&
-        sameProgress(request.resource.data, matchingRoster(resource.data));
+      allow create: if assignedTeacher(request.resource.data) &&
+        validInitialStudent(studentId, request.resource.data.classCode, request.resource.data) &&
+        request.resource.data == getAfter(/databases/$(database)/documents/classes/$(request.resource.data.classCode)/students/$(studentId)).data;
 
       match /worksheetResults/{instanceId} {
-        function student() {
-          return get(/databases/$(database)/documents/students/$(studentId)).data;
-        }
-
-        function validCapture() {
-          let capture = request.resource.data.get('capture', null);
-          return capture == null || (capture is map && capture.validated == true &&
-            capture.worksheetInstanceId == instanceId && capture.answers is list && capture.answers.size() == 5);
-        }
-
-        function validFinalization() {
-          let data = request.resource.data;
-          let result = data.get('finalized', null);
-          return !data.keys().hasAny(['finalized']) || (result is map && assignedTeacher(student()) &&
-            data.get('capture', null) is map && result.teacherId == request.auth.uid &&
-            result.studentId == studentId && result.instanceId == instanceId &&
-            result.subject == data.worksheet.subject && result.lessonId == data.worksheet.lessonId &&
-            result.total == 5 && result.score is int && result.score >= 0 && result.score <= 5 &&
-            result.passed is bool && result.finalizedAt is string &&
-            (result.subject == 'writing' ? result.writing.size() == 5 : result.answers.size() == 5));
-        }
-
-        function validWorksheet() {
-          let data = request.resource.data;
-          return data.keys().hasOnly(['worksheet', 'capture', 'finalized']) &&
-            data.worksheet.studentId == studentId && data.worksheet.instanceId == instanceId &&
-            validCapture() && validFinalization();
-        }
-
-        allow get, list: if canReadStudent(studentId, student());
-        allow create: if canReadStudent(studentId, student()) && validWorksheet();
-        allow update: if canReadStudent(studentId, student()) &&
-          resource.data.get('finalized', null) == null &&
-          request.resource.data.worksheet == resource.data.worksheet && validWorksheet();
+        allow get, list: if canReadStudent(studentId, get(/databases/$(database)/documents/students/$(studentId)).data);
       }
+
+      match /syncReceipts/{receiptId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /loginLimits/{bucketId} {
+      allow read, write: if false;
+    }
+
+    match /studentAccess/{studentId} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

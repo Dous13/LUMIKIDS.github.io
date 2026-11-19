@@ -9,11 +9,13 @@ import {
 
 import LetterGuide from "./LetterGuide";
 import { writingStrokeTemplates } from "../../data/writingStrokeTemplates";
+import type { LetterTrace } from "../../services/sync/learningOperation";
 
 type Props = {
   target: string;
   resetKey: number;
   onPhaseComplete: (complete: boolean) => void;
+  onTraceComplete?: (letters: LetterTrace[]) => void;
   onDrawingStart?: () => void;
   onDrawingEnd?: () => void;
 };
@@ -22,6 +24,7 @@ export default function TracingCanvas({
   target,
   resetKey,
   onPhaseComplete,
+  onTraceComplete,
   onDrawingStart,
   onDrawingEnd,
 }: Props) {
@@ -41,14 +44,16 @@ export default function TracingCanvas({
   const targetRef = useRef(target);
   sizeRef.current = size;
   targetRef.current = target;
-  const callbacks = useRef({ onPhaseComplete, onDrawingStart, onDrawingEnd });
-  callbacks.current = { onPhaseComplete, onDrawingStart, onDrawingEnd };
+  const traces = useRef<LetterTrace[]>([]);
+  const callbacks = useRef({ onPhaseComplete, onTraceComplete, onDrawingStart, onDrawingEnd });
+  callbacks.current = { onPhaseComplete, onTraceComplete, onDrawingStart, onDrawingEnd };
 
   useEffect(() => {
     letterIndexRef.current = 0;
     setLetterIndex(0);
     currentStroke.current = [];
     strokesRef.current = [];
+    traces.current = [];
     setStrokes([]);
     active.current = false;
     setFeedback("");
@@ -120,6 +125,10 @@ export default function TracingCanvas({
         setStrokes(accepted);
         const letterComplete = valid && accepted.length === expected.length;
         const phaseComplete = letterComplete && letterIndexRef.current === currentLetters.length - 1;
+        if (letterComplete) {
+          traces.current[letterIndexRef.current] = { ...sizeRef.current, strokes: accepted };
+          if (phaseComplete) callbacks.current.onTraceComplete?.([...traces.current]);
+        }
         const remaining = expected.length - accepted.length;
         setFeedback(valid ? (letterComplete ? "Wonderful! You completed the letter!" :
           remaining === 1 ? "Great job! One more stroke!" : "Great job! Follow the next green number.") :

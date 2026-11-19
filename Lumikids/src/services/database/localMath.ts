@@ -2,7 +2,8 @@ import { db } from "./database";
 import { mathLessons } from "../../data/mathLessons";
 import { addToSyncQueue } from "../sync/localQueue";
 import { evaluateQuiz } from "../../utils/ruleEngine";
-import { awardLessonRewards, getLocalStudent } from "./localStudent";
+import { awardLessonRewards, getLocalStudent, stageLearningOperation } from "./localStudent";
+import type { LocalLearningOperation } from "../sync/learningOperation";
 import { bestAttempt, isAssessmentAttempt } from "../../utils/assessmentAttempt";
 
 // lessonId has TEXT affinity. Native numeric bindings can produce "2.0",
@@ -137,7 +138,8 @@ export function completeMathLesson(
   quizTotal: number,
   stars: number,
   xpEarned: number,
-  withinTransaction = false
+  withinTransaction = false,
+  operation?: LocalLearningOperation,
 ): boolean {
   if (
     !isAssessmentAttempt({ quizScore, quizTotal }) ||
@@ -170,6 +172,7 @@ export function completeMathLesson(
       quizScore,
       quizTotal,
       withinTransaction,
+      operation,
     );
 
     return false;
@@ -245,8 +248,8 @@ export function completeMathLesson(
 
     // Commit rewards with completion so a failed save can be retried safely.
     if (!progress.completed) {
-      awardLessonRewards(studentId, "math", lessonId, xpEarned, ruleResult.stars * 5);
-    }
+      awardLessonRewards(studentId, "math", lessonId, xpEarned, ruleResult.stars * 5, operation);
+    } else stageLearningOperation(studentId, operation);
     addToSyncQueue("SYNC_STUDENT", { studentId });
     completed = true;
   };
@@ -273,6 +276,7 @@ export function saveMathQuizProgress(
   quizScore: number,
   quizTotal: number,
   withinTransaction = false,
+  operation?: LocalLearningOperation,
 ) {
   const attempt = { quizScore, quizTotal };
   if (!isAssessmentAttempt(attempt)) {
@@ -281,12 +285,15 @@ export function saveMathQuizProgress(
 
   const commit = () => {
     const previous = getMathProgress(studentId, lessonId);
-    if (!previous || bestAttempt(previous, attempt) !== attempt) return;
-    db.runSync(
-      `UPDATE math_progress SET quizScore = ?, quizTotal = ?, synced = 0
-       WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?`,
-      [quizScore, quizTotal, studentId, lessonId],
-    );
+    if (!previous) return;
+    if (bestAttempt(previous, attempt) === attempt) {
+      db.runSync(
+        `UPDATE math_progress SET quizScore = ?, quizTotal = ?, synced = 0
+         WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?`,
+        [quizScore, quizTotal, studentId, lessonId],
+      );
+    } else if (!operation) return;
+    stageLearningOperation(studentId, operation);
     addToSyncQueue("SYNC_STUDENT", { studentId });
   };
   if (withinTransaction) commit();

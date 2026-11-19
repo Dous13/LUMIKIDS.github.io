@@ -68,10 +68,10 @@ export default function AppNavigator() {
         void refreshVerifiedIdentity().then(requireSession).catch(requireSession);
         void refreshStudentSession().then(requireSession).catch(requireSession);
         if (getActiveStudentSession() || getVerifiedIdentity()) {
-          void processQueue(studentId => {
+          void processQueue((studentId, action) => {
             if (getActiveStudentSession()) return canSyncStudentSession(studentId);
             const teacher = getVerifiedIdentity();
-            return !!teacher && hasWorksheetReviewAccess(teacher.user.uid, studentId);
+            return action === "SYNC_WORKSHEET" && !!teacher && hasWorksheetReviewAccess(teacher.user.uid, studentId);
           }, (studentId, reviewerId) => {
             return getVerifiedIdentity()?.user.uid === reviewerId && hasWorksheetReviewAccess(reviewerId, studentId);
           }).catch(error => console.warn("Could not check pending sync work.", error));
