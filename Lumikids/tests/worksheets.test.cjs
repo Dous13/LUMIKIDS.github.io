@@ -86,8 +86,7 @@ function fixture(filename, cloud = new Map()) {
     [path.join(root, 'src/services/firebase/firebase.ts')]: { db: {} },
     'firebase/firestore': {
       doc: (_, ...parts) => parts.join('/'), collection: (_, ...parts) => parts.join('/'), serverTimestamp: () => 'now',
-      getDoc: async ref => ({ exists: () => cloud.has(ref), data: () => cloud.get(ref) }),
-      getDocs: async ref => ({ docs: [...cloud].filter(([key]) => key.startsWith(ref + '/')).map(([key, value]) => ({ id: key.split('/').at(-1), data: () => value })) }),
+      getDocsFromServer: async ref => ({ docs: [...cloud].filter(([key]) => key.startsWith(ref + '/')).map(([key, value]) => ({ id: key.split('/').at(-1), data: () => value })) }),
       runTransaction: async (_, callback) => {
         if (failUpload) throw new Error('offline');
         const writes = [];
@@ -95,19 +94,19 @@ function fixture(filename, cloud = new Map()) {
           get: async ref => ({ exists: () => cloud.has(ref), data: () => cloud.get(ref) }),
           set: (ref, payload) => writes.push([ref, payload]),
         });
+        if (failRootOnce && writes.some(([ref]) => ref === 'students/alice')) {
+          failRootOnce = false;
+          throw new Error('interrupted after result upload');
+        }
         for (const [ref, payload] of writes) cloud.set(ref, { ...cloud.get(ref), ...payload });
         return result;
-      },
-      setDoc: async (ref, payload) => {
-        if (failUpload) throw new Error('offline');
-        if (failRootOnce && ref === 'students/alice') { failRootOnce = false; throw new Error('interrupted after result upload'); }
-        cloud.set(ref, { ...cloud.get(ref), ...payload });
       },
     },
   });
   load('src/services/database/database.ts').initializeDatabase();
   const store = load('src/services/phygital/worksheetStore.ts');
   for (const id of ['alice', 'bob']) {
+    if (!cloud.has('students/' + id)) cloud.set('students/' + id, { id, name: id, classCode: 'class' });
     storage.db.runSync('INSERT OR IGNORE INTO student (id, name, classCode) VALUES (?, ?, ?)', [id, id, 'class']);
     load('src/services/database/localMath.ts').initializeMathProgress(id);
     store.cacheWorksheetReviewAccess('teacher', id, 'class');

@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
+import { AppState } from "react-native";
 import { RootStackParamList } from "../types/navigation";
 import SplashScreen from "../screens/splash/SplashScreen";
 import WelcomeScreen from "../screens/onboarding/WelcomeScreen";
@@ -10,7 +11,7 @@ import DashboardScreen from "../screens/student/DashboardScreen";
 import ReadingScreen from "../screens/reading/ReadingScreen";
 import LessonScreen from "../screens/reading/LessonScreen";
 import QuizScreen from "../screens/reading/QuizScreen";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { initializeDatabase } from "../services/database/database";
 import RewardScreen from "../screens/student/RewardScreen";
 import ShopScreen from "../screens/shop/ShopScreen";
@@ -31,10 +32,28 @@ import WorksheetPreviewScreen from "../screens/phygital/WorksheetPreviewScreen";
 import WorksheetReviewScreen from "../screens/phygital/WorksheetReviewScreen";
 import LessonActivityChoiceScreen from "../screens/student/LessonActivityChoiceScreen";
 import RemedialQuizScreen from "../screens/student/RemedialQuizScreen";
+import { auth, clearLegacyTeacherAuthStorage } from "../services/firebase/firebase";
+import { getVerifiedIdentity, refreshVerifiedIdentity } from "../services/session/verifiedIdentity";
+import { getActiveStudentSession } from "../services/session/session";
+import { canSyncStudentSession, refreshStudentSession } from "../services/student/studentLogin";
+import { hasWorksheetReviewAccess } from "../services/phygital/worksheetStore";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const publicRoutes = new Set(["Splash", "Welcome", "StudentLogin", "TeacherLogin"]);
+const teacherRoutes = new Set(["TeacherHome", "TeacherClass", "TeacherStudent"]);
 
 export default function AppNavigator() {
+  const navigation = useNavigationContainerRef<RootStackParamList>();
+  const requireSession = useCallback(() => {
+    const route = navigation.getCurrentRoute();
+    if (!route || publicRoutes.has(route.name)) return;
+    const student = getActiveStudentSession();
+    const teacher = getVerifiedIdentity();
+    const allowed = teacherRoutes.has(route.name) ? teacher
+      : route.name === "WorksheetReview" ? student || teacher
+      : student;
+    if (!allowed) navigation.resetRoot({ index: 0, routes: [{ name: "Welcome" }] });
+  }, [navigation]);
 
   useEffect(() => {
     try {
@@ -42,21 +61,38 @@ export default function AppNavigator() {
       initializeDatabase();
       console.log("Database initialized!");
 
-      processQueue();
-
-      const interval = setInterval(() => {
-        processQueue();
-      }, 5000);
-
-      return () => clearInterval(interval);
+      void clearLegacyTeacherAuthStorage().catch(error => console.warn("Could not clear legacy teacher storage.", error));
+      const tick = () => {
+        requireSession();
+        if (AppState.currentState === "background") return;
+        void refreshVerifiedIdentity().then(requireSession).catch(requireSession);
+        void refreshStudentSession().then(requireSession).catch(requireSession);
+        if (getActiveStudentSession() || getVerifiedIdentity()) {
+          void processQueue(studentId => {
+            if (getActiveStudentSession()) return canSyncStudentSession(studentId);
+            const teacher = getVerifiedIdentity();
+            return !!teacher && hasWorksheetReviewAccess(teacher.user.uid, studentId);
+          }, (studentId, reviewerId) => {
+            return getVerifiedIdentity()?.user.uid === reviewerId && hasWorksheetReviewAccess(reviewerId, studentId);
+          }).catch(error => console.warn("Could not check pending sync work.", error));
+        }
+      };
+      const interval = setInterval(tick, 5000);
+      const subscription = AppState.addEventListener("change", state => { if (state === "active") tick(); });
+      const unsubscribe = auth.onAuthStateChanged(requireSession);
+      return () => {
+        clearInterval(interval);
+        subscription.remove();
+        unsubscribe();
+      };
 
     } catch (e) {
       console.error("Database failed:", e);
     }
-  }, []);
+  }, [requireSession]);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigation} onStateChange={requireSession}>
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{

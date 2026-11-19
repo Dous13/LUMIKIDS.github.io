@@ -2,7 +2,7 @@ import { Colors } from "../../theme";
 import AnimatedProgress from "../../components/common/AnimatedProgress";
 import FadeIn from "../../components/common/FadeIn";
 import TouchableOpacity from "../../components/common/MotionTouchable";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { ScrollView, View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -17,19 +17,9 @@ import ExitLessonModal from "../../components/common/ExitLessonModal";
 import { useExitLessonGuard } from "../../hooks/useExitLessonGuard";
 import { readingQuizzes } from "../../data/readingQuizzes";
 import { RootStackParamList } from "../../types/navigation";
-import { evaluateQuiz } from "../../utils/ruleEngine";
 import { getSession } from "../../services/session/session";
 import { readingLessons } from "../../data/readingLessons";
-import {
-  awardLocalReadingXP,
-  awardLocalCoins,
-} from "../../services/database/localStudent";
-import {
-  completeLesson,
-  unlockNextLesson,
-  isLessonCompleted,
-  getAllProgress,
-} from "../../services/database/localProgress";
+import { saveReadingAssessment } from "../../services/database/localProgress";
 import { recordMistake } from "../../services/database/localMistakes";
 
 
@@ -50,6 +40,9 @@ export default function QuizScreen() {
   const [selected, setSelected] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
+  const answered = useRef(false);
+  const finishing = useRef(false);
+
   if (!lesson || !quiz || quiz.length === 0) {
     return (
       <SafeAreaView style={styles.center}>
@@ -69,68 +62,31 @@ export default function QuizScreen() {
   const question = validQuiz[currentQuestion];
 
   async function finishQuiz(finalScore: number) {
-    const result = evaluateQuiz(finalScore, quiz.length);
-
-    if (!result.passed) {
-      navigation.replace("RemedialQuiz", {
-        subject: "reading",
-        lessonId,
+    if (finishing.current) return;
+    finishing.current = true;
+    try {
+      const session = await getSession();
+      if (!session) throw new Error("Student session expired.");
+      const result = saveReadingAssessment(session.studentId, lessonId, finalScore, validQuiz.length);
+      if (!result.passed) {
+        navigation.replace("RemedialQuiz", { subject: "reading", lessonId });
+        return;
+      }
+      navigation.replace("Reward", {
+        subject: "reading", lessonId,
+        xp: result.rewarded ? validLesson.xp : 0,
+        coins: result.rewarded ? validLesson.coins : 0,
+        stars: result.stars, unlocked: result.unlocked, levelUp: false,
       });
-      return;
+    } catch {
+      finishing.current = false;
+      setMessage("Your result could not be saved. Please try again.");
     }
-
-    const session = await getSession();
-
-    if (!session) {
-      setMessage(
-        "We couldn't find your student session. Please return home and try again."
-      );
-      return;
-    }
-
-    const alreadyCompleted = isLessonCompleted(
-      session.studentId,
-      lessonId
-    );
-
-    const currentIndex = readingLessons.findIndex(
-      (item) => item.id === lessonId
-    );
-    const nextLesson = readingLessons[currentIndex + 1];
-
-    if (!alreadyCompleted) {
-      awardLocalReadingXP(session.studentId, validLesson.xp);
-      awardLocalCoins(session.studentId, validLesson.coins);
-    }
-
-    completeLesson(
-      session.studentId,
-      lessonId,
-      result.stars,
-      finalScore,
-      quiz.length
-    );
-
-    unlockNextLesson(session.studentId, lessonId);
-    
-console.log(
-  "[READING] Progress after unlock:",
-  getAllProgress(session.studentId)
-);
-
-    navigation.replace("Reward", {
-      subject: "reading",
-      lessonId,
-      xp: alreadyCompleted ? 0 : validLesson.xp,
-      coins: alreadyCompleted ? 0 : validLesson.coins,
-      stars: result.stars,
-      unlocked: !!nextLesson,
-      levelUp: false,
-    });
   }
 
   async function chooseAnswer(choice: string) {
-    if (locked) return;
+    if (answered.current) return;
+    answered.current = true;
 
     setSelected(choice);
     setLocked(true);
@@ -171,7 +127,8 @@ console.log(
       return;
     }
 
-    setCurrentQuestion((value) => value + 1);
+    setCurrentQuestion(currentQuestion + 1);
+    answered.current = false;
     setSelected(null);
     setLocked(false);
     setMessage("");

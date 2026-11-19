@@ -6,11 +6,13 @@ import React, { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDocFromServer } from "firebase/firestore";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { db } from "../../services/firebase/firebase";
 import { getTeacherSession } from "../../services/teacher/teacherSession";
-import { cacheWorksheetReviewAccess } from "../../services/phygital/worksheetStore";
+import { cacheWorksheetReviewAccess, hasWorksheetReviewAccess, revokeWorksheetReviewAccess } from "../../services/phygital/worksheetStore";
+import { getLocalStudent } from "../../services/database/localStudent";
+import { restoreStudentSnapshot } from "../../services/sync/restoreStudentProgress";
 
 export default function TeacherStudentScreen() {
   const navigation = useNavigation<any>();
@@ -19,13 +21,31 @@ export default function TeacherStudentScreen() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const snap = await getDoc(doc(db, "students", route.params.studentId));
+    const studentId = route.params.studentId;
     const teacher = await getTeacherSession();
-    if (snap.exists() && teacher && snap.data().teacherId === teacher.teacherId) {
-      cacheWorksheetReviewAccess(teacher.teacherId, route.params.studentId, snap.data().classCode);
+    setStudent(null);
+    try {
+      if (!teacher) return;
+      const snap = await getDocFromServer(doc(db, "students", studentId));
+      if ((await getTeacherSession()) !== teacher) return;
+      const profile = snap.data();
+      if (!profile || profile.teacherId !== teacher.teacherId) {
+        revokeWorksheetReviewAccess(teacher.teacherId, studentId);
+        return;
+      }
+      restoreStudentSnapshot(studentId, profile);
+      cacheWorksheetReviewAccess(teacher.teacherId, studentId, profile.classCode);
+      setStudent(profile);
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      if (code === "permission-denied" && teacher) revokeWorksheetReviewAccess(teacher.teacherId, studentId);
+      if (code === "unavailable" && teacher &&
+          (await getTeacherSession()) === teacher && hasWorksheetReviewAccess(teacher.teacherId, studentId)) {
+        setStudent(getLocalStudent(studentId));
+      }
+    } finally {
+      setLoading(false);
     }
-    setStudent(snap.exists() ? snap.data() : null);
-    setLoading(false);
   }, [route.params.studentId]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));

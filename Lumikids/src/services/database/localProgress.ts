@@ -1,6 +1,11 @@
 import { db } from "./database";
 import { readingLessons } from "../../data/readingLessons";
 import { addToSyncQueue } from "../sync/localQueue";
+import { bestAttempt, isAssessmentAttempt } from "../../utils/assessmentAttempt";
+import { evaluateQuiz } from "../../utils/ruleEngine";
+import { awardLessonRewards, getLocalStudent } from "./localStudent";
+
+type ReadingProgress = { unlocked: number; completed: number; stars: number; quizScore: number; quizTotal: number };
 
 export function initializeStudentProgress(studentId: string) {
   readingLessons.forEach((lesson, index) => {
@@ -45,7 +50,7 @@ export function getLessonProgress(
   studentId: string,
   lessonId: string
 ) {
-  return db.getFirstSync(
+  return db.getFirstSync<ReadingProgress>(
     `
     SELECT *
     FROM lesson_progress
@@ -60,7 +65,7 @@ export function getLessonProgress(
  * Returns every lesson progress
  */
 export function getAllProgress(studentId: string) {
-  return db.getAllSync(
+  return db.getAllSync<ReadingProgress & { lessonId: string }>(
     `
     SELECT *
     FROM lesson_progress
@@ -74,42 +79,50 @@ export function getAllProgress(studentId: string) {
 /**
  * Marks lesson complete
  */
-export function completeLesson(
+export function saveReadingAssessment(
   studentId: string,
   lessonId: string,
-  stars: number,
-  quizScore = 0,
-  quizTotal = 0
+  quizScore: number,
+  quizTotal: number,
+  withinTransaction = false,
 ) {
-  db.runSync(
-    `
-    UPDATE lesson_progress
-    SET
-      completed = 1,
-      stars = ?,
-      quizScore = ?,
-      quizTotal = ?,
-      synced = 0
-    WHERE
-      studentId = ?
-      AND lessonId = ?
-    `,
-    [
-      stars,
-      quizScore,
-      quizTotal,
-      studentId,
-      lessonId,
-    ]
-  );
+  const attempt = { quizScore, quizTotal };
+  const index = readingLessons.findIndex(lesson => lesson.id === lessonId);
+  if (index < 0 || !isAssessmentAttempt(attempt)) throw new Error("Invalid Reading assessment.");
+  const lesson = readingLessons[index];
+  const result = evaluateQuiz(quizScore, quizTotal);
+  let rewarded = false;
+  const commit = () => {
+    if (!getLocalStudent(studentId)) throw new Error("Student not found on this device.");
+    initializeStudentProgress(studentId);
+    const previous = getLessonProgress(studentId, lessonId);
+    if (previous?.unlocked !== 1) throw new Error("This Reading level is locked.");
+    const best = bestAttempt(previous, attempt)!;
+    if (!result.passed && best === previous) return;
 
-  addToSyncQueue("SYNC_STUDENT", { studentId });
+    db.runSync(
+      `UPDATE lesson_progress SET completed = MAX(completed, ?), stars = MAX(stars, ?),
+       quizScore = ?, quizTotal = ?, synced = 0 WHERE studentId = ? AND lessonId = ?`,
+      [Number(result.passed), result.stars, best.quizScore, best.quizTotal, studentId, lessonId],
+    );
+    if (result.passed) {
+      if (!previous.completed) {
+        awardLessonRewards(studentId, "reading", lessonId, lesson.xp, lesson.coins);
+        rewarded = true;
+      }
+      unlockNextLesson(studentId, lessonId);
+    }
+    addToSyncQueue("SYNC_STUDENT", { studentId });
+  };
+  if (withinTransaction) commit();
+  else db.withTransactionSync(commit);
+  return { ...result, rewarded, unlocked: result.passed && index + 1 < readingLessons.length };
 }
 
 /**
  * Unlock next lesson
  */
-export function unlockNextLesson(
+function unlockNextLesson(
   studentId: string,
   currentLessonId: string
 ) {
@@ -143,7 +156,6 @@ export function unlockNextLesson(
     ]
   );
 
-  addToSyncQueue("SYNC_STUDENT", { studentId });
 }
 
 export function isLessonCompleted(

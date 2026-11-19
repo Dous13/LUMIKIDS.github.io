@@ -4,6 +4,7 @@ import type { GeneratedWorksheet, WorksheetAnswer, WorksheetResponseStatus } fro
 import { WORKSHEET_LAYOUT as L, worksheetIdentityBits } from "./worksheetLayout";
 
 export interface WorksheetAnalysis {
+  capturedAt?: string;
   worksheetInstanceId: string;
   answers: (WorksheetAnswer | null)[];
   confidence: number[];

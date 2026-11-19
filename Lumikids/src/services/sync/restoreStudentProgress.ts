@@ -1,213 +1,44 @@
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDocFromServer } from "firebase/firestore";
 import { db as firestore } from "../firebase/firebase";
-import { db as localDb } from "../database/database";
-import { getMathProgress } from "../database/localMath";
+import { db } from "../database/database";
+import { getLocalStudent } from "../database/localStudent";
+import { initializeStudentProgress } from "../database/localProgress";
+import { initializeWritingProgress } from "../database/localWriting";
+import { initializeMathProgress } from "../database/localMath";
+import { addToSyncQueue } from "./localQueue";
+import { applyLocalProgress } from "./progressMerge";
+import { mergeStudentProfile, profileRevision, readProfile, rememberConfirmedProfile, saveRestoredProfile, type CloudStudent } from "./studentProfile";
 
-type CloudProgress = {
-  unlocked?: boolean | number;
-  completed?: boolean | number;
-  stars?: number;
-  quizScore?: number;
-  quizTotal?: number;
-  xpEarned?: number;
-};
-
-type ProgressTable =
-  | "lesson_progress"
-  | "writing_progress"
-  | "math_progress";
-
-function toFlag(value: unknown): number {
-  return value === true || value === 1 ? 1 : 0;
+export async function fetchStudentProfile(studentId: string): Promise<(CloudStudent & { preferredNameLower?: string }) | null> {
+  const snapshot = await getDocFromServer(doc(firestore, "students", studentId));
+  return snapshot.data() ?? null;
 }
 
-function toNumber(value: unknown): number {
-  const result = Number(value ?? 0);
-  return Number.isFinite(result) ? result : 0;
+export async function restoreStudentProgress(studentId: string) {
+  const profile = await fetchStudentProfile(studentId);
+  if (!profile) throw new Error("The student profile does not exist.");
+  restoreStudentSnapshot(studentId, profile);
 }
 
-function mergeProgress(
-  studentId: string,
-  table: ProgressTable,
-  cloudProgress: Record<string, CloudProgress> | undefined
-) {
-  if (!cloudProgress || typeof cloudProgress !== "object") {
-    return;
-  }
-
-  for (const [lessonId, cloud] of Object.entries(cloudProgress)) {
-    if (!cloud || typeof cloud !== "object") {
-      continue;
+export function restoreStudentSnapshot(studentId: string, data: CloudStudent) {
+  db.withTransactionSync(() => {
+    const previouslySaved = getLocalStudent(studentId);
+    const local = previouslySaved ? readProfile(studentId) : undefined;
+    const profile = mergeStudentProfile(studentId, data, local);
+    saveRestoredProfile(profile);
+    rememberConfirmedProfile(studentId, data, local?.confirmed);
+    initializeStudentProgress(studentId);
+    initializeWritingProgress(studentId);
+    initializeMathProgress(studentId);
+    const progressAhead = applyLocalProgress(studentId, data);
+    const unsyncedMascots = local?.mascots.some(mascot => mascot !== "default" &&
+      !(Array.isArray(data.ownedMascots) && data.ownedMascots.includes(mascot)));
+    const staleProfile = local?.confirmed && profileRevision(data) <= profileRevision(local.confirmed) &&
+      (profileRevision(data) < profileRevision(local.confirmed) || profile.coins !== data.coins || profile.avatar !== data.avatar);
+    if (progressAhead || unsyncedMascots || staleProfile || local?.changes.length || local?.state.legacyProfile ||
+        (previouslySaved && (profile.xp !== data.xp || profile.readingXP !== data.readingXP ||
+          profile.writingXP !== data.writingXP || profile.mathXP !== data.mathXP))) {
+      addToSyncQueue("SYNC_STUDENT", { studentId });
     }
-
-    const local = table === "math_progress"
-      ? getMathProgress(studentId, Number(lessonId))
-      : localDb.getFirstSync(
-          `SELECT * FROM ${table} WHERE studentId = ? AND lessonId = ?`,
-          [studentId, String(lessonId)]
-        ) as any;
-
-    const cloudUnlocked = toFlag(cloud.unlocked);
-    const cloudCompleted = toFlag(cloud.completed);
-
-    const unlocked = Math.max(
-      toFlag(local?.unlocked),
-      cloudUnlocked
-    );
-
-    const completed = Math.max(
-      toFlag(local?.completed),
-      cloudCompleted
-    );
-
-    const stars = Math.max(
-      toNumber(local?.stars),
-      toNumber(cloud.stars)
-    );
-
-    const localAhead =
-      toFlag(local?.unlocked) > cloudUnlocked ||
-      toFlag(local?.completed) > cloudCompleted ||
-      toNumber(local?.stars) > toNumber(cloud.stars);
-
-    const needsUpload =
-      Number(local?.synced ?? 1) === 0 || localAhead;
-
-    const synced = needsUpload ? 0 : 1;
-
-    if (table === "lesson_progress") {
-      localDb.runSync(
-        `
-        INSERT OR REPLACE INTO lesson_progress (
-          studentId,
-          lessonId,
-          unlocked,
-          completed,
-          stars,
-          quizScore,
-          quizTotal,
-          synced
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-        [
-          studentId,
-          String(lessonId),
-          unlocked,
-          completed,
-          stars,
-          Math.max(
-            toNumber(local?.quizScore),
-            toNumber(cloud.quizScore)
-          ),
-          Math.max(
-            toNumber(local?.quizTotal),
-            toNumber(cloud.quizTotal)
-          ),
-          synced,
-        ]
-      );
-    }
-
-    if (table === "writing_progress") {
-      localDb.runSync(
-        `
-        INSERT OR REPLACE INTO writing_progress (
-          studentId,
-          lessonId,
-          unlocked,
-          completed,
-          stars,
-          synced
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-        `,
-        [
-          studentId,
-          String(lessonId),
-          unlocked,
-          completed,
-          stars,
-          synced,
-        ]
-      );
-    }
-
-    if (table === "math_progress") {
-      localDb.runSync(
-        `
-        INSERT OR REPLACE INTO math_progress (
-          studentId,
-          lessonId,
-          unlocked,
-          completed,
-          stars,
-          quizScore,
-          quizTotal,
-          xpEarned,
-          synced
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-        [
-          studentId,
-          String(Number(lessonId)),
-          unlocked,
-          completed,
-          stars,
-          Math.max(
-            toNumber(local?.quizScore),
-            toNumber(cloud.quizScore)
-          ),
-          Math.max(
-            toNumber(local?.quizTotal),
-            toNumber(cloud.quizTotal)
-          ),
-          Math.max(
-            toNumber(local?.xpEarned),
-            toNumber(cloud.xpEarned)
-          ),
-          synced,
-        ]
-      );
-    }
-  }
-}
-
-export async function restoreStudentProgress(
-  studentId: string
-): Promise<void> {
-  const snapshot = await getDoc(
-    doc(firestore, "students", studentId)
-  );
-
-  if (!snapshot.exists()) {
-    return;
-  }
-
-  const data = snapshot.data();
-
-  localDb.withTransactionSync(() => {
-    mergeProgress(
-      studentId,
-      "lesson_progress",
-      data.readingProgress
-    );
-
-    mergeProgress(
-      studentId,
-      "writing_progress",
-      data.writingProgress
-    );
-
-    mergeProgress(
-      studentId,
-      "math_progress",
-      data.mathProgress
-    );
   });
-
-  console.log(
-    `[ProgressRestore] Restored and merged cloud progress for ${studentId}`
-  );
 }

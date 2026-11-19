@@ -2,15 +2,17 @@ import {
   collection,
   doc,
   getDocs,
-  getDoc,
+  getDocFromServer,
   query,
   serverTimestamp,
   setDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../firebase/firebase";
 import { saveTeacherSession } from "./teacherSession";
+import { withSignIn } from "../session/verifiedIdentity";
 import * as Crypto from "expo-crypto";
 
 function normalizeCode(value: string) {
@@ -20,49 +22,46 @@ function normalizeCode(value: string) {
 function generateClassCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let result = "";
-  for (let i = 0; i < 6; i++) result += chars[Math.floor(Math.random() * chars.length)];
+  for (const byte of Crypto.getRandomBytes(6)) result += chars[byte % chars.length];
   return result;
 }
 
-export async function registerTeacher(name: string, email: string, password: string) {
-  const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
-  await setDoc(doc(db, "teachers", credential.user.uid), {
-    id: credential.user.uid,
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-    createdAt: serverTimestamp(),
+export function registerTeacher(name: string, email: string, password: string) {
+  return withSignIn(async () => {
+    const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password);
+    await setDoc(doc(db, "teachers", user.uid), {
+      id: user.uid,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      createdAt: serverTimestamp(),
+    });
+    await saveTeacherSession(user, {
+      teacherId: user.uid,
+      email: user.email || email.trim().toLowerCase(),
+      name: name.trim(),
+    });
+    return user.uid;
   });
-
-  await saveTeacherSession({
-    teacherId: credential.user.uid,
-    email: credential.user.email || email.trim().toLowerCase(),
-    name: name.trim(),
-  });
-
-  return credential.user.uid;
 }
 
-export async function loginTeacher(email: string, password: string) {
-  const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-  const teacherSnapshot = await getDoc(doc(db, "teachers", credential.user.uid));
-  const teacher = teacherSnapshot.exists() ? teacherSnapshot.data() : null;
-
-  await saveTeacherSession({
-    teacherId: credential.user.uid,
-    email: credential.user.email || email.trim().toLowerCase(),
-    name: teacher?.name || "Teacher",
+export function loginTeacher(email: string, password: string) {
+  return withSignIn(async () => {
+    const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+    const teacherSnapshot = await getDocFromServer(doc(db, "teachers", credential.user.uid));
+    if (!teacherSnapshot.exists()) throw new Error("Teacher account not found.");
+    await saveTeacherSession(credential.user, {
+      teacherId: credential.user.uid,
+      email: credential.user.email || email.trim().toLowerCase(),
+      name: teacherSnapshot.data().name || "Teacher",
+    });
+    return credential.user.uid;
   });
-
-  return credential.user.uid;
 }
 
 export async function createClass(teacherId: string, teacherName: string) {
-  let code = generateClassCode();
-  let existing = await getDocs(query(collection(db, "classes"), where("code", "==", code)));
-  while (!existing.empty) {
-    code = generateClassCode();
-    existing = await getDocs(query(collection(db, "classes"), where("code", "==", code)));
-  }
+  // Rules permit creation only. An existing code cannot be overwritten, and
+  // the client does not need to read classrooms belonging to other teachers.
+  const code = generateClassCode();
 
   await setDoc(doc(db, "classes", code), {
     code,
@@ -89,6 +88,7 @@ export async function createTeacherStudent(params: {
 
   const existing = await getDocs(query(
     collection(db, "classes", classCode, "students"),
+    where("teacherId", "==", params.teacherId),
     where("preferredNameLower", "==", preferredName.toLowerCase())
   ));
 
@@ -114,8 +114,10 @@ export async function createTeacherStudent(params: {
     createdAt: serverTimestamp(),
   };
 
-  await setDoc(doc(db, "students", id), student);
-  await setDoc(doc(db, "classes", classCode, "students", id), student);
+  const batch = writeBatch(db);
+  batch.set(doc(db, "students", id), student);
+  batch.set(doc(db, "classes", classCode, "students", id), student);
+  await batch.commit();
   return student;
 }
 
@@ -125,8 +127,7 @@ export async function getTeacherClasses(teacherId: string) {
 }
 
 export async function getClassStudents(classCode: string, teacherId: string) {
-  const snapshot = await getDocs(collection(db, "classes", normalizeCode(classCode), "students"));
-  return snapshot.docs
-    .map(item => ({ id: item.id, ...item.data() }))
-    .filter((student: any) => student.teacherId === teacherId);
+  const snapshot = await getDocs(query(collection(db, "classes", normalizeCode(classCode), "students"),
+    where("teacherId", "==", teacherId)));
+  return snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
 }

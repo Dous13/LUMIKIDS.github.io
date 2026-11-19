@@ -20,6 +20,7 @@ export default function TeacherHomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newCode, setNewCode] = useState("");
+  const [createError, setCreateError] = useState("");
 
   const load = useCallback(async () => {
     const s = await getTeacherSession();
@@ -44,9 +45,12 @@ export default function TeacherHomeScreen() {
     if (!session || creating) return;
     try {
       setCreating(true);
+      setCreateError("");
       const code = await createClass(session.teacherId, session.name);
       setNewCode(code);
       await load();
+    } catch {
+      setCreateError("The class could not be created. Check your connection and try again.");
     } finally {
       setCreating(false);
     }
@@ -87,7 +91,8 @@ export default function TeacherHomeScreen() {
             <View style={{ flex: 1 }}><Text style={styles.createTitle}>{creating ? "Creating class..." : "Create a New Class"}</Text><Text style={styles.createText}>Get a unique code for your learners.</Text></View>
           </TouchableOpacity>
 
-          {newCode ? <View style={styles.codeCard}><Text style={styles.codeLabel}>NEW CLASS CODE</Text><Text style={styles.code}>{newCode}</Text><Text style={styles.codeHint}>Give this code to your registered learners.</Text></View> : null}
+          {createError ? <Text accessibilityRole="alert">{createError}</Text> : null}
+          {newCode ? <View style={styles.codeCard}><Text style={styles.codeLabel}>NEW CLASS CODE</Text><Text style={styles.code}>{newCode}</Text><Text style={styles.codeHint}>Use this code to identify the classroom.</Text></View> : null}
 
           <View style={styles.sectionRow}><Text style={styles.sectionTitle}>My Classes</Text><Text style={styles.count}>{classes.length}</Text></View>
 

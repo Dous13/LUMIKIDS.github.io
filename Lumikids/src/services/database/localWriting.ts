@@ -1,6 +1,9 @@
 import { db } from "./database";
 import { writingLessons } from "../../data/writingLessons";
 import { addToSyncQueue } from "../sync/localQueue";
+import { awardLessonRewards, getLocalStudent } from "./localStudent";
+
+type WritingProgress = { unlocked: number; completed: number; stars: number; lessonId: string };
 
 export function initializeWritingProgress(studentId: string) {
   writingLessons.forEach((lesson, index) => {
@@ -44,7 +47,7 @@ export function getWritingProgress(
   studentId: string,
   lessonId: string
 ) {
-  return db.getFirstSync(
+  return db.getFirstSync<WritingProgress>(
     `
     SELECT *
     FROM writing_progress
@@ -58,7 +61,7 @@ export function getWritingProgress(
 export function getAllWritingProgress(
   studentId: string
 ) {
-  return db.getAllSync(
+  return db.getAllSync<WritingProgress>(
     `
     SELECT *
     FROM writing_progress
@@ -72,30 +75,36 @@ export function getAllWritingProgress(
 export function completeWritingLesson(
   studentId: string,
   lessonId: string,
-  stars: number
+  stars: number,
+  withinTransaction = false,
 ) {
-  db.runSync(
-    `
-    UPDATE writing_progress
-    SET
-      completed = 1,
-      stars = ?,
-      synced = 0
-    WHERE
-      studentId = ?
-      AND lessonId = ?
-    `,
-    [
-      stars,
-      studentId,
-      lessonId,
-    ]
-  );
-
-  addToSyncQueue("SYNC_STUDENT", { studentId });
+  const index = writingLessons.findIndex(lesson => lesson.id === lessonId);
+  if (index < 0 || !Number.isInteger(stars) || stars < 0 || stars > 3) throw new Error("Invalid Writing completion.");
+  let rewarded = false;
+  const commit = () => {
+    if (!getLocalStudent(studentId)) throw new Error("Student not found on this device.");
+    initializeWritingProgress(studentId);
+    const previous = getWritingProgress(studentId, lessonId);
+    if (previous?.unlocked !== 1) throw new Error("This Writing level is locked.");
+    db.runSync(
+      `UPDATE writing_progress SET completed = 1, stars = MAX(stars, ?), synced = 0
+       WHERE studentId = ? AND lessonId = ?`,
+      [stars, studentId, lessonId],
+    );
+    if (!previous.completed) {
+      const lesson = writingLessons[index];
+      awardLessonRewards(studentId, "writing", lessonId, lesson.xp, lesson.coins);
+      rewarded = true;
+    }
+    unlockNextWritingLesson(studentId, lessonId);
+    addToSyncQueue("SYNC_STUDENT", { studentId });
+  };
+  if (withinTransaction) commit();
+  else db.withTransactionSync(commit);
+  return { rewarded, unlocked: index + 1 < writingLessons.length };
 }
 
-export function unlockNextWritingLesson(
+function unlockNextWritingLesson(
   studentId: string,
   currentLessonId: string
 ) {
@@ -129,7 +138,6 @@ export function unlockNextWritingLesson(
     ]
   );
 
-  addToSyncQueue("SYNC_STUDENT", { studentId });
 }
 
 export function isWritingLessonCompleted(

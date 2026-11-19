@@ -116,7 +116,7 @@ export default function WorksheetCaptureScreen() {
 
       // All image analysis happens locally on this device.
       const session = await getSession();
-      if (session?.studentId !== worksheet.studentId) throw new Error("The student account changed. Reopen the worksheet in the correct account.");
+      if (!session || session.studentId !== worksheet.studentId) throw new Error("The student account changed. Reopen the worksheet in the correct account.");
       const result = analyzeWorksheet(photo.base64, worksheet);
       const savedPhoto = new File(Paths.document, "worksheet-" + instanceId + "-" + Date.now() + ".jpg");
       new File(photo.uri).copy(savedPhoto);

@@ -13,8 +13,16 @@ function fixture(filename, cloud = {}) {
     [path.join(root, 'src/services/firebase/firebase.ts')]: { db: {} },
     'firebase/firestore': {
       doc: (_, ...parts) => parts.join('/'), serverTimestamp: () => 'timestamp',
-      getDoc: async () => ({ exists: () => true, data: () => cloud }),
-      setDoc: async (ref, payload) => { uploads.push({ ref, payload }); },
+      getDocFromServer: async () => ({ exists: () => true, data: () => cloud }),
+      runTransaction: async (_, work) => {
+        const writes = [];
+        const result = await work({
+          get: async () => ({ exists: () => true, data: () => cloud }),
+          set: (ref, payload) => writes.push({ ref, payload }),
+        });
+        uploads.push(...writes);
+        return result;
+      },
     },
   });
   load('src/services/database/database.ts').initializeDatabase();

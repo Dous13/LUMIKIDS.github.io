@@ -4,12 +4,10 @@ import type { GeneratedWorksheet, WorksheetAnswer } from "./worksheetTypes";
 import type { WorksheetAnalysis } from "./worksheetAnalyzer";
 import { WORKSHEET_LAYOUT, worksheetIdentityBits } from "./worksheetLayout";
 import { evaluateQuiz } from "../../utils/ruleEngine";
-import { getLocalStudent, awardLocalReadingXP, awardLocalWritingXP, awardLocalCoins } from "../database/localStudent";
+import { getLocalStudent } from "../database/localStudent";
 import { completeMathLesson, getMathProgress, isMathLessonCompleted } from "../database/localMath";
-import { initializeStudentProgress, getLessonProgress, completeLesson, unlockNextLesson, isLessonCompleted } from "../database/localProgress";
-import { initializeWritingProgress, getWritingProgress, completeWritingLesson, unlockNextWritingLesson, isWritingLessonCompleted } from "../database/localWriting";
-import { readingLessons } from "../../data/readingLessons";
-import { writingLessons } from "../../data/writingLessons";
+import { saveReadingAssessment } from "../database/localProgress";
+import { initializeWritingProgress, getWritingProgress, completeWritingLesson } from "../database/localWriting";
 import { mathLessons } from "../../data/mathLessons";
 import { addToSyncQueue } from "../sync/localQueue";
 
@@ -44,22 +42,38 @@ export function issueWorksheet(studentId: string, subject: "reading" | "writing"
   return worksheet;
 }
 export function saveWorksheetCapture(studentId: string, instanceId: string, capture: WorksheetAnalysis, photoUri: string) {
-  const record = getWorksheetRecord(studentId, instanceId);
-  if (record.finalized) throw new Error("This copy is already finalized. Print a new copy to submit another attempt.");
-  if (capture.validated !== true || capture.worksheetInstanceId !== instanceId ||
-      capture.answers.length !== record.worksheet.questions.length) throw new Error("Capture does not match this worksheet.");
   db.withTransactionSync(() => {
-    db.runSync("UPDATE worksheet_instances SET capture = ?, photoUri = ?, review = NULL WHERE studentId = ? AND instanceId = ?", [JSON.stringify(capture), photoUri, studentId, instanceId]);
+    const record = getWorksheetRecord(studentId, instanceId);
+    if (record.finalized) throw new Error("This copy is already finalized. Print a new copy to submit another attempt.");
+    if (capture.validated !== true || capture.worksheetInstanceId !== instanceId ||
+        capture.answers.length !== record.worksheet.questions.length) throw new Error("Capture does not match this worksheet.");
+    const previous = Date.parse(record.capture?.capturedAt ?? "");
+    const capturedAt = new Date(Math.max(Date.now(), (Number.isFinite(previous) ? previous : 0) + 1)).toISOString();
+    db.runSync("UPDATE worksheet_instances SET capture = ?, photoUri = ?, review = NULL WHERE studentId = ? AND instanceId = ?",
+      [JSON.stringify({ ...capture, capturedAt }), photoUri, studentId, instanceId]);
     addToSyncQueue("SYNC_WORKSHEET", { studentId, instanceId });
   });
 }
 
 // Call only after the teacher portal verifies the student's teacherId from its existing roster.
 export function cacheWorksheetReviewAccess(teacherId: string, studentId: string, classCode: string) {
-  db.runSync("INSERT OR REPLACE INTO worksheet_review_access (teacherId, studentId, classCode) VALUES (?, ?, ?)", [teacherId, studentId, classCode]);
+  db.withTransactionSync(() => {
+    db.runSync("DELETE FROM worksheet_review_access WHERE studentId = ? AND teacherId != ?", [studentId, teacherId]);
+    db.runSync("INSERT OR REPLACE INTO worksheet_review_access (teacherId, studentId, classCode) VALUES (?, ?, ?)", [teacherId, studentId, classCode]);
+  });
+}
+export function hasWorksheetReviewAccess(teacherId: string, studentId: string) {
+  return !!db.getFirstSync(
+    `SELECT 1 FROM worksheet_review_access a JOIN student s ON s.id = a.studentId AND s.classCode = a.classCode
+     WHERE a.teacherId = ? AND a.studentId = ?`, [teacherId, studentId],
+  );
+}
+export function revokeWorksheetReviewAccess(teacherId: string, studentId?: string) {
+  if (studentId) db.runSync("DELETE FROM worksheet_review_access WHERE teacherId = ? AND studentId = ?", [teacherId, studentId]);
+  else db.runSync("DELETE FROM worksheet_review_access WHERE teacherId = ?", [teacherId]);
 }
 export function requireWorksheetReviewer(teacherId: string, studentId: string) {
-  if (!teacherId || !db.getFirstSync("SELECT studentId FROM worksheet_review_access WHERE teacherId = ? AND studentId = ?", [teacherId, studentId])) {
+  if (!teacherId || !hasWorksheetReviewAccess(teacherId, studentId)) {
     throw new Error("Open this student in the signed-in teacher's class roster before reviewing worksheets on this device.");
   }
 }
@@ -93,26 +107,15 @@ export function finalizeWorksheet(studentId: string, instanceId: string, teacher
     if (w.subject === "math") {
       const lesson = mathLessons.find(l => l.id === Number(w.lessonId));
       if (!lesson || getMathProgress(studentId, lesson.id)?.unlocked !== 1) throw new Error("This Math level is locked.");
-      if (passed) completeMathLesson(studentId, lesson.id, score, 5, evaluated.stars,
+      completeMathLesson(studentId, lesson.id, score, 5, evaluated.stars,
         isMathLessonCompleted(studentId, lesson.id) ? 0 : lesson.xpReward, true);
     } else if (w.subject === "reading") {
-      initializeStudentProgress(studentId);
-      const lesson = readingLessons.find(l => l.id === w.lessonId);
-      if (!lesson || (getLessonProgress(studentId, w.lessonId) as any)?.unlocked !== 1) throw new Error("This Reading level is locked.");
-      if (passed) {
-        if (!isLessonCompleted(studentId, w.lessonId)) { awardLocalReadingXP(studentId, lesson.xp); awardLocalCoins(studentId, lesson.coins); }
-        const previous = getLessonProgress(studentId, w.lessonId) as any;
-        completeLesson(studentId, w.lessonId, Math.max(previous?.stars ?? 0, evaluated.stars), score, 5);
-        unlockNextLesson(studentId, w.lessonId);
-      }
+      saveReadingAssessment(studentId, w.lessonId, score, 5, true);
     } else if (w.subject === "writing") {
       initializeWritingProgress(studentId);
-      const lesson = writingLessons.find(l => l.id === w.lessonId);
-      if (!lesson || (getWritingProgress(studentId, w.lessonId) as any)?.unlocked !== 1) throw new Error("This Writing level is locked.");
-      if (passed) {
-        if (!isWritingLessonCompleted(studentId, w.lessonId)) { awardLocalWritingXP(studentId, lesson.xp); awardLocalCoins(studentId, lesson.coins); }
-        completeWritingLesson(studentId, w.lessonId, 3); unlockNextWritingLesson(studentId, w.lessonId);
-      }
+      const progress = getWritingProgress(studentId, w.lessonId);
+      if (progress?.unlocked !== 1) throw new Error("This Writing level is locked.");
+      if (passed) completeWritingLesson(studentId, w.lessonId, 3, true);
     } else throw new Error("Unsupported worksheet subject.");
     result = { studentId, instanceId, subject: w.subject, lessonId: w.lessonId, answers: review.answers,
       writing: review.writing, score, total: 5, passed, stars: passed ? evaluated.stars : 0, teacherId, finalizedAt: new Date().toISOString() };

@@ -10,8 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { writingLessons } from "../../data/writingLessons";
 import TracingCanvas from "../../components/writing/TracingCanvas";
 import { getSession } from "../../services/session/session";
-import { awardLocalCoins, awardLocalWritingXP } from "../../services/database/localStudent";
-import { completeWritingLesson, isWritingLessonCompleted, unlockNextWritingLesson } from "../../services/database/localWriting";
+import { completeWritingLesson } from "../../services/database/localWriting";
 
 type Phase = "uppercase" | "lowercase" | "word";
 
@@ -64,23 +63,18 @@ export default function TraceLetterScreen() {
       return;
     }
 
-    const alreadyCompleted = isWritingLessonCompleted(session.studentId, validLesson.id);
-    if (!alreadyCompleted) {
-      awardLocalWritingXP(session.studentId, validLesson.xp);
-      awardLocalCoins(session.studentId, validLesson.coins);
+    try {
+      const result = completeWritingLesson(session.studentId, validLesson.id, 3);
+      navigation.replace("Reward", {
+        subject: "writing", lessonId: validLesson.id,
+        xp: result.rewarded ? validLesson.xp : 0,
+        coins: result.rewarded ? validLesson.coins : 0,
+        stars: 3, unlocked: result.unlocked, levelUp: false,
+      });
+    } catch {
+      setMessage("Your result could not be saved. Please try again.");
+      setSaving(false);
     }
-    completeWritingLesson(session.studentId, validLesson.id, 3);
-    unlockNextWritingLesson(session.studentId, validLesson.id);
-
-    navigation.replace("Reward", {
-      subject: "writing",
-      lessonId: validLesson.id,
-      xp: alreadyCompleted ? 0 : validLesson.xp,
-      coins: alreadyCompleted ? 0 : validLesson.coins,
-      stars: 3,
-      unlocked: writingLessons.findIndex(item => item.id === validLesson.id) < writingLessons.length - 1,
-      levelUp: false,
-    });
   }
 
   return (

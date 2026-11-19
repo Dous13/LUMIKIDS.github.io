@@ -1,12 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import {
-  Auth,
-  initializeAuth,
-  getAuth,
-  // @ts-expect-error Firebase 12 React Native export is missing from some type declarations
-  getReactNativePersistence,
-} from "firebase/auth";
+import { initializeAuth, inMemoryPersistence } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
@@ -22,13 +16,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
-let auth: Auth;
-try {
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
-  });
-} catch {
-  auth = getAuth(app);
-}
+export const auth = initializeAuth(app, { persistence: inMemoryPersistence });
 
-export { auth };
+export function clearLegacyTeacherAuthStorage() {
+  return AsyncStorage.multiRemove([
+    "teacherSession",
+    `firebase:authUser:${firebaseConfig.apiKey}:${app.name}`,
+  ]);
+}

@@ -12,12 +12,10 @@ import {
 } from "../../services/session/session";
 import { useStudent } from "../../hooks/useStudent";
 import {
-  ownsMascot,
   buyMascot,
   getOwnedMascots,
 } from "../../services/database/localMascot";
 import {
-  spendCoins,
   equipMascot,
 } from "../../services/database/localStudent";
 import RewardModal from "../../components/shop/RewardModal";
@@ -62,9 +60,6 @@ export default function ShopScreen() {
     reload,
   } = useStudent(studentId);
 
-  console.log("studentId:", studentId);
-  console.log("student:", student);
-
   if (!student) {
     return (
       <SafeAreaView style={[styles.container, styles.loading]}>
@@ -82,67 +77,37 @@ export default function ShopScreen() {
     }, 2200);
   }
 
-function purchaseMascot(item: any) {
-  console.log("Pressed Buy:", item.name);
-
-  if (!student) {
-    console.log("No student");
-    return;
+  async function purchaseMascot(item: (typeof mascotShop)[number]) {
+    if (!student || (await getSession())?.studentId !== student.id) return;
+    try {
+      const result = buyMascot(student.id, item.id, item.price);
+      if (result === "owned") return;
+      if (result === "insufficient") {
+        showMessage("Not enough coins!");
+        return;
+      }
+      reload();
+      setOwnedMascots(getOwnedMascots(student.id).map(mascot => mascot.mascotId));
+      setRewardMascot(item);
+      setRewardVisible(true);
+    } catch {
+      showMessage("The purchase could not be saved. Please try again.");
+    }
   }
 
-  console.log("Coins:", student.coins);
-  console.log("Price:", item.price);
-
-  const alreadyOwned = ownsMascot(student.id, item.id);
-
-  console.log("Already owned:", alreadyOwned);
-
-  if (alreadyOwned) {
-    return;
+  async function handleEquip(item: (typeof mascotShop)[number]) {
+    if (!student || (await getSession())?.studentId !== student.id) return;
+    try {
+      equipMascot(student.id, item.id);
+      reload();
+      setOwnedMascots(getOwnedMascots(student.id).map(mascot => mascot.mascotId));
+      setRewardMascot(item);
+      setRewardVisible(true);
+    } catch {
+      showMessage("The mascot could not be equipped. Please try again.");
+    }
   }
 
-  if (student.coins < item.price) {
-      showMessage("🪙 Not enough coins!");
-      return;
-  }
-
-  console.log("Spending coins...");
-  spendCoins(student.id, item.price);
-
-  console.log("Buying mascot...");
-  buyMascot(student.id, item.id);
-
-  console.log("Reloading...");
-  reload();
-
-  const owned = getOwnedMascots(student.id);
-
-  console.log("Owned mascots:", owned);
-
-  setOwnedMascots(
-    owned.map((m: any) => m.mascotId)
-  );
-
-  setRewardMascot(item);
-  setRewardVisible(true);
-}
-
-  function handleEquip(item: any) {
-    if (!student) return;
-
-    equipMascot(student.id, item.id);
-
-    reload();
-
-    const owned = getOwnedMascots(student.id);
-
-    setOwnedMascots(
-      owned.map((m: any) => m.mascotId)
-    );
-
-    setRewardMascot(item);
-    setRewardVisible(true);
-  }
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.circle1}/>

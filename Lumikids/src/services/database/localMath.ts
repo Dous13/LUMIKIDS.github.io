@@ -2,17 +2,12 @@ import { db } from "./database";
 import { mathLessons } from "../../data/mathLessons";
 import { addToSyncQueue } from "../sync/localQueue";
 import { evaluateQuiz } from "../../utils/ruleEngine";
-import { awardLocalCoins, awardLocalMathXP } from "./localStudent";
+import { awardLessonRewards, getLocalStudent } from "./localStudent";
+import { bestAttempt, isAssessmentAttempt } from "../../utils/assessmentAttempt";
 
 // lessonId has TEXT affinity. Native numeric bindings can produce "2.0",
 // while cloud keys use "2". Read aliases as one lesson without deleting any
 // saved rows, and use canonical text IDs for all new inserts.
-const progressColumns = `studentId, CAST(lessonId AS NUMERIC) AS lessonId,
-  MAX(unlocked) AS unlocked, MAX(completed) AS completed,
-  MAX(stars) AS stars, MAX(quizScore) AS quizScore,
-  MAX(quizTotal) AS quizTotal, MAX(xpEarned) AS xpEarned,
-  MIN(synced) AS synced`;
-
 export interface MathProgress {
   studentId: string;
   lessonId: number;
@@ -23,6 +18,36 @@ export interface MathProgress {
   quizTotal: number;
   xpEarned: number;
   synced: number;
+}
+
+function mathProgress(studentId: string, lessonId?: number): MathProgress[] {
+  const rows = db.getAllSync<MathProgress>(
+    `SELECT studentId, CAST(lessonId AS NUMERIC) AS lessonId, unlocked, completed,
+       stars, quizScore, quizTotal, xpEarned, synced FROM math_progress
+     WHERE studentId = ? ${lessonId === undefined ? "" : "AND CAST(lessonId AS NUMERIC) = ?"}
+     ORDER BY CAST(math_progress.lessonId AS NUMERIC),
+       math_progress.lessonId = CAST(CAST(math_progress.lessonId AS NUMERIC) AS TEXT) DESC, math_progress.lessonId`,
+    lessonId === undefined ? [studentId] : [studentId, lessonId],
+  );
+  const grouped = new Map<number, MathProgress>();
+  for (const row of rows) {
+    if (!mathLessons.some(lesson => lesson.id === row.lessonId)) continue;
+    const previous = grouped.get(row.lessonId);
+    if (!previous) {
+      grouped.set(row.lessonId, row);
+      continue;
+    }
+    const attempt = bestAttempt(previous, row)!;
+    grouped.set(row.lessonId, {
+      ...previous, quizScore: attempt.quizScore, quizTotal: attempt.quizTotal,
+      unlocked: Math.max(previous.unlocked, row.unlocked),
+      completed: Math.max(previous.completed, row.completed),
+      stars: Math.max(previous.stars, row.stars),
+      xpEarned: Math.max(previous.xpEarned, row.xpEarned),
+      synced: Math.min(previous.synced, row.synced),
+    });
+  }
+  return [...grouped.values()];
 }
 
 export function initializeMathProgress(studentId: string) {
@@ -64,30 +89,13 @@ export function getMathProgress(
   studentId: string,
   lessonId: number
 ): MathProgress | null {
-  return db.getFirstSync(
-    `
-    SELECT ${progressColumns}
-    FROM math_progress
-    WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?
-    GROUP BY studentId, CAST(lessonId AS NUMERIC)
-    `,
-    [studentId, lessonId]
-  ) as MathProgress | null;
+  return mathProgress(studentId, lessonId)[0] ?? null;
 }
 
 export function getAllMathProgress(
   studentId: string
 ): MathProgress[] {
-  return db.getAllSync(
-    `
-    SELECT ${progressColumns}
-    FROM math_progress
-    WHERE studentId = ?
-    GROUP BY studentId, CAST(lessonId AS NUMERIC)
-    ORDER BY lessonId ASC
-    `,
-    [studentId]
-  ) as MathProgress[];
+  return mathProgress(studentId);
 }
 
 export function isMathLessonUnlocked(
@@ -132,11 +140,7 @@ export function completeMathLesson(
   withinTransaction = false
 ): boolean {
   if (
-    !Number.isFinite(quizScore) ||
-    !Number.isFinite(quizTotal) ||
-    quizTotal <= 0 ||
-    quizScore < 0 ||
-    quizScore > quizTotal ||
+    !isAssessmentAttempt({ quizScore, quizTotal }) ||
     !Number.isInteger(stars) ||
     stars < 0 ||
     stars > 3 ||
@@ -164,21 +168,23 @@ export function completeMathLesson(
       studentId,
       lessonId,
       quizScore,
-      quizTotal
+      quizTotal,
+      withinTransaction,
     );
 
     return false;
   }
 
-  initializeMathProgress(studentId);
-
-  if (!isMathLessonUnlocked(studentId, lessonId)) return false;
-
   const nextLesson = mathLessons[lessonIndex + 1];
+  let completed = false;
 
   // Update completion and unlock the next lesson atomically.
   const commit = () => {
-    const alreadyCompleted = isMathLessonCompleted(studentId, lessonId);
+    if (!getLocalStudent(studentId)) throw new Error("Student not found on this device.");
+    initializeMathProgress(studentId);
+    const progress = getMathProgress(studentId, lessonId);
+    if (progress?.unlocked !== 1) return;
+    const attempt = bestAttempt(progress, { quizScore, quizTotal })!;
     const completionResult = db.runSync(
       `
       UPDATE math_progress
@@ -193,8 +199,8 @@ export function completeMathLesson(
       `,
       [
         stars,
-        quizScore,
-        quizTotal,
+        attempt.quizScore,
+        attempt.quizTotal,
         xpEarned,
         studentId,
         lessonId,
@@ -238,30 +244,16 @@ export function completeMathLesson(
     }
 
     // Commit rewards with completion so a failed save can be retried safely.
-    if (!alreadyCompleted) {
-      awardLocalMathXP(studentId, xpEarned);
-      awardLocalCoins(studentId, ruleResult.stars * 5);
+    if (!progress.completed) {
+      awardLessonRewards(studentId, "math", lessonId, xpEarned, ruleResult.stars * 5);
     }
     addToSyncQueue("SYNC_STUDENT", { studentId });
+    completed = true;
   };
   if (withinTransaction) commit();
   else db.withTransactionSync(commit);
 
-  console.log(
-    `[MathProgress] Completed lesson ${lessonId}.`
-  );
-
-  if (nextLesson) {
-    console.log(
-      `[MathProgress] Unlocked lesson ${nextLesson.id} - ${nextLesson.title}.`
-    );
-  } else {
-    console.log(
-      `[MathProgress] Final math lesson completed.`
-    );
-  }
-
-  return true;
+  return completed;
 }
 
 export function unlockNextMathLesson(
@@ -279,26 +271,24 @@ export function saveMathQuizProgress(
   studentId: string,
   lessonId: number,
   quizScore: number,
-  quizTotal: number
+  quizTotal: number,
+  withinTransaction = false,
 ) {
-  if (
-    !Number.isFinite(quizScore) ||
-    !Number.isFinite(quizTotal) ||
-    quizTotal <= 0 ||
-    quizScore < 0 ||
-    quizScore > quizTotal
-  ) {
+  const attempt = { quizScore, quizTotal };
+  if (!isAssessmentAttempt(attempt)) {
     throw new Error("Invalid math quiz progress data.");
   }
 
-  db.runSync(
-    `
-    UPDATE math_progress
-    SET quizScore = ?, quizTotal = ?, synced = 0
-    WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?
-    `,
-    [quizScore, quizTotal, studentId, lessonId]
-  );
-
-  addToSyncQueue("SYNC_STUDENT", { studentId });
+  const commit = () => {
+    const previous = getMathProgress(studentId, lessonId);
+    if (!previous || bestAttempt(previous, attempt) !== attempt) return;
+    db.runSync(
+      `UPDATE math_progress SET quizScore = ?, quizTotal = ?, synced = 0
+       WHERE studentId = ? AND CAST(lessonId AS NUMERIC) = ?`,
+      [quizScore, quizTotal, studentId, lessonId],
+    );
+    addToSyncQueue("SYNC_STUDENT", { studentId });
+  };
+  if (withinTransaction) commit();
+  else db.withTransactionSync(commit);
 }

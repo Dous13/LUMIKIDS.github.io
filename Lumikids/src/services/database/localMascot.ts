@@ -20,29 +20,24 @@ export function ownsMascot(
 
 export function buyMascot(
   studentId: string,
-  mascotId: string
+  mascotId: string,
+  price: number,
 ) {
-  db.runSync(
-    `
-    INSERT INTO owned_mascots
-    (
-      studentId,
-      mascotId
-    )
-    VALUES (?, ?)
-    `,
-    [
-      studentId,
-      mascotId,
-    ]
-  );
-
-addToSyncQueue(
-  "SYNC_STUDENT",
-  {
-    studentId,
-  }
-);
+  if (!Number.isSafeInteger(price) || price < 0) throw new Error("Invalid mascot price.");
+  let result: "owned" | "insufficient" | "purchased" = "owned";
+  db.withTransactionSync(() => {
+    if (ownsMascot(studentId, mascotId)) return;
+    const debit = db.runSync("UPDATE student SET coins = coins - ? WHERE id = ? AND coins >= ?", [price, studentId, price]);
+    if (!debit.changes) { result = "insufficient"; return; }
+    db.runSync("INSERT INTO owned_mascots (studentId, mascotId) VALUES (?, ?)", [studentId, mascotId]);
+    db.runSync(
+      "INSERT INTO student_profile_changes (studentId, coins, mascotId) VALUES (?, ?, ?)",
+      [studentId, -price, mascotId],
+    );
+    addToSyncQueue("SYNC_STUDENT", { studentId });
+    result = "purchased";
+  });
+  return result as "owned" | "insufficient" | "purchased";
 }
 
 export function getOwnedMascots(studentId: string) {

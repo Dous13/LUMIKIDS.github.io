@@ -117,6 +117,25 @@ export function initializeDatabase() {
 
       retryCount INTEGER DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS student_profile_sync (
+      studentId TEXT PRIMARY KEY NOT NULL,
+      deviceId TEXT NOT NULL DEFAULT (lower(hex(randomblob(16)))),
+      legacyProfile TEXT,
+      confirmedProfile TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS student_profile_changes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      studentId TEXT NOT NULL,
+      subject TEXT,
+      lessonId TEXT,
+      xp INTEGER NOT NULL DEFAULT 0,
+      coins INTEGER NOT NULL DEFAULT 0,
+      avatar TEXT,
+      mascotId TEXT
+    );
+    CREATE INDEX IF NOT EXISTS student_profile_changes_student ON student_profile_changes (studentId, id);
   `);
 
   const columns = db.getAllSync(`PRAGMA table_info(lesson_progress)`) as Array<{ name: string }>;
@@ -135,6 +154,25 @@ export function initializeDatabase() {
   }
   if (!columns.some(column => column.name === "quizTotal")) {
     db.execSync(`ALTER TABLE lesson_progress ADD COLUMN quizTotal INTEGER DEFAULT 0`);
+  }
+
+  const queueColumns = db.getAllSync<{ name: string }>("PRAGMA table_info(sync_queue)");
+  if (!queueColumns.some(column => column.name === "revision")) {
+    db.withTransactionSync(() => {
+      // Old jobs had no mutation details. Keep their existing local balance
+      // and avatar as a baseline until the first confirmed upload.
+      db.execSync(`
+        INSERT OR IGNORE INTO student_profile_sync (studentId, legacyProfile)
+        SELECT s.id, json_object('xp', s.xp, 'coins', s.coins, 'avatar', s.avatar,
+          'readingXP', s.readingXP, 'writingXP', s.writingXP, 'mathXP', s.mathXP)
+        FROM student s WHERE EXISTS (
+          SELECT 1 FROM sync_queue q WHERE q.synced = 0
+          AND q.action = 'SYNC_STUDENT'
+          AND json_extract(CASE WHEN json_valid(q.payload) THEN q.payload ELSE '{}' END, '$.studentId') = s.id
+        );
+        ALTER TABLE sync_queue ADD COLUMN revision INTEGER NOT NULL DEFAULT 0;
+      `);
+    });
   }
 }
 

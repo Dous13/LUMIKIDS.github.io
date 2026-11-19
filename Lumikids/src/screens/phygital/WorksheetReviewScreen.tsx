@@ -7,10 +7,11 @@ import TouchableOpacity from "../../components/common/MotionTouchable";
 import { Colors } from "../../theme";
 import { getSession } from "../../services/session/session";
 import { getTeacherSession } from "../../services/teacher/teacherSession";
-import { getWorksheetRecord, getWorksheetHistory, requireWorksheetReviewer, saveWorksheetReview, finalizeWorksheet,
+import { getWorksheetRecord, getWorksheetHistory, requireWorksheetReviewer, revokeWorksheetReviewAccess, saveWorksheetReview, finalizeWorksheet,
   type WorksheetRecord, type WorksheetReview } from "../../services/phygital/worksheetStore";
 import { restoreWorksheetHistory } from "../../services/sync/syncWorksheet";
 import type { WorksheetAnswer } from "../../services/phygital/worksheetTypes";
+import { canonicalJson } from "../../services/phygital/worksheetLayout";
 
 export default function WorksheetReviewScreen() {
   const navigation = useNavigation();
@@ -30,9 +31,15 @@ export default function WorksheetReviewScreen() {
       if (!reviewer && student?.studentId !== params.studentId) throw new Error("Open this student from your class roster first.");
       if (active) { setTeacherId(reviewer); setRecords(getWorksheetHistory(params.studentId)); }
       try { await restoreWorksheetHistory(params.studentId); }
-      catch { if (active) setError("Showing saved local worksheets. Cloud history is unavailable offline."); }
+      catch (error) {
+        if ((error as { code?: string })?.code === "permission-denied") {
+          if (reviewer) revokeWorksheetReviewAccess(reviewer, params.studentId);
+          throw new Error("This account no longer has access to this student's worksheets.");
+        }
+        if (active) setError("Showing saved local worksheets. Cloud history is unavailable.");
+      }
       if (active) setRecords(getWorksheetHistory(params.studentId));
-    })().catch(e => { if (active) { setRecords([]); setError(e.message); } });
+    })().catch(e => { if (active) { setTeacherId(""); setRecords([]); setError(e.message); } });
     return () => { active = false; };
   }, [params.studentId]));
 
@@ -40,7 +47,12 @@ export default function WorksheetReviewScreen() {
     try {
       const teacher = await getTeacherSession();
       if (!teacherId || teacher?.teacherId !== teacherId) throw new Error("Sign in as the reviewing teacher again.");
-      record = getWorksheetRecord(params.studentId, record.worksheet.instanceId!);
+      const latest = getWorksheetRecord(params.studentId, record.worksheet.instanceId!);
+      if (canonicalJson(latest.capture) !== canonicalJson(record.capture)) {
+        setRecords(getWorksheetHistory(params.studentId));
+        throw new Error("The photo changed. Review the updated capture before confirming answers.");
+      }
+      record = latest;
       const review: WorksheetReview = record.review?.teacherId === teacherId
         ? { ...record.review, answers: [...record.review.answers], writing: [...record.review.writing], reviewed: [...record.review.reviewed] }
         : { teacherId, answers: record.capture?.answers.length === 5 ? [...record.capture.answers] : [],
@@ -56,6 +68,11 @@ export default function WorksheetReviewScreen() {
     try {
       const teacher = await getTeacherSession();
       if (teacher?.teacherId !== teacherId) throw new Error("Sign in as the reviewing teacher again.");
+      const latest = getWorksheetRecord(params.studentId, record.worksheet.instanceId!);
+      if (canonicalJson(latest.capture) !== canonicalJson(record.capture)) {
+        setRecords(getWorksheetHistory(params.studentId));
+        throw new Error("The photo changed. Review the updated capture before finalizing.");
+      }
       const result = finalizeWorksheet(params.studentId, record.worksheet.instanceId!, teacherId);
       setRecords(getWorksheetHistory(params.studentId));
       Alert.alert("Result saved", `${result.score}/5. ${result.passed ? "Completion saved." : "More practice is needed."}`);

@@ -1,123 +1,96 @@
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { db as firestore } from "../firebase/firebase";
-import { getLocalStudent } from "../database/localStudent";
-import { getAllProgress } from "../database/localProgress";
-import { getAllWritingProgress } from "../database/localWriting";
-import { getAllMathProgress } from "../database/localMath";
-import { db as localDb } from "../database/database";
+import { db } from "../database/database";
 import { getAllMistakes } from "../database/localMistakes";
-import { getOwnedMascots } from "../database/localMascot";
-import { restoreStudentProgress } from "./restoreStudentProgress";
+import type { WorksheetResult } from "../phygital/worksheetStore";
+import { canonicalJson } from "../phygital/worksheetLayout";
+import { getPendingQueue, readQueuePayload } from "./localQueue";
+import { applyLocalProgress, mergeProgress, progressTables, readLocalProgress } from "./progressMerge";
+import { mergeStudentProfile, profileRevision, readProfile, rememberConfirmedProfile, saveRestoredProfile, type CloudStudent } from "./studentProfile";
 
-function toReadingProgress(rows: any[]) {
-  return Object.fromEntries(
-    rows.map((lesson) => [lesson.lessonId, {
-      unlocked: lesson.unlocked === 1,
-      completed: lesson.completed === 1,
-      stars: lesson.stars ?? 0,
-      quizScore: lesson.quizScore ?? 0,
-      quizTotal: lesson.quizTotal ?? 0,
-    }])
-  );
+const active = new Map<string, Promise<void>>();
+
+export function syncStudent(studentId: string): Promise<void> {
+  const pending = active.get(studentId);
+  if (pending) return pending;
+  const work = uploadStudent(studentId).finally(() => active.delete(studentId));
+  active.set(studentId, work);
+  return work;
 }
 
-function toWritingProgress(rows: any[]) {
-  return Object.fromEntries(
-    rows.map((lesson) => [lesson.lessonId, {
-      unlocked: lesson.unlocked === 1,
-      completed: lesson.completed === 1,
-      stars: lesson.stars ?? 0,
-    }])
-  );
-}
+async function uploadStudent(studentId: string) {
+  const profile = readProfile(studentId);
+  const localProgress = readLocalProgress(studentId);
+  const studentJobs = () => getPendingQueue().filter(job =>
+    job.action === "SYNC_STUDENT" && readQueuePayload(job)?.studentId === studentId);
+  const revision = JSON.stringify(studentJobs());
+  const results = getPendingQueue().flatMap(job => {
+    if (job.action !== "SYNC_WORKSHEET") return [];
+    const payload = readQueuePayload(job);
+    if (payload?.studentId !== studentId || !payload.instanceId) return [];
+    const row = db.getFirstSync<{ finalized: string | null }>(
+      "SELECT finalized FROM worksheet_instances WHERE studentId = ? AND instanceId = ?", [studentId, payload.instanceId],
+    );
+    return row?.finalized ? [JSON.parse(row.finalized) as WorksheetResult] : [];
+  });
+  const mistakes = Object.fromEntries(getAllMistakes(studentId).map(mistake => [
+    `${mistake.subject}_${mistake.lessonId}_${mistake.questionKey}`,
+    {
+      subject: mistake.subject, lessonId: mistake.lessonId, questionKey: mistake.questionKey,
+      question: mistake.question, selectedAnswer: mistake.selectedAnswer, correctAnswer: mistake.correctAnswer,
+      count: mistake.count,
+    },
+  ]));
 
-function toMathProgress(rows: any[]) {
-  return Object.fromEntries(
-    rows.map((lesson) => [String(lesson.lessonId), {
-      unlocked: lesson.unlocked === 1,
-      completed: lesson.completed === 1,
-      stars: lesson.stars ?? 0,
-      quizScore: lesson.quizScore ?? 0,
-      quizTotal: lesson.quizTotal ?? 0,
-      xpEarned: lesson.xpEarned ?? 0,
-    }])
-  );
-}
+  const root = doc(firestore, "students", studentId);
+  const confirmed = await runTransaction(firestore, async transaction => {
+    const snapshot = await transaction.get(root);
+    if (!snapshot.exists()) throw new Error("The cloud student profile does not exist.");
+    const cloud = snapshot.data() as CloudStudent & { mistakes?: typeof mistakes };
+    for (const result of results) {
+      const remote = await transaction.get(doc(firestore, "students", studentId, "worksheetResults", result.instanceId));
+      const finalized = remote.exists() ? remote.data().finalized : undefined;
+      if (!finalized || canonicalJson(finalized) !== canonicalJson(result)) {
+        throw new Error("Worksheet finalization is pending. Student progress will retry after the result is published.");
+      }
+    }
+    const mergedProfile = mergeStudentProfile(studentId, cloud, profile);
+    const progress = mergeProgress(cloud, localProgress);
+    const previousReceipt = cloud.profileReceipts?.[profile.state.deviceId];
+    const oldReceipt = typeof previousReceipt === "number" && Number.isSafeInteger(previousReceipt) ? previousReceipt : 0;
+    const receipt = Math.max(oldReceipt, profile.changes[profile.changes.length - 1]?.id ?? 0);
+    const mergedMistakes = { ...cloud.mistakes };
+    for (const [key, mistake] of Object.entries(mistakes)) {
+      if ((mergedMistakes[key]?.count ?? 0) <= mistake.count) mergedMistakes[key] = mistake;
+    }
 
-export async function syncStudent(studentId: string) {
-  // Always merge existing cloud progress before uploading local records.
-  await restoreStudentProgress(studentId);
+    const summary = { ...progress, ...mergedProfile, mistakes: mergedMistakes, updatedAt: serverTimestamp() };
+    // A single commit couples the receipt, root profile, and teacher roster.
+    // Keep receipt metadata on the root document only.
+    const profileReceipts = { ...cloud.profileReceipts, [profile.state.deviceId]: receipt };
+    const revision = Math.max(profileRevision(cloud), profileRevision(profile.confirmed ?? {})) + 1;
+    const rootSummary = { ...summary, profileReceipts, profileRevision: revision };
+    transaction.set(root, rootSummary, { mergeFields: Object.keys(rootSummary) });
+    transaction.set(doc(firestore, "classes", mergedProfile.classCode, "students", studentId), summary,
+      { mergeFields: Object.keys(summary) });
+    return { ...mergedProfile, ...progress, profileReceipts, profileRevision: revision };
+  });
 
-  const student = getLocalStudent(studentId);
-  if (!student) return;
-
-  const readingProgress = toReadingProgress(
-    getAllProgress(studentId) as any[]
-  );
-  const writingProgress = toWritingProgress(
-    getAllWritingProgress(studentId) as any[]
-  );
-  const mathProgress = toMathProgress(
-    getAllMathProgress(studentId) as any[]
-  );
-
-  const mistakes = Object.fromEntries(
-    getAllMistakes(studentId).map((mistake) => [
-      `${mistake.subject}_${mistake.lessonId}_${mistake.questionKey}`,
-      {
-        subject: mistake.subject,
-        lessonId: mistake.lessonId,
-        questionKey: mistake.questionKey,
-        question: mistake.question,
-        selectedAnswer: mistake.selectedAnswer,
-        correctAnswer: mistake.correctAnswer,
-        count: mistake.count,
-      },
-    ])
-  );
-
-  const ownedMascots = getOwnedMascots(studentId).map(
-    (item) => item.mascotId
-  );
-
-  const payload = {
-    id: student.id,
-    name: student.name,
-    classCode: student.classCode,
-    xp: student.xp,
-    coins: student.coins,
-    readingXP: student.readingXP,
-    writingXP: student.writingXP,
-    mathXP: student.mathXP,
-    level: student.level,
-    streak: student.streak,
-    avatar: student.avatar,
-    ownedMascots,
-    mistakes,
-    readingProgress,
-    writingProgress,
-    mathProgress,
-    updatedAt: serverTimestamp(),
-  };
-
-  // Root student document is the source of truth for the student app.
-  await setDoc(
-    doc(firestore, "students", student.id),
-    payload,
-    { merge: true }
-  );
-
-  // Keep the teacher roster in sync with the same student summary.
-  // Teachers read this document to monitor class progress.
-  await setDoc(
-    doc(firestore, "classes", student.classCode, "students", student.id),
-    payload,
-    { merge: true }
-  );
-
-  // Mark local progress as synchronized only after Firestore succeeds.
-  localDb.runSync(`UPDATE lesson_progress SET synced = 1 WHERE studentId = ?`, [student.id]);
-  localDb.runSync(`UPDATE writing_progress SET synced = 1 WHERE studentId = ?`, [student.id]);
-  localDb.runSync(`UPDATE math_progress SET synced = 1 WHERE studentId = ?`, [student.id]);
-  localDb.runSync(`UPDATE mistakes SET synced = 1 WHERE studentId = ?`, [student.id]);
+  db.withTransactionSync(() => {
+    // Reapply mutations made during the network request to the acknowledged
+    // profile. Keep each new mutation and its queue entry for the next pass.
+    const current = readProfile(studentId);
+    saveRestoredProfile(mergeStudentProfile(studentId, confirmed, current));
+    rememberConfirmedProfile(studentId, confirmed, current.confirmed);
+    applyLocalProgress(studentId, confirmed);
+    db.runSync("UPDATE student_profile_sync SET legacyProfile = NULL WHERE studentId = ?", [studentId]);
+    db.runSync("DELETE FROM student_profile_changes WHERE studentId = ? AND id <= ?", [
+      studentId, confirmed.profileReceipts[profile.state.deviceId],
+    ]);
+    if (JSON.stringify(studentJobs()) === revision) {
+      for (const table of [...Object.values(progressTables), "mistakes"]) {
+        db.runSync(`UPDATE ${table} SET synced = 1 WHERE studentId = ?`, [studentId]);
+      }
+    }
+  });
 }

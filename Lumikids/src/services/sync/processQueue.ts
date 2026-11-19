@@ -1,45 +1,33 @@
-import { getPendingQueue, markQueueSynced } from "./localQueue";
+import { getPendingQueue, markQueueSynced, readQueuePayload } from "./localQueue";
 import { syncStudent } from "./syncStudent";
 import { syncWorksheet } from "./syncWorksheet";
 
-let isProcessing = false;
+type Scope = (studentId: string) => boolean;
+type WorksheetPublisher = (studentId: string, teacherId: string) => boolean;
+let active: Promise<void> | undefined;
 
-export async function processQueue() {
-  if (isProcessing) {
-    return;
-  }
+export function processQueue(canSync: Scope = () => true, canPublishWorksheet?: WorksheetPublisher): Promise<void> {
+  if (!active) active = drainQueue(canSync, canPublishWorksheet).finally(() => { active = undefined; });
+  return active;
+}
 
-  isProcessing = true;
-
-  try {
-    const queue = getPendingQueue() as any[];
-
-    for (const job of queue) {
-      try {
-        const payload = JSON.parse(job.payload);
-
-        switch (job.action) {
-          case "SYNC_WORKSHEET":
-            await syncWorksheet(payload.studentId, payload.instanceId);
-            break;
-          case "SYNC_STUDENT":
-            await syncStudent(payload.studentId);
-            break;
-
-          default:
-            console.log("Unknown sync action:", job.action);
-            break;
-        }
-
-        markQueueSynced(job.id);
-      } catch (error) {
-        console.log(
-          `[SYNC] Queue job ${job.id} failed:`,
-          error
-        );
-      }
+async function drainQueue(canSync: Scope, canPublishWorksheet?: WorksheetPublisher) {
+  const queue = getPendingQueue();
+  // Publish worksheet results first. A failed result holds its dependent
+  // student snapshot while unrelated jobs can still be attempted.
+  const ordered = [...queue.filter(job => job.action === "SYNC_WORKSHEET"),
+    ...queue.filter(job => job.action !== "SYNC_WORKSHEET")];
+  for (const job of ordered) {
+    const payload = readQueuePayload(job);
+    if (!payload || !canSync(payload.studentId)) continue;
+    try {
+      if (job.action === "SYNC_WORKSHEET") {
+        await syncWorksheet(payload.studentId, payload.instanceId!, canPublishWorksheet);
+      } else if (job.action === "SYNC_STUDENT") await syncStudent(payload.studentId);
+      else continue;
+      markQueueSynced(job);
+    } catch (error) {
+      console.warn(`[SYNC] Queue job ${job.id} remains pending.`, error);
     }
-  } finally {
-    isProcessing = false;
   }
 }
