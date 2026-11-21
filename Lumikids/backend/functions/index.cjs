@@ -1,13 +1,13 @@
 const { createHash } = require("node:crypto");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { initializeApp } = require("firebase-admin/app");
+const { getApps, initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { InvalidOperation, exact, profileSummary, isWorksheetInstanceId } = require("./learning.cjs");
 const { applyLearningBatch, equipDevice, operationSequence } = require("./learningBatch.cjs");
 const { syncWorksheetRevision } = require("./worksheetRevision.cjs");
 const { loginSource } = require("./loginSource.cjs");
-initializeApp();
+if (!getApps().some(app => app.name === "[DEFAULT]")) initializeApp();
 const auth = getAuth();
 const db = getFirestore();
 const options = { maxInstances: 10, timeoutSeconds: 30 };

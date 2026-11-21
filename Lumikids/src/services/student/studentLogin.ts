@@ -41,8 +41,17 @@ export async function loginStudent(nameInput: string, codeInput: string, remembe
     }, true);
   } catch (error) {
     const code = (error as { code?: string })?.code;
-    if (["unavailable", "deadline-exceeded", "functions/unavailable", "functions/deadline-exceeded", "auth/network-request-failed"].includes(code ?? "")) {
-      throw new Error("Connect to the internet to verify your name and classroom code.");
+    if (["functions/not-found", "functions/unavailable", "functions/deadline-exceeded", "functions/internal"].includes(code ?? "")) {
+      throw new Error("The student sign-in server is unavailable. Check that the backend is running and the device can reach it, then try again.");
+    }
+    if (["unavailable", "deadline-exceeded", "auth/network-request-failed"].includes(code ?? "")) {
+      throw new Error("Could not connect to Firebase. Check your internet connection and try again.");
+    }
+    if (["auth/invalid-custom-token", "auth/custom-token-mismatch"].includes(code ?? "")) {
+      throw new Error("Firebase could not verify the server's sign-in token. Ask whoever runs the backend to check its Firebase configuration.");
+    }
+    if (code === "permission-denied") {
+      throw new Error("Your student profile could not be opened. Ask your teacher to check your enrollment.");
     }
     throw new Error("We could not verify your name and classroom code. Check with your teacher or try again.");
   }

@@ -1,5 +1,6 @@
 const assert = require("node:assert/strict");
 const { createHash } = require("node:crypto");
+const { once } = require("node:events");
 const { readFileSync } = require("node:fs");
 const { test } = require("node:test");
 const { createRequire } = require("node:module");
@@ -19,6 +20,7 @@ const { loader, sqlite, root } = require("./runtime.cjs");
 const { quizProof, traceProof } = require("./cloud-fixture.cjs");
 const { loginSource, EMULATOR_SOURCE_HEADER } = require("../backend/functions/loginSource.cjs");
 const path = require("node:path");
+const { addLearner, createClassroom, createTeacherProfile } = require("../scripts/firebase-emulator-fixtures.cjs");
 const requireFunctions = createRequire(require.resolve("../backend/functions/package.json"));
 
 const projectId = "demo-lumikids";
@@ -27,6 +29,83 @@ if (!process.env.FIRESTORE_EMULATOR_HOST || !process.env.FIREBASE_AUTH_EMULATOR_
   throw new Error("Run this suite through Firebase emulators:exec with project demo-lumikids.");
 }
 const [firestoreHost, firestorePort] = process.env.FIRESTORE_EMULATOR_HOST.split(":");
+const standalone = process.env.LUMIKIDS_STANDALONE_TEST === "1";
+let standaloneOrigin;
+
+if (standalone) {
+  test("standalone configuration keeps live Firebase and emulator settings separate", () => {
+    const { readConfig } = require("../backend/functions/server.cjs");
+    const demo = { LUMIKIDS_BACKEND_MODE: "emulator" }, live = { LUMIKIDS_BACKEND_MODE: "live" };
+    assert.equal(readConfig(demo).projectId, "demo-lumikids");
+    assert.equal(readConfig(live).projectId, "lumikids-a94d8");
+    assert.throws(() => readConfig({}), /LUMIKIDS_BACKEND_MODE/);
+    assert.throws(() => readConfig({ ...demo, GCLOUD_PROJECT: "lumikids-a94d8" }), /does not match/);
+    assert.throws(() => readConfig({ ...demo, FIRESTORE_EMULATOR_HOST: "example.test:8080" }), /127\.0\.0\.1/);
+    assert.throws(() => readConfig({ ...demo, GOOGLE_APPLICATION_CREDENTIALS: "configured" }), /credentials/);
+    assert.throws(() => readConfig({ ...demo, LOGIN_TRUSTED_SOURCE_HEADER: "1" }), /trusted ingress/);
+    assert.throws(() => readConfig({ ...live, FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099" }), /emulator settings/);
+    assert.throws(() => readConfig({ ...live, FIREBASE_DEBUG_FEATURES: "{}" }), /debug flags/);
+    assert.throws(() => readConfig({ ...live, LUMIKIDS_ALLOWED_ORIGINS: "*" }), /exact HTTPS origins/);
+    const key = { LUMIKIDS_SERVICE_ACCOUNT_KEY_PATH: "server-only.json" };
+    const tls = { LUMIKIDS_BACKEND_TLS_CERT_PATH: "server.crt", LUMIKIDS_BACKEND_TLS_KEY_PATH: "server.key" };
+    const lan = { LUMIKIDS_BACKEND_HOST: "192.0.2.10" };
+    assert.equal(readConfig(demo).host, "127.0.0.1");
+    assert.equal(readConfig({ ...live, ...lan, ...tls, ...key }).host, "192.0.2.10");
+    assert.throws(() => readConfig({ ...live, ...lan }), /direct HTTPS/);
+    assert.throws(() => readConfig({ ...demo, ...lan, ...tls }), /loopback/);
+    assert.throws(() => readConfig({ ...live, LUMIKIDS_BACKEND_TLS_KEY_PATH: "server.key" }), /both TLS files/);
+    assert.throws(() => readConfig({ ...live, ...tls, LOGIN_TRUSTED_SOURCE_HEADER: "1" }), /socket peer/);
+    assert.throws(() => readConfig({ ...demo, ...key }), /credentials/);
+    assert.throws(() => readConfig({ ...live, ...key, GOOGLE_APPLICATION_CREDENTIALS: "adc.json" }), /Choose a service-account key/);
+  });
+
+  test("app Firebase configuration selects the Functions emulator or the configured standalone origin", t => {
+    const emulatorKey = "EXPO_PUBLIC_FIREBASE_EMULATOR_HOST", backendKey = "EXPO_PUBLIC_LUMIKIDS_BACKEND_URL";
+    const previous = [process.env[emulatorKey], process.env[backendKey], global.__DEV__];
+    const set = (key, value) => {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    };
+    t.after(() => {
+      set(emulatorKey, previous[0]);
+      set(backendKey, previous[1]);
+      if (previous[2] === undefined) delete global.__DEV__;
+      else global.__DEV__ = previous[2];
+    });
+    const configure = (dev, emulator, backend) => {
+      global.__DEV__ = dev;
+      set(emulatorKey, emulator);
+      set(backendKey, backend);
+      const calls = [];
+      const load = loader({
+        "firebase/app": { initializeApp: config => config },
+        "firebase/auth": { initializeAuth: () => ({}), connectAuthEmulator: (_, ...args) => calls.push(["auth", args[0]]) },
+        "firebase/firestore": { getFirestore: () => ({}), connectFirestoreEmulator: (_, ...args) => calls.push(["firestore", ...args]) },
+        "firebase/functions": {
+          getFunctions: (app, origin) => ({ project: app.projectId, origin }),
+          connectFunctionsEmulator: (_, ...args) => calls.push(["functions", ...args]),
+        },
+        "@react-native-async-storage/async-storage": {},
+      });
+      const { functions } = load("src/services/firebase/firebase.ts");
+      return { ...functions, calls };
+    };
+    const local = "10.0.2.2", http = "http://10.0.2.2:5002", https = "https://backend.example.test";
+    const demoServices = [["auth", "http://10.0.2.2:9099"], ["firestore", local, 8080]];
+    assert.deepEqual(configure(true, local, undefined),
+      { project: "demo-lumikids", origin: undefined, calls: [...demoServices, ["functions", local, 5001]] });
+    assert.deepEqual(configure(true, local, http), { project: "demo-lumikids", origin: http, calls: demoServices });
+    assert.deepEqual(configure(false, undefined, https), { project: "lumikids-a94d8", origin: https, calls: [] });
+    const localHttps = "https://10.0.2.2:5002";
+    assert.deepEqual(configure(true, undefined, localHttps), { project: "lumikids-a94d8", origin: localHttps, calls: [] });
+    assert.throws(() => configure(false, undefined, localHttps), /matching local HTTP backend/);
+    assert.throws(() => configure(true, undefined, http), /matching local HTTP backend/);
+    assert.throws(() => configure(false, local, http), /matching local HTTP backend/);
+    assert.throws(() => configure(true, local, https), /matching local HTTP backend/);
+    assert.throws(() => configure(true, local, "http://127.0.0.1:5002"), /matching local HTTP backend/);
+    assert.throws(() => configure(false, undefined, https + "/loginStudent"), /matching local HTTP backend/);
+  });
+}
 
 test("source simulation is restricted to the loopback demo emulator", () => {
   const peer = "192.0.2.10", simulated = "198.51.100.20", ingress = "203.0.113.30";
@@ -69,8 +148,8 @@ function client(name) {
   connectAuthEmulator(auth, "http://" + process.env.FIREBASE_AUTH_EMULATOR_HOST, { disableWarnings: true });
   const db = getFirestore(app);
   connectFirestoreEmulator(db, firestoreHost, Number(firestorePort));
-  const functions = getFunctions(app);
-  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+  const functions = getFunctions(app, standaloneOrigin);
+  if (!standaloneOrigin) connectFunctionsEmulator(functions, "127.0.0.1", 5001);
   return { app, auth, db, functions, call: async (fn, data) => (await httpsCallable(functions, fn)(data)).data };
 }
 
@@ -78,24 +157,10 @@ async function teacherAccount(client, suffix, code, learner, name) {
   const email = suffix + "@example.test";
   const { user } = await createUserWithEmailAndPassword(client.auth, email, "emulator-only-demo");
   const teacherId = user.uid;
-  await setDoc(doc(client.db, "teachers", teacherId), { id: teacherId, name: suffix, email, createdAt: serverTimestamp() });
-  await setDoc(doc(client.db, "classes", code), {
-    code, teacherId, teacherName: suffix, name: suffix + " classroom", createdAt: serverTimestamp(),
-  });
+  await createTeacherProfile(client.db, teacherId, suffix, email);
+  await createClassroom(client.db, teacherId, suffix, code);
   await addLearner(client, teacherId, code, learner, name);
   return teacherId;
-}
-
-async function addLearner(client, teacherId, code, learner, name) {
-  const data = {
-    id: learner, classCode: code, teacherId, fullName: name + " Learner", name, preferredName: name,
-    preferredNameLower: name.toLowerCase(), xp: 0, coins: 0, level: 1, streak: 0,
-    readingXP: 0, writingXP: 0, mathXP: 0, avatar: "default", createdAt: serverTimestamp(),
-  };
-  const batch = writeBatch(client.db);
-  batch.set(doc(client.db, "students", learner), data);
-  batch.set(doc(client.db, "classes", code, "students", learner), data);
-  await batch.commit();
 }
 
 async function login(client, name, classCode) {
@@ -104,10 +169,36 @@ async function login(client, name, classCode) {
   return { result, credential: await signInWithCustomToken(client.auth, result.token) };
 }
 
+function mobileRuntime(firebase, storage, saved) {
+  const load = loader({
+    "expo-sqlite": { openDatabaseSync: () => storage.db },
+    [path.join(root, "src/services/firebase/firebase.ts")]: firebase,
+    "@react-native-async-storage/async-storage": {
+      getItem: async key => saved.get(key) ?? null,
+      setItem: async (key, value) => { saved.set(key, value); },
+      removeItem: async key => { saved.delete(key); },
+    },
+  });
+  const svc = name => load("src/services/" + name + ".ts");
+  svc("database/database").initializeDatabase();
+  return { svc, login: svc("student/studentLogin"), sessions: svc("session/session"), queue: svc("sync/processQueue") };
+}
+
 test("Firestore, Auth and callable Functions use the same demo authorization boundary", async t => {
+  if (standalone) {
+    const { startStandalone } = require("../backend/functions/server.cjs");
+    const server = startStandalone();
+    await once(server, "listening");
+    t.after(() => new Promise(resolve => {
+      server.close(resolve);
+      server.closeAllConnections();
+    }));
+    assert.equal(server.address().address, "127.0.0.1");
+    standaloneOrigin = "http://127.0.0.1:" + server.address().port;
+  }
   const env = await initializeTestEnvironment({
     projectId,
-    firestore: { host: firestoreHost, port: Number(firestorePort), rules: readFileSync("firestore.rules", "utf8") },
+    firestore: { host: firestoreHost, port: Number(firestorePort), rules: readFileSync(path.join(root, "firestore.rules"), "utf8") },
   });
   const a = client("teacher-a"), b = client("teacher-b"), student = client("student"), guest = client("guest");
   t.after(async () => {
@@ -119,9 +210,98 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
   await teacherAccount(b, "teacher-b", "ROOMB2", "learner-b", "Ari");
   let quiz, worksheet, capture, review;
 
+  if (standalone) {
+    await t.test("standalone HTTP boundary enforces routes, callable errors, preflight, and body limits", async () => {
+      const request = (route, options) => fetch(standaloneOrigin + route, options);
+      const post = (body, headers = {}) => ({
+        method: "POST", headers: { "content-type": "application/json", ...headers }, body,
+      });
+      const expectError = async (response, httpStatus, status) => {
+        assert.equal(response.status, httpStatus);
+        assert.equal((await response.json()).error.status, status);
+      };
+      const health = await request("/healthz");
+      assert.equal(health.status, 200);
+      assert.match(health.headers.get("content-type"), /^text\/plain\b/);
+      assert.equal(health.headers.get("cache-control"), "no-store");
+      assert.equal(await health.text(), "ok");
+      const healthHead = await request("/healthz", { method: "HEAD" });
+      assert.equal(healthHead.status, 200);
+      assert.equal(await healthHead.text(), "");
+      await expectError(await request("/healthz", post('{"data":{}}')), 404, "NOT_FOUND");
+      await expectError(await request("/other", post('{"data":{}}')), 404, "NOT_FOUND");
+      await expectError(await request("/loginStudent"), 405, "INVALID_ARGUMENT");
+      await expectError(await request("/loginStudent", post('{"data":')), 400, "INVALID_ARGUMENT");
+      await expectError(await request("/loginStudent", post('{"data":{},"extra":1}')), 400, "INVALID_ARGUMENT");
+      await expectError(await request("/loginStudent", post(JSON.stringify({ data: "x".repeat(1_600_001) }))),
+        413, "RESOURCE_EXHAUSTED");
+      await expectError(await request("/loginStudent", post('{"data":{}}', { "content-encoding": "gzip" })),
+        415, "INVALID_ARGUMENT");
+      for (const route of ["/syncStudentLearning", "/syncWorksheet"]) {
+        await expectError(await request(route, post('{"data":{}}')), 401, "UNAUTHENTICATED");
+        await expectError(await request(route, post('{"data":{}}', { authorization: "Bearer invalid" })), 401, "UNAUTHENTICATED");
+      }
+      const preflight = (origin) => request("/loginStudent", {
+        method: "OPTIONS", headers: {
+          origin, "access-control-request-method": "POST", "access-control-request-headers": "content-type,authorization",
+        },
+      });
+      const allowed = await preflight("http://localhost:8081");
+      assert.equal(allowed.status, 204);
+      assert.equal(allowed.headers.get("access-control-allow-origin"), "http://localhost:8081");
+      assert.match(allowed.headers.get("access-control-allow-methods"), /POST/);
+      const denied = await preflight("https://another.example");
+      assert.equal(denied.headers.get("access-control-allow-origin"), null);
+      await expectError(denied, 403, "PERMISSION_DENIED");
+      await expectError(await request("/loginStudent", post('{"data":{}}', { origin: "https://another.example" })),
+        403, "PERMISSION_DENIED");
+    });
+
+    await t.test("Mira and Leo keep separate Auth identities, SQLite progress, and cloud rewards", async t => {
+      const classroom = "LUMI26";
+      const teacher = client("standalone-teacher");
+      t.after(() => deleteApp(teacher.app));
+      const teacherId = await teacherAccount(teacher, "standalone-teacher", classroom, "standalone-mira", "Mira");
+      await addLearner(teacher, teacherId, classroom, "standalone-leo", "Leo");
+      const transport = client("standalone-mobile"), storage = sqlite();
+      t.after(async () => {
+        storage.raw.close();
+        await deleteApp(transport.app);
+      });
+      const mobile = mobileRuntime(transport, storage, new Map());
+      const local = id => mobile.svc("database/localStudent").getLocalStudent(id);
+      const profile = async id => (await getDocFromServer(doc(transport.db, "students", id))).data();
+
+      await mobile.login.loginStudent("Mira", classroom, true);
+      assert.equal(transport.auth.currentUser.uid, "student:standalone-mira");
+      mobile.svc("database/localProgress").saveReadingAssessment("standalone-mira", "A", 4, 4, false, quizProof("reading", "A"));
+      await mobile.queue.processQueue(mobile.login.canSyncStudentSession);
+      const mira = await profile("standalone-mira");
+      assert.deepEqual([mira.xp, mira.coins], [25, 15]);
+      await assertFails(getDocFromServer(doc(transport.db, "students/standalone-leo")));
+
+      await mobile.login.logoutStudent();
+      await mobile.login.loginStudent("Leo", classroom, true);
+      assert.equal(transport.auth.currentUser.uid, "student:standalone-leo");
+      assert.deepEqual(await mobile.sessions.getSession(), { studentId: "standalone-leo" });
+      assert.deepEqual([local("standalone-leo").name, local("standalone-leo").xp, local("standalone-leo").coins], ["Leo", 0, 0]);
+      const leo = await profile("standalone-leo");
+      assert.deepEqual([leo.xp, leo.coins], [0, 0]);
+      await assertFails(getDocFromServer(doc(transport.db, "students/standalone-mira")));
+      await mobile.login.logoutStudent();
+
+      await mobile.login.loginStudent("Mira", classroom, true);
+      assert.deepEqual(await mobile.sessions.getSession(), { studentId: "standalone-mira" });
+      assert.deepEqual([local("standalone-mira").name, local("standalone-mira").xp, local("standalone-mira").coins], ["Mira", 25, 15]);
+      await mobile.login.logoutStudent();
+    });
+  }
+
   await t.test("unsigned users and forged login fields are denied uniformly", async () => {
     await assertFails(getDocFromServer(doc(guest.db, "students/learner-a")));
     await assertFails(getDocFromServer(doc(guest.db, "classes/ROOMA2")));
+    await assertFails(updateDoc(doc(guest.db, "students/learner-a"), { coins: 100 }));
+    await assertFails(setDoc(doc(guest.db, "students/guest-learner"), { id: "guest-learner" }));
     for (const data of [
       { name: "Unknown", classCode: "ROOMA2" },
       { name: "Ari", classCode: "OTHER2" },
@@ -136,10 +316,15 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
   });
 
   await t.test("registration, assigned classroom, roster and student reads preserve teacher access", async () => {
+    await assertSucceeds(getDocFromServer(doc(a.db, "teachers", teacherA)));
     await assertSucceeds(getDocFromServer(doc(a.db, "classes/ROOMA2")));
     const classes = await getDocsFromServer(query(collection(a.db, "classes"), where("teacherId", "==", teacherA)));
     assert.deepEqual(classes.docs.map(item => item.id), ["ROOMA2"]);
     await assertSucceeds(getDocsFromServer(query(collection(a.db, "classes/ROOMA2/students"), where("teacherId", "==", teacherA))));
+    const matching = await assertSucceeds(getDocsFromServer(query(collection(a.db, "classes/ROOMA2/students"),
+      where("teacherId", "==", teacherA), where("preferredNameLower", "==", "ari"))));
+    assert.deepEqual(matching.docs.map(item => item.id), ["learner-a"]);
+    await assertFails(getDocsFromServer(query(collection(b.db, "classes/ROOMA2/students"), where("teacherId", "==", teacherA))));
     await assertSucceeds(getDocFromServer(doc(a.db, "students/learner-a")));
     await assertFails(getDocFromServer(doc(a.db, "classes/ROOMB2")));
     await assertFails(getDocFromServer(doc(a.db, "students/learner-b")));
@@ -157,17 +342,72 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
   await t.test("custom-token enrollment grants only the exact student profile", async () => {
     const { result, credential } = await login(student, "  aRI  ", " rooma2 ");
     assert.equal(result.studentId, "learner-a");
-    const { claims } = await credential.user.getIdTokenResult(true);
+    const { claims, signInProvider } = await credential.user.getIdTokenResult(true);
+    assert.equal(signInProvider, "custom");
     assert.equal(claims.studentId, "learner-a");
     assert.equal(claims.role, "student");
     await assertSucceeds(getDocFromServer(doc(student.db, "students/learner-a")));
     await assertFails(getDocFromServer(doc(student.db, "students/learner-b")));
     await assertFails(getDocsFromServer(collection(student.db, "classes/ROOMA2/students")));
     await assertFails(getDocFromServer(doc(student.db, "classes/ROOMB2")));
+    await assertFails(updateDoc(doc(student.db, "teachers", teacherA), { name: "Replacement" }));
+    await assertFails(updateDoc(doc(student.db, "classes/ROOMA2/students/learner-a"), { teacherId: "replacement" }));
     await assertFails(updateDoc(doc(student.db, "students/learner-b"), { xp: 500 }));
     await assertFails(updateDoc(doc(student.db, "students/learner-a"), { coins: 100, classCode: "ROOMB2" }));
     await assertFails(setDoc(doc(student.db, "students/learner-a/syncReceipts/fake"), { digest: "fake" }));
     await assertFails(setDoc(doc(student.db, "teachers/" + credential.user.uid), { id: credential.user.uid }));
+  });
+
+  await t.test("student profile and worksheet reads require the custom provider and matching identity claims", async () => {
+    const claims = { role: "student", studentId: "learner-a", classCode: "ROOMA2", sessionVersion: 0,
+      firebase: { sign_in_provider: "custom" } };
+    const uid = "student:learner-a";
+    const authorized = env.authenticatedContext(uid, claims).firestore();
+    await assertSucceeds(getDocFromServer(doc(authorized, "students/learner-a")));
+    await assertSucceeds(getDocsFromServer(collection(authorized, "students/learner-a/worksheetResults")));
+    for (const [userId, token] of [
+      [uid, { ...claims, firebase: { sign_in_provider: "password" } }],
+      ["student:learner-b", claims],
+      [uid, { ...claims, studentId: "learner-b" }],
+      [uid, { ...claims, classCode: "ROOMB2" }],
+      [uid, { ...claims, role: "teacher" }],
+      [uid, { ...claims, sessionVersion: 1 }],
+    ]) {
+      const db = env.authenticatedContext(userId, token).firestore();
+      await assertFails(getDocFromServer(doc(db, "students/learner-a")));
+      await assertFails(getDocsFromServer(collection(db, "students/learner-a/worksheetResults")));
+    }
+  });
+
+  await t.test("legacy enrollment is readable only with a consistent teacher and a valid access version", async () => {
+    const teacherId = "rules-legacy-teacher", id = "rules-legacy-learner", classCode = "RULES2";
+    const seed = action => env.withSecurityRulesDisabled(context => action(context.firestore()));
+    await seed(async db => {
+      await setDoc(doc(db, "teachers", teacherId), { id: "nonmatching-teacher" });
+      await setDoc(doc(db, "classes", classCode), { code: classCode, teacherId });
+      await setDoc(doc(db, "students", id), { id, classCode, teacherId, name: "Legacy Learner" });
+    });
+    const studentDb = sessionVersion => env.authenticatedContext("student:" + id, {
+      role: "student", studentId: id, classCode, sessionVersion, firebase: { sign_in_provider: "custom" },
+    }).firestore();
+    const profile = db => getDocFromServer(doc(db, "students", id));
+    const teacherDb = env.authenticatedContext(teacherId, { firebase: { sign_in_provider: "password" } }).firestore();
+    const classroom = () => getDocFromServer(doc(teacherDb, "classes", classCode));
+    await assertFails(profile(studentDb(0)));
+    await assertFails(classroom());
+    await seed(db => setDoc(doc(db, "teachers", teacherId), { id: teacherId }));
+    await assertSucceeds(profile(studentDb(0)));
+    await assertSucceeds(classroom());
+
+    for (const invalidVersion of [-1, 0.5, "7", 9_007_199_254_740_992]) {
+      await seed(db => setDoc(doc(db, "studentAccess", id), { enabled: true, version: invalidVersion }));
+      await assertFails(profile(studentDb(invalidVersion)));
+    }
+    await seed(db => setDoc(doc(db, "studentAccess", id), { enabled: true, version: 7 }));
+    await assertFails(profile(studentDb(0)));
+    await assertSucceeds(profile(studentDb(7)));
+    await seed(db => updateDoc(doc(db, "students", id), { preferredNameLower: "legacy learner" }));
+    await assertFails(profile(studentDb(7)));
   });
 
   await t.test("password authentication cannot grant the teacher role to a reserved student UID", async t => {
@@ -235,6 +475,11 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
     const mirrored = (await getDocFromServer(doc(a.db, "classes/ROOMA2/students/learner-a"))).data();
     assert.equal(mirrored.xp, 25);
     assert.equal(mirrored.readingProgress.A.completed, true);
+    for (const { db } of [student, a]) {
+      await assertFails(getDocFromServer(doc(db, "students", "learner-a", "syncReceipts", quiz.id)));
+      await assertFails(setDoc(doc(db, "students/learner-a/syncReceipts/wallet-version"), { version: 0 }));
+      await assertFails(updateDoc(doc(db, "students/learner-a"), { coins: 100, avatar: "replacement" }));
+    }
   });
 
   await t.test("malformed, oversized and disproportionate traces are rejected before progress is awarded", async () => {
@@ -504,6 +749,12 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
     assert.equal(result.finalized.teacherId, teacherA);
     assert.equal(result.finalized.score, 5);
     assert.equal(result.profile.mathXP, 50);
+    const saved = await assertSucceeds(getDocFromServer(doc(a.db, "students/learner-a/worksheetResults", instanceId)));
+    assert.equal(saved.data().finalized.score, 5);
+    await assertSucceeds(getDocsFromServer(collection(a.db, "students/learner-a/worksheetResults")));
+    await assertFails(getDocFromServer(doc(b.db, "students/learner-a/worksheetResults", instanceId)));
+    await assertFails(getDocsFromServer(collection(b.db, "students/learner-a/worksheetResults")));
+    await assertFails(updateDoc(doc(a.db, "students/learner-a/worksheetResults", instanceId), { finalized: { score: 0 } }));
     const replay = await a.call("syncWorksheet", data);
     assert.deepEqual(replay.finalized, result.finalized);
     assert.equal(replay.profile.xp, result.profile.xp);
@@ -618,21 +869,7 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
       storage.raw.close();
       await Promise.all([deleteApp(first.app), deleteApp(reopened.app)]);
     });
-    function mobile(firebase) {
-      const load = loader({
-        "expo-sqlite": { openDatabaseSync: () => storage.db },
-        [path.join(root, "src/services/firebase/firebase.ts")]: firebase,
-        "@react-native-async-storage/async-storage": {
-          getItem: async key => saved.get(key) ?? null,
-          setItem: async (key, value) => { saved.set(key, value); },
-          removeItem: async key => { saved.delete(key); },
-        },
-      });
-      const svc = name => load("src/services/" + name + ".ts");
-      svc("database/database").initializeDatabase();
-      return { svc, login: svc("student/studentLogin"), sessions: svc("session/session"), queue: svc("sync/processQueue") };
-    }
-    const old = mobile(first);
+    const old = mobileRuntime(first, storage, saved);
     await old.login.loginStudent("Ari", "ROOMB2", true);
     assert.equal(JSON.parse(saved.get("studentSession")).classCode, undefined);
     old.svc("database/localProgress").saveReadingAssessment("learner-b", "A", 4, 4, false, quizProof("reading", "A"));
@@ -645,7 +882,7 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
     assert.equal(old.svc("database/localStudent").getLocalStudent("learner-b").xp, 50);
     assert.ok(old.svc("sync/localQueue").getPendingQueue().length > 0);
 
-    const current = mobile(reopened);
+    const current = mobileRuntime(reopened, storage, saved);
     assert.equal(reopened.auth.currentUser, null);
     assert.equal((await current.sessions.restoreRememberedSession()).studentId, "learner-b");
     assert.equal(current.login.canSyncStudentSession("learner-b"), false);
@@ -706,7 +943,7 @@ test("Firestore, Auth and callable Functions use the same demo authorization bou
     await assert.rejects(submit(b, "Rae"), denial);
   });
 
-  await t.test("simulated classmates share source quotas and separate sources remain independent", async () => {
+  await t.test("simulated classmates share source quotas and separate sources remain independent", { skip: standalone }, async () => {
     const sourceA = "198.51.100.10", sourceB = "198.51.100.11";
     const submit = (name, source, classCode = "ROOMA2") => loginFromTestSource(name, classCode, source);
     const deny = { status: 403, body: { error: { status: "PERMISSION_DENIED",

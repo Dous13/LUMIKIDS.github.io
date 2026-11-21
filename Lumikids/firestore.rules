@@ -9,7 +9,7 @@ service cloud.firestore {
 
     function isTeacher() {
       return teacherAccount() &&
-        exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+        get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.id == request.auth.uid;
     }
 
     function ownsClass(code) {
@@ -25,7 +25,7 @@ service cloud.firestore {
       let classroom = get(/databases/$(database)/documents/classes/$(student.classCode)).data;
       let rosterPath = /databases/$(database)/documents/classes/$(student.classCode)/students/$(student.id);
       return classroom.code == student.classCode && classroom.teacherId == student.teacherId &&
-        exists(/databases/$(database)/documents/teachers/$(student.teacherId)) &&
+        get(/databases/$(database)/documents/teachers/$(student.teacherId)).data.id == student.teacherId &&
         (exists(rosterPath)
           ? get(rosterPath).data.id == student.id && get(rosterPath).data.classCode == student.classCode &&
             get(rosterPath).data.teacherId == student.teacherId
@@ -34,13 +34,14 @@ service cloud.firestore {
 
     function currentStudentGrant(studentId) {
       let path = /databases/$(database)/documents/studentAccess/$(studentId);
-      return exists(path)
-        ? get(path).data.enabled == true && request.auth.token.sessionVersion == get(path).data.version
-        : request.auth.token.sessionVersion == 0;
+      let version = request.auth.token.sessionVersion;
+      return version is int && version >= 0 && version <= 9007199254740991 &&
+        (exists(path) ? get(path).data.enabled == true && version == get(path).data.version : version == 0);
     }
 
     function ownsStudent(student) {
-      return request.auth != null && request.auth.token.get('role', '') == 'student' &&
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'custom' &&
+        request.auth.token.get('role', '') == 'student' &&
         request.auth.token.studentId == student.id && request.auth.uid == 'student:' + student.id &&
         request.auth.token.classCode == student.classCode &&
         currentStudentGrant(student.id) && verifiedEnrollment(student);

@@ -48,7 +48,11 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "build:firebase": "node backend/functions/build-curriculum.cjs",
-    "test:firebase": "npm run build:firebase && firebase emulators:exec --only auth,firestore,functions --project demo-lumikids \"node --test tests/firebase-emulator.test.cjs\"",
+    "demo:emulators": "npm run build:firebase && node scripts/firebase-demo.cjs emulators",
+    "demo:seed": "node scripts/seed-firebase-demo.cjs",
+    "demo:android": "node scripts/firebase-demo.cjs android",
+    "test:firebase": "npm run build:firebase && node scripts/firebase-demo.cjs test",
+    "test:standalone": "npm run build:firebase && node scripts/firebase-demo.cjs standalone-test",
     "test:regressions": "npm run build:firebase && node --enable-source-maps --experimental-strip-types --test tests/activity-regressions.test.cjs tests/worksheets.test.cjs tests/offline-sync-regressions.test.cjs src/services/writing/tracingValidator.test.mjs"
   },
   "private": true,

@@ -15,18 +15,31 @@ const productionConfig = {
 };
 
 const emulatorHost = __DEV__ ? process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST : undefined;
+const backendUrl = process.env.EXPO_PUBLIC_LUMIKIDS_BACKEND_URL;
+let backendOrigin: string | undefined;
+if (backendUrl) {
+  const url = new URL(backendUrl);
+  const local = ["localhost", "127.0.0.1", "10.0.2.2"].includes(url.hostname);
+  const valid = emulatorHost
+    ? local && url.hostname === emulatorHost && url.protocol === "http:"
+    : (__DEV__ || !local) && url.protocol === "https:";
+  if (!valid || url.username || url.password || ![url.origin, url.origin + "/"].includes(backendUrl)) {
+    throw new Error("Use a matching local HTTP backend in Firebase emulator mode or an HTTPS backend for live Firebase.");
+  }
+  backendOrigin = url.origin;
+}
 const app = initializeApp(emulatorHost
   ? { projectId: "demo-lumikids", apiKey: "demo-api-key", authDomain: "demo-lumikids.firebaseapp.com" }
   : productionConfig);
 
 export const db = getFirestore(app);
 export const auth = initializeAuth(app, { persistence: inMemoryPersistence });
-export const functions = getFunctions(app);
+export const functions = getFunctions(app, backendOrigin);
 
 if (emulatorHost) {
   connectAuthEmulator(auth, "http://" + emulatorHost + ":9099", { disableWarnings: true });
   connectFirestoreEmulator(db, emulatorHost, 8080);
-  connectFunctionsEmulator(functions, emulatorHost, 5001);
+  if (!backendOrigin) connectFunctionsEmulator(functions, emulatorHost, 5001);
 }
 
 export function clearLegacyTeacherAuthStorage() {
